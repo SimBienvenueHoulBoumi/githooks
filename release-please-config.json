@@ -4,7 +4,6 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "release-as": "1.0.0",
       "changelog-sections": [
         { "type": "feat", "section": "Fonctionnalités" },
         { "type": "fix", "section": "Corrections" },

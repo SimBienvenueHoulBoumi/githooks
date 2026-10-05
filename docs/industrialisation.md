@@ -29,9 +29,19 @@ Les numéros de version sont **calculés automatiquement** à partir des Convent
 | `feat: …` | fonctionnalité : 1.**4**.2 → 1.**5**.0 |
 | `feat!: …` ou `BREAKING CHANGE:` dans le corps | majeure : **1**.4.2 → **2**.0.0 |
 
-À chaque push sur `main`, release-please met à jour une PR « release x.y.z » (changelog + version dans les templates). **Merger cette PR** crée le tag `vX.Y.Z`, la release GitHub et déplace le tag majeur `vX`. C'est la seule action humaine : elle choisit *quand* publier.
+À chaque push sur `main` : release-please met à jour une PR « release x.y.z » (changelog + version dans les templates), la CI la vérifie, puis elle est **mergée automatiquement**. Ce merge crée le tag `vX.Y.Z`, la release GitHub et déplace le tag majeur `vX`. Aucune action humaine.
 
-Prérequis GitHub : *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests*.
+Prérequis (une fois) :
+
+1. *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests* ;
+2. *Settings → General → Allow auto-merge* ;
+3. un jeton *fine-grained* (*Settings développeur → Personal access tokens → Fine-grained*) limité au dépôt githooks, droits **Contents** et **Pull requests** en écriture, enregistré comme secret :
+   ```bash
+   gh secret set RELEASE_PLEASE_TOKEN --repo <owner>/githooks   # colle le jeton (saisie masquée)
+   ```
+   Sans ce jeton, la PR de release est créée mais la CI n'y tourne pas (limite GitHub pour `GITHUB_TOKEN`) : il faut la merger avec l'exception administrateur (`gh pr merge <n> --merge --admin`). En organisation, préférer une **GitHub App** à un jeton personnel.
+
+Pour suspendre les releases automatiques : désactiver le workflow `release` (*Actions → release → Disable workflow*).
 
 Politique conseillée pour les projets : **figer une version exacte** (`ref: v1.4.2`) et la monter volontairement (Renovate/Dependabot peuvent proposer la mise à jour). Une règle plus stricte = version majeure.
 

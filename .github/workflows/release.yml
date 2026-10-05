@@ -1,6 +1,13 @@
 # Releases automatiques à partir des Conventional Commits :
-# release-please tient à jour une PR "release x.y.z" (changelog + versions dans
-# les templates). Son merge crée le tag vX.Y.Z et déplace le tag majeur vX.
+# 1. release-please tient à jour une PR "release x.y.z" (changelog + versions
+#    dans les templates) ;
+# 2. cette PR est mergée automatiquement dès que la CI passe ;
+# 3. le merge crée le tag vX.Y.Z, la release GitHub, et déplace le tag majeur vX.
+#
+# Secret RELEASE_PLEASE_TOKEN (jeton fine-grained : Contents + Pull requests en
+# écriture sur ce dépôt) : nécessaire pour que la CI tourne sur la PR de release
+# (les événements créés par GITHUB_TOKEN ne déclenchent pas de workflow).
+# Sans lui, la PR est créée mais doit être mergée à la main (exception admin).
 name: release
 
 on:
@@ -14,6 +21,8 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -22,8 +31,16 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v4
         with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Merge automatique de la PR de release (dès que la CI passe)
+        if: steps.release.outputs.pr && env.HAS_TOKEN == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr || '{}').number }}
+        run: gh pr merge "$PR_NUMBER" --auto --merge --repo "$GITHUB_REPOSITORY"
 
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/githooks@v1`
   tag-major:
@@ -37,5 +54,6 @@ jobs:
           TAG: ${{ needs.release-please.outputs.tag_name }}
           MAJOR: v${{ needs.release-please.outputs.major }}
         run: |
+          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
           git tag -f "$MAJOR" "$TAG"
           git push -f origin "refs/tags/$MAJOR"
