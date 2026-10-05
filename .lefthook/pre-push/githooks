@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Point d'entrée lefthook : relaie vers le hook githooks du même nom
+# (.lefthook/<hook>/githooks → hooks/<hook>).
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+export GITHOOKS_RUNNER=lefthook
+exec "$here/../../hooks/$(basename "$here")" "$@"

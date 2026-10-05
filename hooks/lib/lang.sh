@@ -115,13 +115,19 @@ format_custom() {
     sh -c "$cmd \"\$@\"" githooks-format "$@"
 }
 
-# Formate les fichiers stagés, chacun avec le langage de son projet le plus
-# proche (monorepo), ou par extension s'il n'appartient à aucun projet (script).
+# Formate les fichiers stagés puis les re-stage (pre-commit)
 format_staged() {
-    local list f p d plugins found plugin dir groups key cmd standalone
+    git diff --cached --name-only --diff-filter=ACMR | format_files restage
+}
+
+# Formate les fichiers lus sur stdin (relatifs à la racine), chacun avec le
+# langage de son projet le plus proche (monorepo), ou par extension s'il
+# n'appartient à aucun projet (script). $1 = "restage" pour les re-stager.
+format_files() {
+    local mode="${1:-}" list f p d plugins found plugin dir groups key cmd standalone
     list="$(mktemp)"
     groups="$(mktemp)"
-    git diff --cached --name-only --diff-filter=ACMR >"$list"
+    while IFS= read -r f; do [ -f "$f" ] && echo "$f"; done >"$list"
     [ -s "$list" ] || { rm -f "$list" "$groups"; return 0; }
 
     cmd="$(cfg format)"
@@ -129,7 +135,7 @@ format_staged() {
         local files=()
         while IFS= read -r f; do files+=("$f"); done <"$list"
         format_custom "$cmd" "${files[@]}" </dev/null || { rm -f "$list" "$groups"; return 1; }
-        printf '%s\n' "${files[@]}" | restage
+        [ "$mode" = restage ] && printf '%s\n' "${files[@]}" | restage
         rm -f "$list" "$groups"
         return 0
     fi
@@ -165,7 +171,7 @@ format_staged() {
         has_marker "$dir" "$plugin" || standalone=1
         echo "ℹ $key : ${#rel[@]} fichier(s)"
         (cd "$dir" && STANDALONE="$standalone" "${plugin}_format" "${rel[@]}") </dev/null
-        printf '%s\n' "${abs[@]}" | restage
+        if [ "$mode" = restage ]; then printf '%s\n' "${abs[@]}" | restage; fi
     done < <(cut -f1,2 "$groups" | sort -u)
 
     rm -f "$list" "$groups"

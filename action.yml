@@ -1,0 +1,41 @@
+# Action GitHub : mêmes règles que les hooks githooks, en CI (non contournable).
+#
+#   - uses: actions/checkout@v4
+#     with:
+#       fetch-depth: 0
+#   - uses: SimBienvenueHoulBoumi/githooks@v1 # x-release-please-major
+name: githooks
+description: Vérifie messages de commit, nom de branche, secrets, formatage et tests des projets touchés.
+author: SimBienvenueHoulBoumi
+
+inputs:
+  checks:
+    description: Vérifications à lancer (commits branch secrets format tests)
+    default: commits branch secrets format tests
+  strict:
+    description: "true : un outil de formatage/test manquant fait échouer"
+    default: "false"
+  gitleaks-version:
+    description: Version de gitleaks installée pour la vérification des secrets
+    default: 8.30.1
+
+runs:
+  using: composite
+  steps:
+    - name: Installer gitleaks
+      if: contains(inputs.checks, 'secrets')
+      shell: bash
+      env:
+        GITLEAKS_VERSION: ${{ inputs.gitleaks-version }}
+        GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
+      run: '"$GITHUB_ACTION_PATH/ci/install-gitleaks.sh"'
+
+    - name: Vérifications githooks
+      shell: bash
+      env:
+        GITHOOKS_CHECKS: ${{ inputs.checks }}
+        GITHOOKS_STRICT: ${{ inputs.strict }}
+        GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
+        GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: '"$GITHUB_ACTION_PATH/ci/check.sh"'
