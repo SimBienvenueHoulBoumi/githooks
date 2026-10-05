@@ -21,7 +21,7 @@ if ! skipped branch-name && ! branch_name_valid "$BRANCH"; then
 fi
 
 # 1. Pas de commit direct sur les branches protégées (sauf commit initial)
-PROTECTED="$(git config --get hooks.protectedBranches || echo "main master")"
+PROTECTED="$(cfg protectedBranches "main master")"
 if ! skipped protect-branch && [[ " $PROTECTED " == *" $BRANCH "* ]] && git rev-parse --verify -q HEAD >/dev/null; then
     echo "✖ Commit direct sur '$BRANCH' interdit. Crée une branche : git switch -c feat/ma-feature" >&2
     echo "  (désactiver pour ce dépôt : git config hooks.skip protect-branch)" >&2
@@ -41,16 +41,12 @@ if ! skipped secrets; then
     fi
 fi
 
-# 3. Formatage selon le(s) langage(s)
+# 3. Formatage : chaque fichier stagé avec l'outil de son langage / projet
 if ! skipped format; then
-    LANGS="$(detect_languages)"
-    if [ -n "$LANGS" ]; then
-        echo "ℹ Langage(s) détecté(s) :$LANGS"
-        # Ne formater (et re-stager) que le contenu stagé, jamais le travail en cours
-        hide_unstaged
-        for lang in $LANGS; do "format_$lang"; done
-        restore_unstaged
-    fi
+    # Ne formater (et re-stager) que le contenu stagé, jamais le travail en cours
+    hide_unstaged
+    format_staged
+    restore_unstaged
 fi
 
 echo "✔ Pre-commit OK"

@@ -61,11 +61,6 @@ restore_unstaged() {
 STASHED=""
 WORKTREE=""
 
-# SHAs locaux poussés (stdin = refs du pre-push), hors suppressions, uniques
-pushed_shas() {
-    awk 'NF == 4 && $2 !~ /^0+$/ { print $2 }' | sort -u
-}
-
 # Lance la commande "$@" sur le commit $1, sans tenir compte du dossier de travail.
 #  - commit = HEAD : modifications en cours (y compris non suivies) mises en stash
 #  - autre commit : worktree temporaire (node_modules lié pour éviter une réinstallation)
