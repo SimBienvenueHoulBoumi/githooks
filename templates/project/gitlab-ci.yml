@@ -1,0 +1,18 @@
+# À fusionner dans le .gitlab-ci.yml du projet.
+# Rendre le pipeline obligatoire : Settings → Merge requests →
+# "Pipelines must succeed".
+include:
+  # githooks hébergé sur votre GitLab (recommandé : accès interne, pas de dépendance externe)
+  - project: outils/githooks
+    ref: v1.0.0 # x-release-please-version
+    file: templates/gitlab/githooks.gitlab-ci.yml
+  # ou depuis GitHub (dépôt public) :
+  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/githooks/v1.0.0/templates/gitlab/githooks.gitlab-ci.yml # x-release-please-version
+
+stages: [test]
+
+githooks:
+  # Image contenant bash, git, curl et les outils du projet (JDK, node, python…)
+  image: eclipse-temurin:21-jdk
+  variables:
+    GITHOOKS_STRICT: "true"
