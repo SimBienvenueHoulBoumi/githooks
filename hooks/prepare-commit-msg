@@ -7,6 +7,7 @@ set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
 exit_if_skipped
+delegate_to_lefthook "$@"
 run_local_hook "$@"
 
 MSG_FILE="$1"

@@ -6,7 +6,12 @@
 HOOK_NAME="$(basename "$0")"
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-warn() { echo "⚠ $*" >&2; }
+# Avertissement ; si GITHOOKS_WARN_FILE est défini (CI), il est aussi journalisé
+# pour le mode strict (outil manquant = échec)
+warn() {
+    echo "⚠ $*" >&2
+    if [ -n "${GITHOOKS_WARN_FILE:-}" ]; then echo "$*" >>"$GITHOOKS_WARN_FILE"; fi
+}
 step() { echo "▶ $*"; }
 has() { command -v "$1" >/dev/null 2>&1; }
 
@@ -131,6 +136,24 @@ exit_if_skipped() {
         echo "ℹ $HOOK_NAME désactivé (git config hooks.skip)."
         exit 0
     fi
+}
+
+# Projet géré par lefthook (lefthook.yml) : lui déléguer le hook, pour appliquer
+# sa config (remote githooks à la version figée + jobs du projet) même quand
+# githooks est installé globalement (core.hooksPath, que lefthook refuse).
+delegate_to_lefthook() {
+    local root f
+    [ -n "${GITHOOKS_RUNNER:-}" ] && return 0
+    root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 0
+    for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
+        [ -f "$root/$f" ] || continue
+        if has lefthook; then
+            export GITHOOKS_RUNNER=lefthook
+            exec lefthook run "$HOOK_NAME" "$@"
+        fi
+        warn "Projet lefthook ($f) mais lefthook absent : règles githooks par défaut. Installe lefthook."
+        return 0
+    done
 }
 
 # Exécute les hooks propres au projet (.githooks/<hook> ou .git/hooks/<hook>),
