@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Hook pre-commit : bloque les commits directs sur main, détecte les secrets,
+# puis formate les fichiers stagés selon le(s) langage(s) détecté(s).
+set -euo pipefail
+
+source "$(dirname "$0")/lib/common.sh"
+source "$(dirname "$0")/lib/lang.sh"
+exit_if_skipped
+cd "$(git rev-parse --show-toplevel)"
+
+run_local_hook "$@"
+
+# 1. Pas de commit direct sur les branches protégées (sauf commit initial)
+PROTECTED="$(git config --get hooks.protectedBranches || echo "main master")"
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
+if ! skipped protect-branch && [[ " $PROTECTED " == *" $BRANCH "* ]] && git rev-parse --verify -q HEAD >/dev/null; then
+    echo "✖ Commit direct sur '$BRANCH' interdit. Crée une branche : git switch -c feat/ma-feature" >&2
+    echo "  (désactiver pour ce dépôt : git config hooks.skip protect-branch)" >&2
+    exit 1
+fi
+
+# 2. Détection de secrets
+if ! skipped secrets; then
+    if has gitleaks; then
+        step "Détection de secrets (gitleaks)"
+        if ! gitleaks git --pre-commit --staged --redact --no-banner; then
+            echo "✖ Secret détecté : commit refusé." >&2
+            exit 1
+        fi
+    else
+        warn "gitleaks absent, détection de secrets ignorée (brew install gitleaks)."
+    fi
+fi
+
+# 3. Formatage selon le(s) langage(s)
+if ! skipped format; then
+    LANGS="$(detect_languages)"
+    if [ -n "$LANGS" ]; then
+        echo "ℹ Langage(s) détecté(s) :$LANGS"
+        for lang in $LANGS; do "format_$lang"; done
+    fi
+fi
+
+echo "✔ Pre-commit OK"

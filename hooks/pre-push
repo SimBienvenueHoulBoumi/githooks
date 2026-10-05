@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Hook pre-push : build/tests complets selon le(s) langage(s) détecté(s).
+set -euo pipefail
+
+source "$(dirname "$0")/lib/common.sh"
+source "$(dirname "$0")/lib/lang.sh"
+exit_if_skipped
+cd "$(git rev-parse --show-toplevel)"
+
+# git fournit les refs poussées sur stdin : on les transmet au hook local
+REFS="$(cat)"
+printf '%s\n' "$REFS" | run_local_hook "$@"
+
+skipped tests && { echo "ℹ Tests désactivés (git config hooks.skip)."; exit 0; }
+
+LANGS="$(detect_languages)"
+if [ -z "$LANGS" ]; then
+    echo "ℹ Aucun langage détecté, tests ignorés."
+    exit 0
+fi
+
+echo "ℹ Langage(s) détecté(s) :$LANGS"
+for lang in $LANGS; do
+    if ! "test_$lang"; then
+        echo "✖ Échec ($lang) : push refusé." >&2
+        exit 1
+    fi
+done
+
+echo "✔ Pre-push OK"

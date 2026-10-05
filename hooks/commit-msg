@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Hook commit-msg : impose le format Conventional Commits.
+# Ex : "feat(auth): ajoute la connexion JWT", "fix: corrige le calcul de TVA"
+set -euo pipefail
+
+source "$(dirname "$0")/lib/common.sh"
+exit_if_skipped
+run_local_hook "$@"
+
+MSG_FILE="$1"
+# Première ligne non commentée
+SUBJECT="$(grep -v '^#' "$MSG_FILE" | head -n1)"
+
+# Commits générés par git : on laisse passer
+if [[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]]; then
+    exit 0
+fi
+
+TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+PATTERN="^($TYPES)(\([a-z0-9._-]+\))?!?: .+"
+
+if ! [[ "$SUBJECT" =~ $PATTERN ]]; then
+    cat >&2 <<EOF
+✖ Message de commit invalide : "$SUBJECT"
+
+Format attendu : <type>(<scope optionnel>): <description>
+Types : ${TYPES//|/, }
+Exemples :
+  feat(user): ajoute l'inscription
+  fix: corrige le timeout de la base
+  refactor!: change l'API publique (breaking change)
+EOF
+    exit 1
+fi
+
+if [ "${#SUBJECT}" -gt 72 ]; then
+    echo "✖ Première ligne trop longue (${#SUBJECT} > 72 caractères)." >&2
+    exit 1
+fi
