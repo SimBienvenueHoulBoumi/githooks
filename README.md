@@ -1,8 +1,42 @@
 # githooks
 
-Hooks git réutilisables, qui s'adaptent au langage du projet.
+Hooks git réutilisables, qui s'adaptent au langage du projet : messages de commit, nommage des branches, secrets, formatage et tests.
 
-## Prérequis
+| Usage | Comment | Garantie |
+|---|---|---|
+| **Organisation / équipe** | lefthook (config partagée, version figée) + action GitHub / template GitLab + protection des branches | Règles imposées : la CI fait foi → **[guide de déploiement](docs/industrialisation.md)** |
+| **Personnel** | `./install.sh --global` : tous les dépôts du poste, sans configuration | Confort local, contournable |
+
+### En bref, dans un projet
+
+```yaml
+# lefthook.yml
+remotes:
+  - git_url: https://github.com/SimBienvenueHoulBoumi/githooks
+    ref: v1.0.0 # x-release-please-version
+    configs: [lefthook-remote.yml]
+```
+
+```yaml
+# .github/workflows/githooks.yml (extrait)
+- uses: actions/checkout@v4
+  with: { fetch-depth: 0 }
+- uses: SimBienvenueHoulBoumi/githooks@v1 # x-release-please-major
+```
+
+```yaml
+# .gitlab-ci.yml (extrait)
+include:
+  - project: outils/githooks
+    ref: v1.0.0 # x-release-please-version
+    file: templates/gitlab/githooks.gitlab-ci.yml
+```
+
+Modèles complets : [`templates/project/`](templates/project). Versions et changelog : [releases](https://github.com/SimBienvenueHoulBoumi/githooks/releases) (automatiques, voir le guide).
+
+## Installation personnelle (globale)
+
+### Prérequis
 
 | Élément | Requis | Notes |
 |---|---|---|
@@ -11,7 +45,7 @@ Hooks git réutilisables, qui s'adaptent au langage du projet.
 | Outils des langages utilisés | selon projets | `mvn`/`mvnw`, `gradle`/`gradlew`, `node`, `ruff`/`black`, `pytest`, `go`, `cargo` — un outil absent est ignoré |
 | [gitleaks](https://github.com/gitleaks/gitleaks) | conseillé | `brew install gitleaks` · `apt install gitleaks` · `winget install gitleaks` |
 
-## Installation
+### Installation
 
 Le dépôt peut être cloné n'importe où : `install.sh` utilise son propre emplacement.
 
@@ -163,7 +197,7 @@ Regex à reporter :
 ```bash
 brew install bats-core shellcheck   # ou apt install bats shellcheck
 bats test/                          # tests (dépôts jetables ; ceux dont l'outil manque sont ignorés)
-shellcheck hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh
+shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
 ```
 
 La CI (`.github/workflows/ci.yml`) lance shellcheck et les tests sur Linux, macOS et Windows.
