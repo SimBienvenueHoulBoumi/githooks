@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh
+        run: shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
 
   tests:
     strategy:
@@ -27,6 +27,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version: stable
@@ -36,9 +38,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Installer bats et ruff
+      - name: Installer bats, lefthook, ruff, gitleaks
+        env:
+          GITHOOKS_BIN: ${{ runner.temp }}/bin
         run: |
-          npm install -g bats
+          npm install -g bats lefthook
           pip install ruff
+          ci/install-gitleaks.sh
+          echo "$GITHOOKS_BIN" >>"$GITHUB_PATH"
       - name: Tests
         run: bats test/
+
+  # githooks se vérifie avec sa propre action (dogfooding)
+  githooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./
+        with:
+          strict: true
