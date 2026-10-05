@@ -1,0 +1,2 @@
+# Scripts bash : fins de ligne LF obligatoires, y compris sur Windows
+* text=auto eol=lf
