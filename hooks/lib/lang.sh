@@ -88,11 +88,12 @@ plugins_for_file() {
 # (lockfile ou node_modules hissés à la racine d'un monorepo, config de style…)
 find_up() {
     local dir top
-    dir="$PWD"
-    top="$(git rev-parse --show-toplevel 2>/dev/null || echo /)"
+    dir="$(pwd -P)"
+    # même format de chemin que $dir (Git Bash : /d/... et non D:/...)
+    top="$(cd "$(git rev-parse --show-toplevel 2>/dev/null || echo /)" && pwd -P)"
     while :; do
-        [ -e "$dir/$1" ] && { echo "$dir/$1"; return 0; }
-        { [ "$dir" = "$top" ] || [ "$dir" = / ]; } && return 1
+        [ -e "${dir%/}/$1" ] && { echo "${dir%/}/$1"; return 0; }
+        if [ "$dir" = "$top" ] || [ "$dir" = / ]; then return 1; fi
         dir="$(dirname "$dir")"
     done
 }
