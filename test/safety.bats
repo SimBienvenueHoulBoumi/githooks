@@ -11,14 +11,14 @@ setup() {
     git switch -q -c feat/x
 }
 
-@test "spotless : regex limitée aux fichiers stagés" {
+@test "spotless : regex limitee aux fichiers stages" {
     source "$HOOKS/lib/common.sh"
     source "$HOOKS/lib/lang.sh"
     run spotless_files_regex <<<"$(printf 'src/A.java\nsrc/B$1.java')"
     [ "$output" = '.*[\\/]src[\\/]A\.java,.*[\\/]src[\\/]B\$1\.java' ]
 }
 
-@test "pre-commit : partiellement stagé, sans chevauchement → worktree formaté + travail conservé" {
+@test "pre-commit : partiellement stage, sans chevauchement -> worktree formate + travail conserve" {
     printf 'module x\n\ngo 1.21\n' >go.mod
     printf 'package main\n\nfunc main() {}\n\n// a\n// b\n// c\n// d\n// fin\n' >main.go
     git add -A && git commit -q -m "chore: base"
@@ -38,7 +38,7 @@ setup() {
     [ ! -e .git/githooks-unstaged.patch ] && [ ! -e .git/githooks-backup ]
 }
 
-@test "pre-commit : partiellement stagé, avec chevauchement → worktree intact" {
+@test "pre-commit : partiellement stage, avec chevauchement -> worktree intact" {
     printf 'module x\n\ngo 1.21\n' >go.mod
     printf 'package main\n\nfunc main() {}\n' >main.go
     git add -A && git commit -q -m "chore: base"
@@ -59,7 +59,7 @@ setup() {
     [ ! -e .git/githooks-unstaged.patch ] && [ ! -e .git/githooks-backup ]
 }
 
-@test "pre-commit : suppression non stagée préservée" {
+@test "pre-commit : suppression non stagee preservee" {
     printf 'module x\n\ngo 1.21\n' >go.mod
     printf 'package main\n\nfunc main() {}\n' >main.go
     echo a >autre.txt
@@ -75,7 +75,7 @@ setup() {
     git show HEAD:autre.txt >/dev/null
 }
 
-@test "pre-push : teste le commit poussé, pas une modification locale qui casse" {
+@test "pre-push : teste le commit pousse, pas une modification locale qui casse" {
     go_project ok
     git add -A && git commit -q -m "test: ok"
     write_go_test fail # cassé localement, non committé
@@ -87,7 +87,7 @@ setup() {
     [ -z "$(git stash list)" ]
 }
 
-@test "pre-push : refuse un commit cassé même si le dossier de travail est corrigé" {
+@test "pre-push : refuse un commit casse meme si le dossier de travail est corrige" {
     go_project fail
     git add -A && git commit -q --no-verify -m "test: ko"
     write_go_test ok # corrigé localement, non committé
@@ -101,7 +101,7 @@ setup() {
     [ -z "$(git stash list)" ]
 }
 
-@test "pre-push : branche autre que HEAD testée dans un worktree temporaire" {
+@test "pre-push : branche autre que HEAD testee dans un worktree temporaire" {
     go_project ok
     git add -A && git commit -q -m "test: ok"
     git switch -q -c fix/casse
@@ -118,7 +118,7 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
-@test "pre-push : suppression de branche, rien à tester" {
+@test "pre-push : suppression de branche, rien a tester" {
     go_project ok
     git add -A && git commit -q -m "test: ok"
     git push -q origin feat/x

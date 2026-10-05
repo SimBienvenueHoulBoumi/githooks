@@ -16,28 +16,28 @@ load_engine() {
 
 # --- Détection ---------------------------------------------------------------
 
-@test "détection : multi-module Maven → projet parent le plus haut" {
+@test "detection : multi-module Maven -> projet parent le plus haut" {
     load_engine
     mkdir -p module/src
     touch pom.xml module/pom.xml
     [ "$(nearest_project module/src/A.java maven)" = "maven ." ]
 }
 
-@test "détection : monorepo Python → projet le plus proche" {
+@test "detection : monorepo Python -> projet le plus proche" {
     load_engine
     mkdir -p api/app
     touch pyproject.toml api/pyproject.toml
     [ "$(nearest_project api/app/main.py python)" = "python api" ]
 }
 
-@test "détection : marqueurs en glob (.NET *.csproj)" {
+@test "detection : marqueurs en glob (.NET *.csproj)" {
     load_engine
     mkdir -p src/Api
     touch src/Api/Api.csproj
     [ "$(nearest_project src/Api/Program.cs dotnet)" = "dotnet src/Api" ]
 }
 
-@test "détection : gestionnaire de paquets Node depuis un sous-dossier (monorepo)" {
+@test "detection : gestionnaire de paquets Node depuis un sous-dossier (monorepo)" {
     load_engine
     mkdir -p packages/web
     touch pnpm-lock.yaml packages/web/package.json
@@ -45,7 +45,7 @@ load_engine() {
     [ "$(node_pm)" = pnpm ]
 }
 
-@test "détection : extension → plugins candidats" {
+@test "detection : extension -> plugins candidats" {
     load_engine
     [[ " $(plugins_for_file src/A.java) " == *" maven "* ]]
     [[ " $(plugins_for_file src/A.java) " == *" gradle "* ]]
@@ -55,7 +55,7 @@ load_engine() {
 
 # --- Formatage -----------------------------------------------------------------
 
-@test "format : script Python isolé (sans projet) formaté par extension" {
+@test "format : script Python isole (sans projet) formate par extension" {
     require ruff
     printf 'x  =  1\n' >script.py
     git add script.py
@@ -64,7 +64,7 @@ load_engine() {
     [ "$(git show HEAD:script.py)" = "x = 1" ]
 }
 
-@test "format : monorepo, chaque fichier formaté dans son projet" {
+@test "format : monorepo, chaque fichier formate dans son projet" {
     require gofmt
     require ruff
     mkdir -p backend frontend
@@ -81,7 +81,7 @@ load_engine() {
     [ "$(git show HEAD:frontend/app.py)" = "y = 2" ]
 }
 
-@test "format : hooks.skip <langage> désactive ce langage" {
+@test "format : hooks.skip <langage> desactive ce langage" {
     require ruff
     git config hooks.skip "secrets python"
     printf 'x  =  1\n' >script.py
@@ -90,7 +90,7 @@ load_engine() {
     [ "$(git show HEAD:script.py)" = "x  =  1" ]
 }
 
-@test "format : Dart isolé" {
+@test "format : Dart isole" {
     require dart
     printf 'void main(){print(1);}\n' >a.dart
     git add a.dart
@@ -98,7 +98,7 @@ load_engine() {
     git show HEAD:a.dart | grep -q '^  print(1);$'
 }
 
-@test "format : Terraform isolé" {
+@test "format : Terraform isole" {
     require terraform
     printf 'variable "a" {\ndefault="x"\n}\n' >main.tf
     git add main.tf
@@ -106,7 +106,7 @@ load_engine() {
     git show HEAD:main.tf | grep -q '^  default = "x"$'
 }
 
-@test "format : outil absent pour un fichier isolé → silencieux" {
+@test "format : outil absent pour un fichier isole -> silencieux" {
     printf '# Titre\n' >NOTES.md
     git add NOTES.md
     run env PATH="/usr/bin:/bin" git commit -q -m "ajoute notes"
@@ -116,7 +116,7 @@ load_engine() {
 
 # --- .githooks.conf -------------------------------------------------------------
 
-@test ".githooks.conf : format personnalisé (reçoit les fichiers stagés)" {
+@test ".githooks.conf : format personnalise (recoit les fichiers stages)" {
     printf '#!/bin/sh\nfor f; do echo "// formaté" >>"$f"; done\n' >fmt.sh
     printf '[hooks]\n\tformat = sh fmt.sh\n' >.githooks.conf
     git add -A
@@ -127,14 +127,14 @@ load_engine() {
     git show HEAD:a.txt | grep -q '// formaté'
 }
 
-@test ".githooks.conf : format personnalisé qui échoue → commit refusé" {
+@test ".githooks.conf : format personnalise qui echoue -> commit refuse" {
     printf '[hooks]\n\tformat = false\n' >.githooks.conf
     git add -A
     run git commit -q -m "ajoute conf"
     [ "$status" -ne 0 ]
 }
 
-@test ".githooks.conf : test personnalisé qui échoue → push refusé" {
+@test ".githooks.conf : test personnalise qui echoue -> push refuse" {
     printf '[hooks]\n\ttest = echo tests-perso && exit 3\n' >.githooks.conf
     git add -A
     git commit -q -m "ajoute conf"
@@ -143,7 +143,7 @@ load_engine() {
     [[ "$output" == *"tests-perso"* ]]
 }
 
-@test ".githooks.conf : réglages partagés (skip)" {
+@test ".githooks.conf : reglages partages (skip)" {
     git switch -q main
     printf '[hooks]\n\tskip = secrets protect-branch\n' >.githooks.conf
     git add .githooks.conf
@@ -162,7 +162,7 @@ load_engine() {
 
 # --- Tests (pre-push) -------------------------------------------------------------
 
-@test "pre-push : monorepo, seuls les projets modifiés sont testés" {
+@test "pre-push : monorepo, seuls les projets modifies sont testes" {
     require go
     mkdir -p ok ko
     (cd ok && go_project ok)
@@ -185,7 +185,7 @@ load_engine() {
     [[ "$output" == *"Échec des tests go (ko)"* ]]
 }
 
-@test "pre-push : fichier non-code d'un projet (README) → tests du projet" {
+@test "pre-push : fichier non-code d'un projet (README) -> tests du projet" {
     require go
     go_project fail
     git add -A
@@ -198,6 +198,7 @@ load_engine() {
 }
 
 @test "pre-push : Makefile en secours quand aucun langage reconnu" {
+    require make
     printf 'test:\n\t@echo make-test-lancé && exit 1\n' >Makefile
     git add Makefile
     git commit -q -m "build: makefile"
@@ -206,7 +207,7 @@ load_engine() {
     [[ "$output" == *"make-test-lancé"* ]]
 }
 
-@test "pre-push : Makefile ignoré quand un langage est reconnu" {
+@test "pre-push : Makefile ignore quand un langage est reconnu" {
     require go
     go_project ok
     printf 'test:\n\t@exit 1\n' >Makefile
@@ -217,7 +218,7 @@ load_engine() {
     [[ "$output" == *"Tests go"* ]]
 }
 
-@test "pre-push : simple script sans projet → rien à tester, push OK" {
+@test "pre-push : simple script sans projet -> rien a tester, push OK" {
     printf 'echo hi\n' >deploy.sh
     git add deploy.sh
     git commit -q -m "ajoute script"

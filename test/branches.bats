@@ -14,7 +14,7 @@ setup() { setup_repo; initial_commit; }
     [ "$(suggest_branch_name 'wip/x')" = "feat/x" ]
 }
 
-@test "validité des noms de branche" {
+@test "validite des noms de branche" {
     source "$HOOKS/lib/common.sh"
     for ok in feat/bean fix/user/login hotfix/x feat/a_b.c main master develop release/1.0; do
         branch_name_valid "$ok" || { echo "devrait être valide : $ok"; return 1; }
@@ -38,14 +38,14 @@ setup() { setup_repo; initial_commit; }
     [[ "$output" == *"git branch -m feat/mon-truc"* ]]
 }
 
-@test "pre-commit : refuse une branche mal nommée" {
+@test "pre-commit : refuse une branche mal nommee" {
     git switch -q -c Mon_Truc 2>/dev/null
     run git commit -q --allow-empty -m "feat: x"
     [ "$status" -ne 0 ]
     [[ "$output" == *"Commit refusé : nom de branche non conforme"* ]]
 }
 
-@test "pre-push : refuse une branche mal nommée" {
+@test "pre-push : refuse une branche mal nommee" {
     git switch -q -c Bad 2>/dev/null
     git commit -q --no-verify --allow-empty -m "feat: x"
     run git push -q origin Bad
@@ -54,7 +54,7 @@ setup() { setup_repo; initial_commit; }
     [ -z "$(git ls-remote --heads origin Bad)" ]
 }
 
-@test "main : commit direct refusé après le commit initial" {
+@test "main : commit direct refuse apres le commit initial" {
     run git commit -q --allow-empty -m "fix: x"
     [ "$status" -ne 0 ]
     [[ "$output" == *"Commit direct sur 'main' interdit"* ]]
