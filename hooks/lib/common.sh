@@ -135,8 +135,11 @@ exit_if_skipped() {
 
 # Exécute les hooks propres au projet (.githooks/<hook> ou .git/hooks/<hook>),
 # ignorés par git dès que core.hooksPath pointe ici.
+# Désactivé sous lefthook : .git/hooks contient ses propres hooks (boucle infinie)
+# et les hooks du projet sont alors déclarés dans lefthook.yml.
 run_local_hook() {
     local candidate real
+    [ "${GITHOOKS_RUNNER:-}" = lefthook ] && return 0
     for candidate in ".githooks/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
         [ -x "$candidate" ] || continue
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
