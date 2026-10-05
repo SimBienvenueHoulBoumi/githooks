@@ -7,6 +7,10 @@ CHECK="$BATS_TEST_DIRNAME/../ci/check.sh"
 
 setup() {
     setup_repo
+    # contexte CI : pas de hooks (prepare-commit-msg corrigerait les messages testés)
+    mkdir -p "$BATS_TEST_TMPDIR/nohooks"
+    git config core.hooksPath "$BATS_TEST_TMPDIR/nohooks"
+    git config --unset hooks.skip # contexte CI : aucune config locale
     initial_commit
     BASE_SHA="$(git rev-parse HEAD)"
     git switch -q -c feat/x
@@ -93,7 +97,7 @@ setup() {
 
 @test "ci : secrets detectes" {
     require gitleaks
-    printf 'aws_access_key_id = AKIAZ3MSJV3MSJV3MSJV\naws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYzz\n' >config.ini
+    printf 'token = ghp_%s\n' "4Rk9vQ2xLm7TzP0aWc3Ny8BdHs5Ju1Ef6GiX" >config.ini # factice
     git add config.ini
     git commit -q --no-verify -m "feat: config"
     run "$CHECK" secrets

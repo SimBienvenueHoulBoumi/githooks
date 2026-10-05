@@ -52,7 +52,8 @@ global_install() {
 
 @test "delegation : hooks githooks globaux → lefthook du projet" {
     global_install
-    run git commit -q --allow-empty -m "chore: init"
+    git add lefthook.yml # un fichier stagé : lefthook ignore les jobs sur un commit vide
+    run git commit -q -m "chore: init"
     [ "$status" -eq 0 ]
     [[ "$output" == *"JOB-DU-PROJET"* ]]
     [[ "$output" != *"Custom hooks paths are not supported"* ]]
