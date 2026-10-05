@@ -4,6 +4,7 @@ set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
 source "$(dirname "$0")/lib/lang.sh"
+source "$(dirname "$0")/lib/safety.sh"
 exit_if_skipped
 cd "$(git rev-parse --show-toplevel)"
 
@@ -24,20 +25,46 @@ if ! skipped branch-name; then
     done <<< "$REFS"
 fi
 
-skipped tests && { echo "ℹ Tests désactivés (git config hooks.skip)."; exit 0; }
+skipped tests && { echo "ℹ Tests désactivés (hooks.skip)."; exit 0; }
 
-LANGS="$(detect_languages)"
-if [ -z "$LANGS" ]; then
-    echo "ℹ Aucun langage détecté, tests ignorés."
-    exit 0
-fi
+REMOTE="${1:-origin}"
 
-echo "ℹ Langage(s) détecté(s) :$LANGS"
-for lang in $LANGS; do
-    if ! "test_$lang"; then
-        echo "✖ Échec ($lang) : push refusé." >&2
-        exit 1
+# Fichiers modifiés par le push de <sha> : depuis l'état distant connu, ou pour
+# une nouvelle branche depuis le dernier commit déjà présent sur le remote.
+changed_files() {
+    local sha="$1" remote_sha="$2" oldest base=""
+    if [[ ! "$remote_sha" =~ ^0+$ ]] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+        base="$remote_sha"
+    else
+        oldest="$(git rev-list "$sha" --not --remotes="$REMOTE" | tail -n1)"
+        [ -z "$oldest" ] && return 0                       # déjà tout sur le remote
+        base="$(git rev-parse -q --verify "$oldest^" || true)" # vide = premier push
     fi
-done
+    if [ -n "$base" ]; then
+        git diff --name-only "$base" "$sha"
+    else
+        git ls-tree -r --name-only "$sha"
+    fi
+}
 
+run_tests_for() { test_projects <"$1"; }
+
+TESTED=""
+CHANGED="$(git rev-parse --absolute-git-dir)/githooks-changed-files"
+while read -r _ local_sha _ remote_sha; do
+    # suppression de branche : rien à tester
+    if [ -z "$local_sha" ] || [[ "$local_sha" =~ ^0+$ ]]; then continue; fi
+    [[ " $TESTED " == *" $local_sha "* ]] && continue
+    TESTED="$TESTED $local_sha"
+    changed_files "$local_sha" "$remote_sha" >"$CHANGED"
+    if [ ! -s "$CHANGED" ] && [ -z "$(cfg test)" ]; then
+        echo "ℹ ${local_sha:0:7} : aucun fichier modifié, rien à tester."
+        continue
+    fi
+    # Teste le commit poussé tel qu'il sera sur le serveur
+    run_on_commit "$local_sha" run_tests_for "$CHANGED"
+done <<<"$REFS"
+
+rm -f "$CHANGED"
+[ -n "$TESTED" ] || echo "ℹ Rien à tester (suppression de branche uniquement)."
 echo "✔ Pre-push OK"

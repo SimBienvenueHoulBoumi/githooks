@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
 # Fonctions communes à tous les hooks : désactivation par projet et chaînage
 # des hooks propres au projet. Compatible bash 3.2 (macOS).
+# shellcheck disable=SC2034 # variables utilisées par les hooks qui sourcent ce fichier
 
 HOOK_NAME="$(basename "$0")"
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+
+warn() { echo "⚠ $*" >&2; }
+step() { echo "▶ $*"; }
+has() { command -v "$1" >/dev/null 2>&1; }
+
+# Lit un réglage hooks.<clé> : git config (local puis global) en priorité,
+# puis .githooks.conf versionné à la racine du projet, sinon la valeur par défaut.
+#   cfg allowedBranches "main master"
+cfg() {
+    local root
+    git config --get "hooks.$1" 2>/dev/null && return 0
+    root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    [ -n "$root" ] && [ -f "$root/.githooks.conf" ] &&
+        git config -f "$root/.githooks.conf" --get "hooks.$1" 2>/dev/null && return 0
+    [ $# -ge 2 ] && printf '%s\n' "$2"
+    return 0
+}
 
 # Conventional Commits (partagé par commit-msg et prepare-commit-msg)
 CC_TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
@@ -35,7 +53,7 @@ EOF
 branch_name_valid() {
     local branch="$1" allowed pat
     [ -z "$branch" ] && return 0 # HEAD détachée
-    allowed="$(git config --get hooks.allowedBranches || echo "$DEFAULT_ALLOWED_BRANCHES")"
+    allowed="$(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")"
     set -f # pas d'expansion de "release/*" sur le disque
     for pat in $allowed; do
         # shellcheck disable=SC2254
@@ -60,7 +78,7 @@ suggest_branch_name() {
         bug | bugs) type=fix ;;
         doc) type=docs ;;
         features) type=feat ;;
-        tests) type=test ;;
+        tests) type="test" ;;
         refacto) type=refactor ;;
     esac
     [[ "$type" =~ ^($CC_TYPES|$BRANCH_ALIASES)$ ]] || type=feat
@@ -89,19 +107,19 @@ EOF
    Si elle est déjà poussée, renomme aussi le distant :
      git push origin -u $(suggest_branch_name "$branch") && git push origin --delete $branch
 
-Exceptions autorisées : $(git config --get hooks.allowedBranches || echo "$DEFAULT_ALLOWED_BRANCHES")
+Exceptions autorisées : $(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")
   (modifier : git config hooks.allowedBranches "main develop release/*")
 Désactiver pour ce dépôt : git config hooks.skip branch-name
 EOF
 }
 
-# Vrai si l'élément est désactivé pour ce dépôt via `git config hooks.skip`.
+# Vrai si l'élément est désactivé (hooks.skip, git config ou .githooks.conf).
 # Valeurs : true|all, ou liste séparée par espaces/virgules parmi
 # pre-commit prepare-commit-msg commit-msg pre-push post-checkout
-# branch-name protect-branch secrets format tests
+# branch-name protect-branch secrets format tests, ou un langage (node, python…)
 skipped() {
     local v
-    v="$(git config --get hooks.skip || true)"
+    v="$(cfg skip)"
     [ "$v" = true ] || [ "$v" = all ] && return 0
     case " ${v//,/ } " in *" $1 "*) return 0 ;; esac
     return 1
