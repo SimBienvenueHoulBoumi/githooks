@@ -5,6 +5,10 @@
 HOOK_NAME="$(basename "$0")"
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
+# Conventional Commits (partagé par commit-msg et prepare-commit-msg)
+CC_TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+CC_PATTERN="^($CC_TYPES)(\([a-z0-9._-]+\))?!?: .+"
+
 # Vrai si l'élément est désactivé pour ce dépôt via `git config hooks.skip`.
 # Valeurs : true|all, ou liste séparée par espaces/virgules parmi
 # pre-commit commit-msg pre-push protect-branch secrets format tests

@@ -16,15 +16,12 @@ if [[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]]; then
     exit 0
 fi
 
-TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
-PATTERN="^($TYPES)(\([a-z0-9._-]+\))?!?: .+"
-
-if ! [[ "$SUBJECT" =~ $PATTERN ]]; then
+if ! [[ "$SUBJECT" =~ $CC_PATTERN ]]; then
     cat >&2 <<EOF
 ✖ Message de commit invalide : "$SUBJECT"
 
 Format attendu : <type>(<scope optionnel>): <description>
-Types : ${TYPES//|/, }
+Types : ${CC_TYPES//|/, }
 Exemples :
   feat(user): ajoute l'inscription
   fix: corrige le timeout de la base

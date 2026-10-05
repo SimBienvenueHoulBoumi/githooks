@@ -20,8 +20,17 @@ Mise à jour : `git pull` dans ce dépôt, aucun projet à toucher.
 | Hook | Rôle |
 |---|---|
 | `pre-commit` | Bloque les commits directs sur `main`/`master`, détecte les secrets (gitleaks), formate les fichiers stagés |
+| `prepare-commit-msg` | Préfixe le message d'après la branche : sur `feat/bean`, `git commit -m "ajoute X"` → `feat(bean): ajoute X` |
 | `commit-msg` | Impose [Conventional Commits](https://www.conventionalcommits.org) (`feat(scope): …`), 72 caractères max |
 | `pre-push` | Build et tests complets |
+
+## Nommage des branches
+
+`<type>/<sujet>` : le type devient le préfixe du commit, le sujet son scope (omis au-delà de 20 caractères).
+
+- Types : `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- Alias : `feature/` → `feat`, `bugfix/` et `hotfix/` → `fix`
+- Un message déjà conforme n'est jamais modifié ; merge, squash et amend sont ignorés.
 
 ## Détection du langage
 

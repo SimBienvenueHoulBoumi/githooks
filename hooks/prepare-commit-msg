@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Hook prepare-commit-msg : déduit le préfixe Conventional Commits du nom de branche.
+#   branche feat/bean :  git commit            → éditeur prérempli avec "feat(bean): "
+#                        git commit -m "ajoute X" → "feat(bean): ajoute X"
+# Un message déjà conforme n'est pas modifié.
+set -euo pipefail
+
+source "$(dirname "$0")/lib/common.sh"
+exit_if_skipped
+run_local_hook "$@"
+
+MSG_FILE="$1"
+SOURCE="${2:-}"
+
+# Uniquement pour un commit "neuf" : pas de merge, squash, amend (-c/-C/--amend)
+case "$SOURCE" in "" | message | template) ;; *) exit 0 ;; esac
+
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
+[[ "$BRANCH" == */* ]] || exit 0
+
+# Type : préfixe de branche, avec alias courants
+TYPE="${BRANCH%%/*}"
+case "$TYPE" in
+    feature) TYPE=feat ;;
+    bugfix | hotfix) TYPE=fix ;;
+esac
+[[ "$TYPE" =~ ^($CC_TYPES)$ ]] || exit 0
+
+# Scope : reste de la branche normalisé (feat/User/Login → user-login), omis si trop long
+SCOPE="$(echo "${BRANCH#*/}" | tr '[:upper:]/' '[:lower:]-' | tr -cd 'a-z0-9._-')"
+if [ -n "$SCOPE" ] && [ "${#SCOPE}" -le 20 ]; then
+    PREFIX="$TYPE($SCOPE): "
+else
+    PREFIX="$TYPE: "
+fi
+
+SUBJECT="$(grep -v '^#' "$MSG_FILE" | head -n1 || true)"
+[[ "$SUBJECT" =~ $CC_PATTERN ]] && exit 0
+[[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]] && exit 0
+
+# Ajoute le préfixe en tête de la première ligne (vide ou non)
+TMP="$(mktemp)"
+{
+    printf '%s%s\n' "$PREFIX" "$SUBJECT"
+    # reste du fichier après la première ligne non commentée
+    awk 'done || /^#/ {print; next} {done=1}' "$MSG_FILE"
+} > "$TMP"
+mv "$TMP" "$MSG_FILE"
