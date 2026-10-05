@@ -138,6 +138,30 @@ exit_if_skipped() {
     fi
 }
 
+# lefthook refuse de fonctionner (gros avertissement) quand core.hooksPath est
+# défini globalement. Pour lui seul, on présente une copie de la config globale
+# de l'utilisateur SANS core.hooksPath : il récupère ses remotes et installe ses
+# hooks dans .git/hooks, sans jamais toucher au dossier githooks global.
+lefthook_without_global_hookspath() {
+    local global cfg key value
+    git config --global --get core.hooksPath >/dev/null 2>&1 || return 0
+    global="${GIT_CONFIG_GLOBAL:-$HOME/.gitconfig}"
+    cfg="$(git rev-parse --absolute-git-dir)/githooks-lefthook.gitconfig"
+    # Copie régénérée seulement si la config globale a changé
+    if [ ! -f "$cfg" ] || [ "$global" -nt "$cfg" ]; then
+        : >"$cfg.tmp"
+        git config --global --list --includes -z | while IFS= read -r -d '' entry; do
+            key="${entry%%$'\n'*}"
+            value="${entry#*$'\n'}"
+            [ "$key" = "$entry" ] && value=""
+            [ "$(echo "$key" | tr '[:upper:]' '[:lower:]')" = core.hookspath ] && continue
+            git config -f "$cfg.tmp" --add "$key" "$value"
+        done
+        mv "$cfg.tmp" "$cfg"
+    fi
+    export GIT_CONFIG_GLOBAL="$cfg"
+}
+
 # Projet géré par lefthook (lefthook.yml) : lui déléguer le hook, pour appliquer
 # sa config (remote githooks à la version figée + jobs du projet) même quand
 # githooks est installé globalement (core.hooksPath, que lefthook refuse).
@@ -149,6 +173,7 @@ delegate_to_lefthook() {
         [ -f "$root/$f" ] || continue
         if has lefthook; then
             export GITHOOKS_RUNNER=lefthook
+            lefthook_without_global_hookspath
             exec lefthook run "$HOOK_NAME" "$@"
         fi
         warn "Projet lefthook ($f) mais lefthook absent : règles githooks par défaut. Installe lefthook."
