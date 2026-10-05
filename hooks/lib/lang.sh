@@ -38,9 +38,16 @@ format_maven() {
     local files; files="$(staged_files '\.java$')"
     [ -z "$files" ] && return 0
     if ! grep -q spotless pom.xml; then warn "Maven : Spotless non configuré, formatage ignoré."; return 0; fi
-    step "Maven : formatage (spotless:apply)"
-    "$(mvn_cmd)" -q spotless:apply
+    step "Maven : formatage (spotless:apply, fichiers stagés uniquement)"
+    "$(mvn_cmd)" -q spotless:apply -DspotlessFiles="$(echo "$files" | spotless_files_regex)"
     echo "$files" | restage
+}
+
+# Chemins relatifs (stdin) → liste de regex pour -DspotlessFiles.
+# Spotless compare au chemin absolu : ".*[\\/]src[\\/]A\.java" (/ ou \ pour Windows).
+# shellcheck disable=SC2016 # regex littérales
+spotless_files_regex() {
+    sed -e 's/[][\.*^$()+?{}|]/\\&/g' -e 's#/#[\\\\/]#g' -e 's#^#.*[\\\\/]#' | paste -sd, -
 }
 
 format_gradle() {

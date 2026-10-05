@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Fonctions communes à tous les hooks : désactivation par projet et chaînage
 # des hooks propres au projet. Compatible bash 3.2 (macOS).
+# shellcheck disable=SC2034 # variables utilisées par les hooks qui sourcent ce fichier
 
 HOOK_NAME="$(basename "$0")"
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
@@ -60,7 +61,7 @@ suggest_branch_name() {
         bug | bugs) type=fix ;;
         doc) type=docs ;;
         features) type=feat ;;
-        tests) type=test ;;
+        tests) type="test" ;;
         refacto) type=refactor ;;
     esac
     [[ "$type" =~ ^($CC_TYPES|$BRANCH_ALIASES)$ ]] || type=feat

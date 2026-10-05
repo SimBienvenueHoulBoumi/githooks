@@ -4,6 +4,7 @@ set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
 source "$(dirname "$0")/lib/lang.sh"
+source "$(dirname "$0")/lib/safety.sh"
 exit_if_skipped
 cd "$(git rev-parse --show-toplevel)"
 
@@ -26,18 +27,32 @@ fi
 
 skipped tests && { echo "ℹ Tests désactivés (git config hooks.skip)."; exit 0; }
 
-LANGS="$(detect_languages)"
-if [ -z "$LANGS" ]; then
-    echo "ℹ Aucun langage détecté, tests ignorés."
+# Tests de tous les langages détectés dans le dossier courant
+run_all_tests() {
+    local langs lang
+    langs="$(detect_languages)"
+    if [ -z "$langs" ]; then
+        echo "ℹ Aucun langage détecté, tests ignorés."
+        return 0
+    fi
+    echo "ℹ Langage(s) détecté(s) :$langs"
+    for lang in $langs; do
+        if ! "test_$lang"; then
+            echo "✖ Échec ($lang) : push refusé." >&2
+            return 1
+        fi
+    done
+}
+
+SHAS="$(printf '%s\n' "$REFS" | pushed_shas)"
+if [ -z "$SHAS" ]; then
+    echo "ℹ Rien à tester (suppression de branche uniquement)."
     exit 0
 fi
 
-echo "ℹ Langage(s) détecté(s) :$LANGS"
-for lang in $LANGS; do
-    if ! "test_$lang"; then
-        echo "✖ Échec ($lang) : push refusé." >&2
-        exit 1
-    fi
+# Teste chaque commit poussé tel qu'il sera sur le serveur
+for sha in $SHAS; do
+    run_on_commit "$sha" run_all_tests
 done
 
 echo "✔ Pre-push OK"
