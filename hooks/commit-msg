@@ -21,11 +21,18 @@ if ! [[ "$SUBJECT" =~ $CC_PATTERN ]]; then
 ✖ Message de commit invalide : "$SUBJECT"
 
 Format attendu : <type>(<scope optionnel>): <description>
-Types : ${CC_TYPES//|/, }
-Exemples :
-  feat(user): ajoute l'inscription
-  fix: corrige le timeout de la base
-  refactor!: change l'API publique (breaking change)
+  ex. : feat(user): ajoute l'inscription
+        fix: corrige le timeout de la base
+        refactor!: change l'API publique   (! = breaking change)
+
+Types :
+EOF
+    types_help
+    cat >&2 <<EOF
+
+👉 Astuce : nomme ta branche <type>/<sujet> (ex. feat/user) et le préfixe
+   sera ajouté automatiquement : git commit -m "ajoute l'inscription"
+   Ton message n'est pas perdu : git commit -e -F .git/COMMIT_EDITMSG
 EOF
     exit 1
 fi

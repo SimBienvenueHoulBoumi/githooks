@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Hook post-checkout : avertit dès qu'on arrive sur une branche mal nommée.
+# Non bloquant (git ne permet pas d'empêcher la création d'une branche) :
+# le blocage se fait au commit (pre-commit) et au push (pre-push).
+set -euo pipefail
+
+source "$(dirname "$0")/lib/common.sh"
+exit_if_skipped
+run_local_hook "$@"
+
+# $3 = 1 pour un changement de branche, 0 pour un checkout de fichier
+[ "${3:-0}" = 1 ] || exit 0
+skipped branch-name && exit 0
+
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
+if ! branch_name_valid "$BRANCH"; then
+    echo "⚠ Attention : commits et push seront refusés sur cette branche." >&2
+    branch_help "$BRANCH"
+fi
+exit 0

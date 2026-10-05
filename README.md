@@ -19,15 +19,20 @@ Mise à jour : `git pull` dans ce dépôt, aucun projet à toucher.
 
 | Hook | Rôle |
 |---|---|
-| `pre-commit` | Bloque les commits directs sur `main`/`master`, détecte les secrets (gitleaks), formate les fichiers stagés |
+| `post-checkout` | Avertit dès qu'on arrive sur une branche mal nommée (non bloquant) |
+| `pre-commit` | Refuse les branches mal nommées, bloque les commits directs sur `main`/`master`, détecte les secrets (gitleaks), formate les fichiers stagés |
 | `prepare-commit-msg` | Préfixe le message d'après la branche : sur `feat/bean`, `git commit -m "ajoute X"` → `feat(bean): ajoute X` |
 | `commit-msg` | Impose [Conventional Commits](https://www.conventionalcommits.org) (`feat(scope): …`), 72 caractères max |
-| `pre-push` | Build et tests complets |
+| `pre-push` | Refuse les branches mal nommées, build et tests complets |
 
 ## Nommage des branches
 
-`<type>/<sujet>` : le type devient le préfixe du commit, le sujet son scope (omis au-delà de 20 caractères).
+Format imposé : `<type>/<sujet>` (sujet en `a-z0-9._-`, `/` pour sous-découper).
+Ex. : `feat/inscription`, `fix/user/login`, `hotfix/timeout-db`.
 
+- Averti à la création (`post-checkout`), refusé au commit et au push, avec la commande de renommage à copier.
+- Exceptions par défaut : `main`, `master`, `develop`, `release/*` (modifiables via `hooks.allowedBranches`).
+- Le type devient le préfixe du commit, le sujet son scope (omis au-delà de 20 caractères).
 - Types : `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 - Alias : `feature/` → `feat`, `bugfix/` et `hotfix/` → `fix`
 - Un message déjà conforme n'est jamais modifié ; merge, squash et amend sont ignorés.
@@ -54,9 +59,10 @@ git config hooks.skip true                    # désactive tout
 git config hooks.skip "pre-push"              # désactive un hook
 git config hooks.skip "protect-branch,format" # désactive des étapes
 git config hooks.protectedBranches "main develop"   # défaut : "main master"
+git config hooks.allowedBranches "main develop release/*"   # exceptions au nommage
 ```
 
-Étapes désactivables : `protect-branch`, `secrets`, `format`, `tests`.
+Étapes désactivables : `branch-name`, `protect-branch`, `secrets`, `format`, `tests`.
 
 Contournement ponctuel : `git commit --no-verify`, `git push --no-verify`.
 
@@ -66,5 +72,6 @@ Un script exécutable dans `.githooks/<hook>` ou `.git/hooks/<hook>` du projet e
 
 ## Limites
 
+- Git n'a pas de hook à la création de branche : le nommage est averti puis bloqué au commit/push, pas empêché à la création. Pour l'imposer côté serveur : ruleset GitHub « Restrict branch names ».
 - Un `core.hooksPath` local (husky, etc.) est prioritaire sur l'installation globale.
 - Un fichier partiellement stagé est re-stagé entièrement après formatage.

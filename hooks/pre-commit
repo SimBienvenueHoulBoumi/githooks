@@ -10,9 +10,17 @@ cd "$(git rev-parse --show-toplevel)"
 
 run_local_hook "$@"
 
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
+
+# 0. Nommage de la branche
+if ! skipped branch-name && ! branch_name_valid "$BRANCH"; then
+    echo "✖ Commit refusé : nom de branche non conforme." >&2
+    branch_help "$BRANCH"
+    exit 1
+fi
+
 # 1. Pas de commit direct sur les branches protégées (sauf commit initial)
 PROTECTED="$(git config --get hooks.protectedBranches || echo "main master")"
-BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
 if ! skipped protect-branch && [[ " $PROTECTED " == *" $BRANCH "* ]] && git rev-parse --verify -q HEAD >/dev/null; then
     echo "✖ Commit direct sur '$BRANCH' interdit. Crée une branche : git switch -c feat/ma-feature" >&2
     echo "  (désactiver pour ce dépôt : git config hooks.skip protect-branch)" >&2

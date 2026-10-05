@@ -11,6 +11,19 @@ cd "$(git rev-parse --show-toplevel)"
 REFS="$(cat)"
 printf '%s\n' "$REFS" | run_local_hook "$@"
 
+# Nommage des branches poussées (ligne : <ref locale> <sha> <ref distante> <sha>)
+if ! skipped branch-name; then
+    while read -r _ _ remote_ref _; do
+        [[ "$remote_ref" == refs/heads/* ]] || continue
+        branch="${remote_ref#refs/heads/}"
+        if ! branch_name_valid "$branch"; then
+            echo "✖ Push refusé : nom de branche non conforme." >&2
+            branch_help "$branch"
+            exit 1
+        fi
+    done <<< "$REFS"
+fi
+
 skipped tests && { echo "ℹ Tests désactivés (git config hooks.skip)."; exit 0; }
 
 LANGS="$(detect_languages)"
