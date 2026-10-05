@@ -107,9 +107,10 @@ load_engine() {
 }
 
 @test "format : outil absent pour un fichier isole -> silencieux" {
+    command -v prettier >/dev/null && skip "prettier installé globalement"
     printf '# Titre\n' >NOTES.md
     git add NOTES.md
-    run env PATH="/usr/bin:/bin" git commit -q -m "ajoute notes"
+    run git commit -q -m "ajoute notes"
     [ "$status" -eq 0 ]
     [[ "$output" != *"prettier introuvable"* ]]
 }
@@ -199,12 +200,12 @@ load_engine() {
 
 @test "pre-push : Makefile en secours quand aucun langage reconnu" {
     require make
-    printf 'test:\n\t@echo make-test-lancé && exit 1\n' >Makefile
+    printf 'test:\n\t@echo make-test-lance && exit 1\n' >Makefile
     git add Makefile
     git commit -q -m "build: makefile"
     run git push -q origin feat/x
     [ "$status" -ne 0 ]
-    [[ "$output" == *"make-test-lancé"* ]]
+    [[ "$output" == *"make-test-lance"* ]]
 }
 
 @test "pre-push : Makefile ignore quand un langage est reconnu" {
@@ -225,4 +226,13 @@ load_engine() {
     run git push -q origin feat/x
     [ "$status" -eq 0 ]
     [[ "$output" == *"Aucun projet testable"* ]]
+}
+
+@test "find_up : s'arrete a la racine du depot (chemins Windows/Git Bash)" {
+    load_engine
+    mkdir -p a/b
+    touch marker
+    cd a/b
+    [ "$(find_up marker)" = "$(cd "$REPO" && pwd -P)/marker" ]
+    ! find_up introuvable-xyz
 }
