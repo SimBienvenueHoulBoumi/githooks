@@ -38,7 +38,7 @@ hide_unstaged() {
 # le hook : le commit est formaté, le dossier de travail ne perd rien.
 restore_unstaged() {
     trap - EXIT INT TERM
-    [ -n "$UNSTAGED_PATCH" ] && [ -f "$UNSTAGED_PATCH" ] || return 0
+    if [ -z "$UNSTAGED_PATCH" ] || [ ! -f "$UNSTAGED_PATCH" ]; then return 0; fi
     local f
     if ! git apply --whitespace=nowarn "$UNSTAGED_PATCH" 2>/dev/null; then
         while IFS= read -r f; do

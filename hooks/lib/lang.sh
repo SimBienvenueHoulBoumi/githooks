@@ -154,7 +154,7 @@ format_staged() {
     while IFS="$(printf '\t')" read -r plugin dir; do
         local rel=() abs=()
         while IFS="$(printf '\t')" read -r p d f; do
-            [ "$p" = "$plugin" ] && [ "$d" = "$dir" ] || continue
+            if [ "$p" != "$plugin" ] || [ "$d" != "$dir" ]; then continue; fi
             abs+=("$f")
             if [ "$dir" = . ]; then rel+=("$f"); else rel+=("${f#"$dir"/}"); fi
         done <"$groups"

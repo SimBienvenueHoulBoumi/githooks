@@ -52,7 +52,8 @@ run_tests_for() { test_projects <"$1"; }
 TESTED=""
 CHANGED="$(git rev-parse --absolute-git-dir)/githooks-changed-files"
 while read -r _ local_sha _ remote_sha; do
-    [ -n "$local_sha" ] && [[ ! "$local_sha" =~ ^0+$ ]] || continue # suppression
+    # suppression de branche : rien à tester
+    if [ -z "$local_sha" ] || [[ "$local_sha" =~ ^0+$ ]]; then continue; fi
     [[ " $TESTED " == *" $local_sha "* ]] && continue
     TESTED="$TESTED $local_sha"
     changed_files "$local_sha" "$remote_sha" >"$CHANGED"
