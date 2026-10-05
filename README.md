@@ -2,18 +2,38 @@
 
 Hooks git réutilisables, qui s'adaptent au langage du projet.
 
+## Prérequis
+
+| Élément | Requis | Notes |
+|---|---|---|
+| git + bash | oui | macOS, Linux, Windows via [Git for Windows](https://gitforwindows.org) (hooks exécutés par Git Bash) |
+| Accès au dépôt | oui | dépôt privé : clé SSH ajoutée à GitHub, ou `gh auth login` puis clone en HTTPS |
+| Outils des langages utilisés | selon projets | `mvn`/`mvnw`, `gradle`/`gradlew`, `node`, `ruff`/`black`, `pytest`, `go`, `cargo` — un outil absent est ignoré |
+| [gitleaks](https://github.com/gitleaks/gitleaks) | conseillé | `brew install gitleaks` · `apt install gitleaks` · `winget install gitleaks` |
+
 ## Installation
 
-```bash
-git clone git@github.com:SimBienvenueHoulBoumi/githooks.git ~/Desktop/Bureau/projets/githooks
-cd ~/Desktop/Bureau/projets/githooks
+Le dépôt peut être cloné n'importe où : `install.sh` utilise son propre emplacement.
 
-./install.sh --global       # tous les dépôts de la machine
-# ou, dans un projet :
-/chemin/vers/githooks/install.sh   # ce dépôt uniquement
+```bash
+git clone git@github.com:SimBienvenueHoulBoumi/githooks.git ~/githooks
+~/githooks/install.sh --global      # tous les dépôts de la machine
 ```
 
-Mise à jour : `git pull` dans ce dépôt, aucun projet à toucher.
+Pour un seul dépôt plutôt que toute la machine :
+
+```bash
+cd mon-projet
+~/githooks/install.sh
+```
+
+Vérifier : `git config --global core.hooksPath` doit afficher `…/githooks/hooks`.
+
+| Action | Commande |
+|---|---|
+| Mettre à jour | `git -C ~/githooks pull` (aucun projet à toucher) |
+| Déplacer le dossier | relancer `install.sh --global` depuis le nouvel emplacement |
+| Désinstaller | `~/githooks/install.sh --uninstall --global` |
 
 ## Hooks
 
@@ -73,5 +93,7 @@ Un script exécutable dans `.githooks/<hook>` ou `.git/hooks/<hook>` du projet e
 ## Limites
 
 - Git n'a pas de hook à la création de branche : le nommage est averti puis bloqué au commit/push, pas empêché à la création. Pour l'imposer côté serveur : ruleset GitHub « Restrict branch names ».
-- Un `core.hooksPath` local (husky, etc.) est prioritaire sur l'installation globale.
+- Un `core.hooksPath` local (husky, etc.) est prioritaire sur l'installation globale : dans ce dépôt, lancer `install.sh` sans `--global` ou laisser l'outil existant gérer.
 - Un fichier partiellement stagé est re-stagé entièrement après formatage.
+- Hooks locaux = contournables (`--no-verify`) et à installer sur chaque poste. Pour imposer les règles à une équipe : CI + rulesets GitHub.
+- Testé sur macOS (bash 3.2) ; Linux et Git Bash (Windows) utilisent les mêmes commandes standard mais n'ont pas été testés.
