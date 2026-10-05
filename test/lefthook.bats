@@ -11,9 +11,12 @@ setup() {
     git init -q --bare "$GH_REMOTE"
     git -C "$BATS_TEST_DIRNAME/.." push -q --no-verify "$GH_REMOTE" HEAD:refs/heads/test/v1
     setup_repo
+    # lefthook est un binaire Windows natif : chemin D:/... et non /d/...
+    local url="$GH_REMOTE"
+    if command -v cygpath >/dev/null 2>&1; then url="$(cygpath -m "$GH_REMOTE")"; fi
     cat >lefthook.yml <<EOF
 remotes:
-  - git_url: $GH_REMOTE
+  - git_url: $url
     ref: test/v1
     configs:
       - lefthook-remote.yml
@@ -50,7 +53,7 @@ global_install() {
     [ "$(subject)" = "feat(bean): ajoute" ]
 }
 
-@test "delegation : hooks githooks globaux → lefthook du projet" {
+@test "delegation : hooks githooks globaux -> lefthook du projet" {
     global_install
     git add lefthook.yml # un fichier stagé : lefthook ignore les jobs sur un commit vide
     run git commit -q -m "chore: init"
