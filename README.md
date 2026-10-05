@@ -13,7 +13,7 @@ Hooks git réutilisables, qui s'adaptent au langage du projet : messages de comm
 # lefthook.yml
 remotes:
   - git_url: https://github.com/SimBienvenueHoulBoumi/githooks
-    ref: v1.0.0 # x-release-please-version
+    ref: v1.0.1 # x-release-please-version
     configs: [lefthook-remote.yml]
 ```
 
@@ -28,7 +28,7 @@ remotes:
 # .gitlab-ci.yml (extrait)
 include:
   - project: outils/githooks
-    ref: v1.0.0 # x-release-please-version
+    ref: v1.0.1 # x-release-please-version
     file: templates/gitlab/githooks.gitlab-ci.yml
 ```
 

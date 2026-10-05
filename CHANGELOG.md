@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.0.0...v1.0.1) (2026-10-05)
+
+
+### Corrections
+
+* **release:** merge auto de la release, tag majeur, versions calculées ([fc4fb05](https://github.com/SimBienvenueHoulBoumi/githooks/commit/fc4fb05d844ddedee9bf890798096592544e0c72))
+* **release:** releases entièrement automatiques ([06dbd8c](https://github.com/SimBienvenueHoulBoumi/githooks/commit/06dbd8cd86b318502f79f11f85fa7b5136f539f3))
+
 ## 1.0.0 (2026-10-05)
 
 
