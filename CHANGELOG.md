@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.2.1...v2.2.2) (2026-10-06)
+
+
+### Documentation
+
+* README à jour ([#47](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/47)) ([b7019dd](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/b7019dd880c68eeaa28764dfdaebdfb85ab78b4a))
+
 ## [2.2.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.2.0...v2.2.1) (2026-10-06)
 
 
