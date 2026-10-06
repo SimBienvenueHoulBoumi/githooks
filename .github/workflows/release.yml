@@ -1,8 +1,10 @@
 # Releases entièrement automatiques, sans jeton personnel :
 # 1. release-please tient à jour une PR "release x.y.z" (changelog + versions) ;
 # 2. ce workflow déclenche la CI sur cette PR (workflow_dispatch : seul type
-#    d'événement que GITHUB_TOKEN a le droit de déclencher), attend les
-#    vérifications obligatoires, puis la merge (squash) ;
+#    d'événement que GITHUB_TOKEN a le droit de déclencher) et attend sa fin.
+#    GitHub ne rattache pas ces vérifications à la PR : leur résultat réel est
+#    reporté en statuts sur le commit (une vérification exigée qui n'a pas
+#    réussi = rien n'est reporté ni mergé), puis la PR est mergée (squash) ;
 # 3. release-please, relancé dans le même run, crée le tag vX.Y.Z et la
 #    release ; les jobs suivants déplacent le tag majeur et signent l'archive.
 name: release
@@ -29,6 +31,7 @@ jobs:
       pull-requests: write
       actions: write # déclencher la CI sur la PR de release
       checks: read
+      statuses: write # reporter le résultat de cette CI sur le commit
     outputs:
       release_created: ${{ steps.release.outputs.release_created || steps.publish.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name || steps.publish.outputs.tag_name }}
@@ -60,13 +63,31 @@ jobs:
           done
           echo "PR #$pr ($branch @ ${sha:0:7}) : lancement de la CI"
           gh workflow run ci.yml --ref "$branch"
-          # Attendre que les vérifications obligatoires apparaissent puis se terminent
+          run_id=""
           for _ in $(seq 1 30); do
-            gh pr checks "$pr" --required >/dev/null 2>&1 && break
-            [ "$(gh pr checks "$pr" --required --json state -q length 2>/dev/null || echo 0)" -gt 0 ] && break
-            sleep 10
+            run_id="$(gh run list --workflow ci.yml --branch "$branch" --event workflow_dispatch \
+              --commit "$sha" --limit 1 --json databaseId -q '.[0].databaseId')"
+            [ -n "$run_id" ] && break
+            sleep 5
           done
-          gh pr checks "$pr" --required --watch --interval 30
+          [ -n "$run_id" ] || { echo "✖ Run de CI introuvable"; exit 1; }
+          gh run watch "$run_id" --exit-status --interval 30 >/dev/null
+          run_url="$(gh run view "$run_id" --json url -q .url)"
+          # Vérifications exigées par la protection de main : résultat réel de
+          # chacune, reporté en statut sur le commit
+          gh api "repos/$GH_REPO/rules/branches/main" \
+            --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context' |
+            while IFS= read -r ctx; do
+              conclusion="$(gh run view "$run_id" --json jobs \
+                -q ".jobs[] | select(.name==\"$ctx\") | .conclusion")"
+              if [ "$conclusion" != success ]; then
+                echo "✖ $ctx : ${conclusion:-absent}"
+                exit 1
+              fi
+              gh api "repos/$GH_REPO/statuses/$sha" -f state=success -f context="$ctx" \
+                -f target_url="$run_url" -f description="CI de la PR de release" >/dev/null
+              echo "✔ $ctx"
+            done
           gh pr merge "$pr" --squash --match-head-commit "$sha"
           echo "merged=true" >>"$GITHUB_OUTPUT"
 
