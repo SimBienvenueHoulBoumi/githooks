@@ -45,6 +45,7 @@ jobs:
         if: steps.release.outputs.pr
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }} # pas de checkout : dépôt explicite pour gh
           PR_JSON: ${{ steps.release.outputs.pr }}
         run: |
           pr="$(jq -r .number <<<"$PR_JSON")"
