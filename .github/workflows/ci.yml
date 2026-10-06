@@ -97,14 +97,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      # Outils des vérifications de ce dépôt (workflows GitHub Actions)
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: stable
-          cache: false
-      - run: |
-          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-          echo "$(go env GOPATH)/bin" >>"$GITHUB_PATH"
+      # Aucun outil installé à la main : l'action doit se suffire à elle-même,
+      # comme pour un projet utilisateur (actionlint, gitleaks)
       - uses: ./
         with:
           strict: true

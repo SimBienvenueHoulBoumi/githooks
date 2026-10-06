@@ -31,8 +31,8 @@
     GITHOOKS_BIN: $CI_PROJECT_DIR/.githooks-bin
   script:
     - git clone --quiet --depth 1 --branch "$GITHOOKS_REF" "$GITHOOKS_URL" /tmp/githooks
-    - case " $GITHOOKS_CHECKS " in *" secrets "*) /tmp/githooks/ci/install-gitleaks.sh ;; esac
-    - /tmp/githooks/ci/check.sh
+    - case " $GITHOOKS_CHECKS " in *" secrets "*) bash /tmp/githooks/ci/install-tool.sh gitleaks ;; esac
+    - bash /tmp/githooks/ci/check.sh
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
