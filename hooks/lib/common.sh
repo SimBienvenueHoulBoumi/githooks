@@ -169,6 +169,25 @@ branch_name_valid() {
     [[ "$branch" =~ $BRANCH_PATTERN ]]
 }
 
+# Flux avec branche d'intégration (réglage integrationBranch, ex. develop) :
+# REPLY = branches cibles autorisées pour une PR depuis la branche $1, vide si
+# aucun flux n'est configuré (PR libres, en pratique vers main).
+#   travail (feat/…, fix/…, bots) → intégration
+#   intégration, PR de release-please → principale (mainBranch, défaut main)
+#   release/…, hotfix/…           → principale ou intégration
+pr_targets_r() {
+    local integration
+    cfg_r integrationBranch ""
+    integration="$REPLY"
+    [ -n "$integration" ] || return 0
+    cfg_r mainBranch main
+    case "$1" in
+        "$integration" | release-please--*) ;;
+        release/* | hotfix/*) REPLY="$REPLY $integration" ;;
+        *) REPLY="$integration" ;;
+    esac
+}
+
 # Propose un nom valide à partir d'un nom invalide (Feat/Mon Truc → feat/mon-truc)
 suggest_branch_name() {
     local b type rest
