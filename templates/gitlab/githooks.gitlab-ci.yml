@@ -5,7 +5,7 @@
 #   include:
 #     # githooks hébergé sur votre GitLab (recommandé) :
 #     - project: outils/githooks
-#       ref: v1.3.0 # x-release-please-version
+#       ref: v1.3.1 # x-release-please-version
 #       file: templates/gitlab/githooks.gitlab-ci.yml
 #     # ou depuis GitHub (dépôt public) :
 #     # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/githooks/v1.0.0/templates/gitlab/githooks.gitlab-ci.yml
@@ -24,7 +24,7 @@
   variables:
     GIT_DEPTH: "0"
     GITHOOKS_URL: https://github.com/SimBienvenueHoulBoumi/githooks.git
-    GITHOOKS_REF: v1.3.0 # x-release-please-version
+    GITHOOKS_REF: v1.3.1 # x-release-please-version
     GITHOOKS_CHECKS: commits branch secrets format tests
     GITHOOKS_STRICT: "false"
     GITLEAKS_VERSION: 8.30.1
