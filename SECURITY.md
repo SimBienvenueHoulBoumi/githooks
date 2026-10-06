@@ -22,17 +22,25 @@ Chaque release contient une archive source signée avec [Sigstore](https://www.s
 
 ```bash
 TAG=v1.1.0
-gh release download "$TAG" --repo SimBienvenueHoulBoumi/repogarde -p "repogarde-$TAG.tar.gz*"
+gh release download "$TAG" --repo SimBienvenueHoulBoumi/repogarde -p "repogarde-$TAG*"
 cosign verify-blob "repogarde-$TAG.tar.gz" \
   --bundle "repogarde-$TAG.tar.gz.sigstore.json" \
   --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/repogarde/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
+Chaque release contient aussi une **preuve de provenance [SLSA](https://slsa.dev) niveau 3** (`repogarde-vX.Y.Z.intoto.jsonl`) : elle atteste que l'archive a été construite par le workflow de release de ce dépôt, depuis le commit du tag.
+
+```bash
+slsa-verifier verify-artifact "repogarde-$TAG.tar.gz" \
+  --provenance-path "repogarde-$TAG.intoto.jsonl" \
+  --source-uri github.com/SimBienvenueHoulBoumi/repogarde --source-tag "$TAG"
+```
+
 ## Ce que repogarde fait pour la sécurité
 
 - Détection de secrets (gitleaks) dans les hooks et en CI ; gitleaks installé en CI à **version figée avec somme SHA-256 vérifiée**.
-- Actions GitHub figées par SHA, mises à jour par Dependabot ; workflows sans droits par défaut.
+- Actions GitHub figées par SHA, outils Python de la CI figés par empreinte (`--require-hashes`), mis à jour par Dependabot ; workflows sans droits par défaut.
 - Analyse CodeQL des workflows, évaluation OpenSSF Scorecard.
 - Aucun secret utilisé par les workflows hors `GITHUB_TOKEN` (lecture seule par défaut) et le jeton optionnel de release.
 - Les hooks n'exécutent que les outils installés sur le poste ou déclarés par le projet ; aucun téléchargement au moment du commit.

@@ -104,8 +104,8 @@ jobs:
           gobin=""
           if command -v go >/dev/null; then gobin="$(go env GOPATH)/bin"; fi
           case "$LANG_E2E" in
-            python) pip install ruff==0.16.10 pytest==9.1.1 ;;
-            ansible) pip install ansible-lint==26.9.0 ;;
+            python) pip install --require-hashes -r ci/requirements/e2e-python.txt ;;
+            ansible) pip install --require-hashes -r ci/requirements/e2e-ansible.txt ;;
             cpp) sudo apt-get install -y -qq clang-format >/dev/null ;;
             shell) go install mvdan.cc/sh/v3/cmd/shfmt@v3.14.1 && echo "$gobin" >>"$GITHUB_PATH" ;;
             helm | kubernetes)

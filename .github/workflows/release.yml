@@ -135,12 +135,15 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    outputs:
+      hashes: ${{ steps.archive.outputs.hashes }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Archive signée
+        id: archive
         env:
           TAG: ${{ needs.release-please.outputs.tag_name }}
           GH_TOKEN: ${{ github.token }}
@@ -150,3 +153,23 @@ jobs:
           git archive --format=tar.gz --prefix="$name/" -o "$name.tar.gz" "$TAG"
           cosign sign-blob --yes --bundle "$name.tar.gz.sigstore.json" "$name.tar.gz"
           gh release upload "$TAG" "$name.tar.gz" "$name.tar.gz.sigstore.json" --clobber
+          # Empreinte de l'archive pour la preuve de provenance SLSA
+          echo "hashes=$(sha256sum "$name.tar.gz" | base64 -w0)" >>"$GITHUB_OUTPUT"
+
+  # Provenance SLSA niveau 3 : atteste que l'archive a été construite par ce
+  # workflow, depuis ce dépôt et ce commit (fichier .intoto.jsonl joint à la
+  # release). Générateur référencé par tag : exigé par l'outil, qui vérifie sa
+  # propre identité.
+  provenance:
+    needs: [release-please, sign]
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.sign.outputs.hashes }}
+      upload-assets: true
+      upload-tag-name: ${{ needs.release-please.outputs.tag_name }}
+      provenance-name: repogarde-${{ needs.release-please.outputs.tag_name }}.intoto.jsonl

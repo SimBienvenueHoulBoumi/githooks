@@ -12,3 +12,15 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  # Outils Python de la CI et du site, figés par empreinte (pip-compile)
+  - package-ecosystem: pip
+    directories: [/docs, /ci/requirements]
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      python:
+        patterns: ["*"]
