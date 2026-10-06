@@ -1,5 +1,11 @@
 # githooks
 
+[![CI](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/ci.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/ci.yml)
+[![e2e](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/e2e.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/e2e.yml)
+[![Release](https://img.shields.io/github/v/release/SimBienvenueHoulBoumi/githooks)](https://github.com/SimBienvenueHoulBoumi/githooks/releases)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SimBienvenueHoulBoumi/githooks/badge)](https://scorecard.dev/viewer/?uri=github.com/SimBienvenueHoulBoumi/githooks)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+
 Hooks git réutilisables, qui s'adaptent au langage du projet : messages de commit, nommage des branches, secrets, formatage et tests.
 
 | Usage | Comment | Garantie |
@@ -118,13 +124,26 @@ Fonctionne sur **n'importe quel dépôt** : simple script, projet unique, monore
 | Elixir (Phoenix) | `mix.exs` | `mix format` | `mix test` |
 | C / C++ / Obj-C | `CMakeLists.txt`, `meson.build` ¹ ² | clang-format **si `.clang-format`** | ctest / meson test (si build configuré) |
 | Shell | — ² | shfmt (`.editorconfig`, sinon 4 espaces) | — |
-| Terraform / OpenTofu | — ² | `terraform fmt` / `tofu fmt` | — |
+| **Terraform / OpenTofu** | `*.tf` ² | `terraform fmt` / `tofu fmt` | `init -backend=false` + `validate` · tflint |
+| **Packer** | `*.pkr.hcl` ² | `packer fmt` | `packer validate -syntax-only` |
+| **Ansible** | `ansible.cfg`, `galaxy.yml`, `requirements.yml` | reformatage YAML (`ansible-lint --fix=none`) | `ansible-lint` |
+| **Helm** | `Chart.yaml` | **aucun** (templates Go : un formateur YAML les casserait) | `helm lint` · `helm template` + kubeconform · `helm unittest` |
+| **Kubernetes** (kustomize) | `kustomization.yaml` | prettier | `kubectl kustomize` + kubeconform (schémas) |
+| **Docker** | `Dockerfile`, `Containerfile`, `compose.yaml` | — | hadolint · `docker compose config` |
+| **GitHub Actions** | `.github/workflows` | — | actionlint |
 | Autre | `Makefile`, `justfile`, `Taskfile.yml` | — | `make test` · `just test` · `task test` |
 
 ¹ multi-module : build depuis le projet parent le plus haut. ² formate aussi les fichiers isolés, hors projet.
 
-Un outil absent est ignoré (avertissement dans un projet, silence pour un fichier isolé) : jamais bloquant.
-Testé en réel : Maven/Spring Boot, Node + pnpm, Python + uv, Go, Dart, Terraform, Make. Les autres suivent la documentation de leurs outils.
+Pour l'infrastructure, l'étape « tests » est une **validation** (lint, rendu, schémas) : rien n'est déployé.
+
+Un outil absent est ignoré (avertissement dans un projet, silence pour un fichier isolé) : jamais bloquant sur le poste ; bloquant en CI avec le mode strict.
+
+**Versions des outils** : celles déclarées par le projet sont prioritaires (`node_modules`, `.venv`/uv, `vendor/bin`, `bundle exec`, wrapper Maven/Gradle, plugin Spotless versionné), pour que tout le monde formate à l'identique ; à défaut, l'outil installé sur le poste.
+
+**Testé en réel** : chaque langage et outil ci-dessus a un projet exemple (`test/e2e/`) vérifié en CI avec son outillage : formatage au commit, vérification CI, tests au vert puis cassés (et, pour Helm, templates laissés intacts).
+
+**Linters** : délégués à [MegaLinter](https://megalinter.io) (option `megalinter: true` de l'action, `GITHOOKS_MEGALINTER: "true"` sur GitLab) plutôt que réimplémentés.
 
 ### Ajouter un langage
 
@@ -151,6 +170,7 @@ Dans un fichier **`.githooks.conf` versionné** à la racine du projet (partagé
     skip = protect-branch python        # étapes, hooks ou langages désactivés
     protectedBranches = main develop    # défaut : main master
     allowedBranches = main develop release/*
+    exclude = vendor/* generated/*      # chemins ni formatés ni testés
 ```
 
 Ou en local (non partagé, **prioritaire** sur `.githooks.conf`) :
@@ -162,7 +182,7 @@ git config hooks.skip "protect-branch,format" # désactive des étapes
 git config hooks.skip "node"                  # désactive un langage
 ```
 
-Désactivables : hooks (`pre-commit`, `pre-push`…), étapes (`branch-name`, `protect-branch`, `secrets`, `format`, `tests`), langages (`maven`, `node`, `python`…).
+Désactivables : hooks (`pre-commit`, `pre-push`…), étapes (`branch-name`, `protect-branch`, `secrets`, `format`, `tests`), langages et outils (`maven`, `node`, `helm`, `docker`…).
 
 Contournement ponctuel : `git commit --no-verify`, `git push --no-verify`.
 
@@ -200,7 +220,7 @@ bats test/                          # tests (dépôts jetables ; ceux dont l'out
 shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
 ```
 
-La CI (`.github/workflows/ci.yml`) lance shellcheck et les tests sur Linux, macOS et Windows.
+La CI lance shellcheck, actionlint et les tests sur Linux, macOS et Windows (`ci.yml`), un projet réel par langage (`e2e.yml`) et l'évaluation OpenSSF (`scorecard.yml`). Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Limites
 

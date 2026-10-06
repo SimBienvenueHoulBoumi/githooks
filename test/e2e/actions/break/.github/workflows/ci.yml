@@ -1,0 +1,7 @@
+name: ci
+on: push
+jobs:
+  build:
+    runs-onn: ubuntu-latest
+    steps:
+      - run: echo "${{ github.event.nope.x }}"

@@ -236,3 +236,95 @@ load_engine() {
     [ "$(find_up marker)" = "$(cd "$REPO" && pwd -P)/marker" ]
     ! find_up introuvable-xyz
 }
+
+@test "detection : multi-module sur 3 niveaux, sans boucle" {
+    load_engine
+    mkdir -p a/b/c/src
+    touch pom.xml a/pom.xml a/b/pom.xml a/b/c/pom.xml
+    [ "$(nearest_project a/b/c/src/A.java maven)" = "maven ." ]
+    # mémo : deuxième appel identique
+    [ "$(nearest_project a/b/c/src/B.java maven)" = "maven ." ]
+}
+
+@test "performance : commit de 300 fichiers en moins de 30 s" {
+    touch pom.xml
+    for d in a b c d e; do
+        mkdir -p "src/$d/sub"
+        for i in $(seq 1 60); do echo "# doc $i" >"src/$d/sub/F$i.md"; done
+    done
+    git add -A
+    start=$SECONDS
+    run git commit -q -m "ajoute 300 fichiers"
+    [ "$status" -eq 0 ]
+    echo "durée : $((SECONDS - start)) s"
+    [ $((SECONDS - start)) -lt 30 ]
+}
+
+@test "format : erreur de syntaxe -> commit refuse, message clair" {
+    require ruff
+    printf 'def f(:\n' >casse.py
+    git add casse.py
+    run git commit -q -m "ajoute casse"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Échec du formatage"* ]]
+}
+
+@test "format : outil du projet (.venv) prioritaire sur celui du poste" {
+    mkdir -p .venv/bin
+    printf '#!/bin/sh\n[ "$1" = --version ] && exit 0\necho RUFF-DU-PROJET >&2\n' >.venv/bin/ruff
+    chmod +x .venv/bin/ruff
+    touch pyproject.toml
+    printf 'x = 1\n' >a.py
+    git add a.py pyproject.toml
+    run git commit -q -m "ajoute a"
+    [[ "$output" == *"RUFF-DU-PROJET"* ]]
+}
+
+# --- Infrastructure as code ---------------------------------------------------
+
+@test "IaC : les YAML d'un chart Helm ne sont confies qu'a helm (jamais prettier)" {
+    load_engine
+    mkdir -p chart/templates
+    touch chart/Chart.yaml package.json
+    plugins_for_file_r chart/templates/svc.yaml
+    nearest_project_r chart/templates/svc.yaml "$REPLY"
+    [ "$REPLY" = "helm chart" ]
+    ! declare -F helm_format
+}
+
+@test "IaC : detection Kubernetes, Ansible, Terraform, Packer, Docker, Actions" {
+    load_engine
+    mkdir -p k8s infra ansible img .github/workflows
+    touch k8s/kustomization.yaml infra/main.tf ansible/ansible.cfg img/build.pkr.hcl Dockerfile
+    [ "$(nearest_project k8s/deploy.yaml "kubernetes node")" = "kubernetes k8s" ]
+    [ "$(nearest_project infra/vars.tf terraform)" = "terraform infra" ]
+    [ "$(nearest_project ansible/site.yml "ansible node")" = "ansible ansible" ]
+    [ "$(nearest_project img/vars.pkrvars.hcl packer)" = "packer img" ]
+    [[ " $(plugins_for_file Dockerfile.prod) " == *" docker "* ]]
+    has_marker . actions
+}
+
+@test "IaC : workflow GitHub modifie -> actionlint lance au push" {
+    require actionlint
+    mkdir -p .github/workflows
+    printf 'name: ci\non: push\njobs:\n  b:\n    runs-onn: ubuntu-latest\n    steps:\n      - run: echo\n' >.github/workflows/ci.yml
+    git add -A
+    git commit -q -m "ci: workflow"
+    run git push -q origin feat/x
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"actionlint"* ]]
+}
+
+@test "python : pas de faux succes avec un .pyc perime (meme taille, meme seconde)" {
+    require pytest
+    load_engine
+    mkdir -p tests
+    printf '[tool.pytest.ini_options]\npythonpath = ["."]\n' >pyproject.toml
+    printf 'def test_x():\n    assert 1 == 1\n' >tests/test_x.py
+    python_test >/dev/null 2>&1
+    pytest -q >/dev/null 2>&1 || true # laisse un .pyc dans __pycache__
+    printf 'def test_x():\n    assert 1 == 2\n' >tests/test_x.py
+    touch -r pyproject.toml tests/test_x.py
+    run python_test
+    [ "$status" -ne 0 ]
+}

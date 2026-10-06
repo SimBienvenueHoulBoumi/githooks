@@ -1,0 +1,125 @@
+# Tests de bout en bout : un vrai projet par langage / outil, avec son outillage
+# réel (test/e2e/run.sh). Mode strict : un outil manquant fait échouer le job.
+name: e2e
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: e2e (${{ matrix.lang }})
+    strategy:
+      fail-fast: false
+      matrix:
+        lang: [maven, gradle, node, deno, python, go, rust, php, ruby, dotnet, dart, elixir, cpp, shell, terraform, packer, tasks, ansible, helm, kubernetes, docker, actions]
+        os: [ubuntu-latest]
+        include:
+          - lang: swift
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      E2E_STRICT: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Java
+        if: contains(fromJSON('["maven","gradle"]'), matrix.lang)
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Gradle
+        if: matrix.lang == 'gradle'
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          gradle-version: current
+      - name: Node
+        if: contains(fromJSON('["node","helm","kubernetes"]'), matrix.lang)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+      - name: Deno
+        if: matrix.lang == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - name: Python
+        if: contains(fromJSON('["python","ansible"]'), matrix.lang)
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Go
+        if: contains(fromJSON('["go","shell","helm","kubernetes","actions"]'), matrix.lang)
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: false
+      - name: PHP
+        if: matrix.lang == 'php'
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: "8.3"
+          tools: composer
+      - name: Ruby
+        if: matrix.lang == 'ruby'
+        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        with:
+          ruby-version: "3.3"
+      - name: .NET
+        if: matrix.lang == 'dotnet'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "8.0.x"
+      - name: Dart
+        if: matrix.lang == 'dart'
+        uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+      - name: Elixir
+        if: matrix.lang == 'elixir'
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: "27"
+          elixir-version: "1.17"
+      - name: Terraform
+        if: matrix.lang == 'terraform'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      - name: Packer
+        if: matrix.lang == 'packer'
+        uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789 # v3.4.0
+      - name: Helm
+        if: matrix.lang == 'helm'
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+
+      - name: Outils complémentaires (versions figées)
+        env:
+          LANG_E2E: ${{ matrix.lang }}
+        run: |
+          gobin=""
+          if command -v go >/dev/null; then gobin="$(go env GOPATH)/bin"; fi
+          case "$LANG_E2E" in
+            python) pip install ruff==0.16.10 pytest==9.1.1 ;;
+            ansible) pip install ansible-lint==26.9.0 ;;
+            cpp) sudo apt-get install -y -qq clang-format >/dev/null ;;
+            shell) go install mvdan.cc/sh/v3/cmd/shfmt@v3.14.1 && echo "$gobin" >>"$GITHUB_PATH" ;;
+            helm | kubernetes)
+              go install github.com/yannh/kubeconform/cmd/kubeconform@v0.8.0 && echo "$gobin" >>"$GITHUB_PATH" ;;
+            actions) go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 && echo "$gobin" >>"$GITHUB_PATH" ;;
+            docker)
+              mkdir -p "$HOME/.local/bin"
+              curl -fsSL -o "$HOME/.local/bin/hadolint" \
+                https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-x86_64
+              chmod +x "$HOME/.local/bin/hadolint"
+              echo "$HOME/.local/bin" >>"$GITHUB_PATH" ;;
+          esac
+
+      - name: e2e ${{ matrix.lang }}
+        env:
+          LANG_E2E: ${{ matrix.lang }}
+        run: test/e2e/run.sh "$LANG_E2E"

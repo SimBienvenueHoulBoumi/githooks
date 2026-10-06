@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(calc C)
+enable_testing()
+add_executable(calc_test calc_test.c calc.c)
+add_test(NAME calc_test COMMAND calc_test)

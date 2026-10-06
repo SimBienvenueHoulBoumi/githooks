@@ -20,16 +20,27 @@ register() {
     eval "PLUGIN_MARKERS_$1=\$2 PLUGIN_EXT_$1=\$3 PLUGIN_FLAGS_$1=\"\${*:4}\""
 }
 
-plugin_get() { eval "printf '%s' \"\${PLUGIN_$2_$1:-}\""; }
+# Les fonctions de détection sont appelées pour chaque fichier : elles évitent
+# tout sous-processus ($(…), dirname, git) et renvoient leur résultat dans REPLY.
 
-plugin_has_flag() { [[ " $(plugin_get "$1" FLAGS) " == *" $2 "* ]]; }
+# REPLY = attribut $2 (MARKERS, EXT, FLAGS) du plugin $1
+plugin_get() { eval "REPLY=\${PLUGIN_$2_$1:-}"; }
 
-# Plugins actifs (non désactivés via hooks.skip <nom>)
-active_plugins() {
-    local p out=""
-    for p in $PLUGINS; do skipped "$p" || out="$out $p"; done
-    echo "$out"
+plugin_has_flag() {
+    plugin_get "$1" FLAGS
+    [[ " $REPLY " == *" $2 "* ]]
 }
+
+# Plugins actifs (non désactivés via hooks.skip <nom>), calculés une seule fois
+ACTIVE_PLUGINS=""
+ACTIVE_PLUGINS_DONE=""
+active_plugins_init() {
+    local p
+    [ -n "$ACTIVE_PLUGINS_DONE" ] && return 0
+    for p in $PLUGINS; do skipped "$p" || ACTIVE_PLUGINS="$ACTIVE_PLUGINS $p"; done
+    ACTIVE_PLUGINS_DONE=1
+}
+active_plugins() { active_plugins_init; echo "$ACTIVE_PLUGINS"; }
 
 for _plugin in "$(dirname "${BASH_SOURCE[0]}")/../lang/"*.sh; do
     # shellcheck source=/dev/null
@@ -39,11 +50,21 @@ unset _plugin
 
 # --- Détection ---------------------------------------------------------------
 
+# Dossier parent sans sous-processus ("a/b" → "a", "a" → ".")
+parent_dir() {
+    case "$1" in
+        */*) REPLY="${1%/*}" ;;
+        *) REPLY=. ;;
+    esac
+}
+
 # Le dossier $1 contient-il un marqueur du plugin $2 ?
 has_marker() {
-    local m
+    local m markers
+    plugin_get "$2" MARKERS
+    markers="$REPLY"
     set -f
-    for m in $(plugin_get "$2" MARKERS); do
+    for m in $markers; do
         set +f
         compgen -G "$1/$m" >/dev/null && return 0
         set -f
@@ -52,37 +73,68 @@ has_marker() {
     return 1
 }
 
-# Remonte depuis le dossier de $1 jusqu'à la racine ; affiche "<plugin> <dossier>"
-# pour le premier dossier contenant un marqueur d'un des plugins $2.
-nearest_project() {
-    local dir p
-    dir="$(dirname "$1")"
+# Mémo des résultats de nearest_project, par (dossier, plugins) : un gros commit
+# touche beaucoup de fichiers dans peu de dossiers.
+NEAREST_MEMO=$'\n'
+
+# REPLY = "<plugin> <dossier>" du premier dossier, en remontant depuis le dossier
+# de $1, qui contient un marqueur d'un des plugins $2 ; échec si aucun.
+nearest_project_r() {
+    local start dir p key hit up
+    parent_dir "$1"
+    start="$REPLY"
+    key="$start|$2"
+    case "$NEAREST_MEMO" in
+        *$'\n'"$key="*)
+            hit="${NEAREST_MEMO#*$'\n'"$key="}"
+            REPLY="${hit%%$'\n'*}"
+            [ -n "$REPLY" ]
+            return
+            ;;
+    esac
+    dir="$start"
     while :; do
         for p in $2; do
             if has_marker "$dir" "$p"; then
                 # multi-module : on build depuis le projet parent le plus haut
                 if plugin_has_flag "$p" outermost; then
-                    while [ "$dir" != . ] && has_marker "$(dirname "$dir")" "$p"; do
-                        dir="$(dirname "$dir")"
+                    while [ "$dir" != . ]; do
+                        parent_dir "$dir"
+                        up="$REPLY" # has_marker écrase REPLY
+                        has_marker "$up" "$p" || break
+                        dir="$up"
                     done
                 fi
-                echo "$p $dir"
+                NEAREST_MEMO="$NEAREST_MEMO$key=$p $dir"$'\n'
+                REPLY="$p $dir"
                 return 0
             fi
         done
-        [ "$dir" = . ] && return 1
-        dir="$(dirname "$dir")"
+        if [ "$dir" = . ]; then
+            NEAREST_MEMO="$NEAREST_MEMO$key="$'\n'
+            REPLY=""
+            return 1
+        fi
+        parent_dir "$dir"
+        dir="$REPLY"
     done
 }
 
-# Plugins dont l'extension correspond au fichier $1
-plugins_for_file() {
+# Version affichée (tests, usage interactif)
+nearest_project() { nearest_project_r "$@" && echo "$REPLY"; }
+
+# REPLY = plugins actifs dont l'extension correspond au fichier $1
+plugins_for_file_r() {
     local p out=""
-    for p in $(active_plugins); do
-        [[ "$1" =~ $(plugin_get "$p" EXT) ]] && out="$out $p"
+    active_plugins_init
+    for p in $ACTIVE_PLUGINS; do
+        plugin_get "$p" EXT
+        [[ "$1" =~ $REPLY ]] && out="$out $p"
     done
-    echo "$out"
+    REPLY="$out"
 }
+
+plugins_for_file() { plugins_for_file_r "$1"; echo "$REPLY"; }
 
 # Cherche $1 depuis le dossier courant en remontant jusqu'à la racine du dépôt
 # (lockfile ou node_modules hissés à la racine d'un monorepo, config de style…)
@@ -105,6 +157,32 @@ tool_missing() {
     return 0
 }
 
+# Chemins exclus (hooks.exclude) : globs séparés par des espaces, ex.
+# "vendor/* generated/*" — code vendorisé, fichiers générés, fixtures de test.
+EXCLUDE_PATTERNS=""
+EXCLUDE_DONE=""
+is_excluded() {
+    local pat
+    if [ -z "$EXCLUDE_DONE" ]; then
+        EXCLUDE_PATTERNS="$(cfg exclude)"
+        EXCLUDE_DONE=1
+    fi
+    [ -n "$EXCLUDE_PATTERNS" ] || return 1
+    set -f
+    for pat in $EXCLUDE_PATTERNS; do
+        # shellcheck disable=SC2254
+        case "$1" in $pat) set +f; return 0 ;; esac
+    done
+    set +f
+    return 1
+}
+
+# Filtre stdin : retire les chemins exclus
+without_excluded() {
+    local f
+    while IFS= read -r f; do is_excluded "$f" || printf '%s\n' "$f"; done
+}
+
 # --- Formatage (pre-commit) --------------------------------------------------
 
 # Commande personnalisée : hooks.format reçoit les fichiers stagés en arguments
@@ -124,10 +202,10 @@ format_staged() {
 # langage de son projet le plus proche (monorepo), ou par extension s'il
 # n'appartient à aucun projet (script). $1 = "restage" pour les re-stager.
 format_files() {
-    local mode="${1:-}" list f p d plugins found plugin dir groups key cmd standalone
+    local mode="${1:-}" list f p d plugins plugin dir groups key cmd standalone failed=0
     list="$(mktemp)"
     groups="$(mktemp)"
-    while IFS= read -r f; do [ -f "$f" ] && echo "$f"; done >"$list"
+    while IFS= read -r f; do [ -f "$f" ] && ! is_excluded "$f" && echo "$f"; done >"$list"
     [ -s "$list" ] || { rm -f "$list" "$groups"; return 0; }
 
     cmd="$(cfg format)"
@@ -142,11 +220,12 @@ format_files() {
 
     # Regroupe : plugin <TAB> dossier <TAB> fichier
     while IFS= read -r f; do
-        plugins="$(plugins_for_file "$f")"
+        plugins_for_file_r "$f"
+        plugins="$REPLY"
         [ -z "${plugins// /}" ] && continue
-        if found="$(nearest_project "$f" "$plugins")"; then
-            plugin="${found%% *}"
-            dir="${found#* }"
+        if nearest_project_r "$f" "$plugins"; then
+            plugin="${REPLY%% *}"
+            dir="${REPLY#* }"
         else
             plugin=""
             for p in $plugins; do
@@ -170,16 +249,24 @@ format_files() {
         standalone=""
         has_marker "$dir" "$plugin" || standalone=1
         echo "ℹ $key : ${#rel[@]} fichier(s)"
-        (cd "$dir" && STANDALONE="$standalone" "${plugin}_format" "${rel[@]}") </dev/null
+        # Échec d'un formateur (ex. erreur de syntaxe) : signalé, jamais ignoré
+        if ! (cd "$dir" && STANDALONE="$standalone" "${plugin}_format" "${rel[@]}") </dev/null; then
+            echo "✖ Échec du formatage $key (erreur de syntaxe ?)." >&2
+            failed=1
+            continue
+        fi
         if [ "$mode" = restage ]; then printf '%s\n' "${abs[@]}" | restage; fi
     done < <(cut -f1,2 "$groups" | sort -u)
 
     rm -f "$list" "$groups"
+    return "$failed"
 }
 
 # Re-stage des fichiers reformatés (lus sur stdin, relatifs à la racine)
 restage() {
-    while IFS= read -r f; do [ -n "$f" ] && [ -e "$f" ] && git add -- "$f"; done
+    local f
+    while IFS= read -r f; do [ -n "$f" ] && [ -e "$f" ] && printf '%s\0' "$f"; done |
+        xargs -0 git add --
 }
 
 # --- Tests (pre-push) --------------------------------------------------------
@@ -187,19 +274,22 @@ restage() {
 # Projets touchés par les fichiers modifiés (stdin, relatifs à la racine) :
 # affiche les dossiers uniques contenant au moins un marqueur.
 projects_for_files() {
-    local all="" p dir found
-    for p in $(active_plugins); do
-        [ -n "$(plugin_get "$p" MARKERS)" ] && all="$all $p"
+    local all="" p dir
+    active_plugins_init
+    for p in $ACTIVE_PLUGINS; do
+        plugin_get "$p" MARKERS
+        [ -n "$REPLY" ] && all="$all $p"
     done
-    awk '{ if (index($0, "/")) sub(/\/[^\/]*$/, ""); else $0 = "."; print }' | sort -u |
+    without_excluded |
+        awk '{ if (index($0, "/")) sub(/\/[^\/]*$/, ""); else $0 = "."; print }' | sort -u |
         while IFS= read -r dir; do
-        found="$(nearest_project "$dir/x" "$all")" && echo "${found#* }"
-    done | sort -u
+            nearest_project_r "$dir/x" "$all" && echo "${REPLY#* }"
+        done | sort -u
 }
 
 # Lance les tests de chaque projet touché. Lecture des fichiers modifiés sur stdin.
 test_projects() {
-    local cmd dir p plugins key ran=0 rc=0
+    local cmd dir p plugins key ran=0
     cmd="$(cfg test)"
     if [ -n "$cmd" ]; then
         step "Tests personnalisés : $cmd"
@@ -209,7 +299,8 @@ test_projects() {
 
     while IFS= read -r dir; do
         plugins=""
-        for p in $(active_plugins); do
+        active_plugins_init
+        for p in $ACTIVE_PLUGINS; do
             has_marker "$dir" "$p" && plugins="$plugins $p"
         done
         # un plugin "fallback" (ex. make) seulement si rien d'autre
@@ -229,5 +320,5 @@ test_projects() {
     done < <(projects_for_files)
 
     [ "$ran" = 1 ] || echo "ℹ Aucun projet testable touché par ce push."
-    return "$rc"
+    return 0
 }

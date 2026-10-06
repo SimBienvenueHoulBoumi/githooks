@@ -139,7 +139,11 @@ check_format() {
         ci_error "Dossier de travail modifié avant la vérification : impossible de contrôler le formatage."
         return 1
     fi
-    changed_files | format_files
+    if ! changed_files | without_excluded | format_files; then
+        ci_error "Un formateur a échoué (erreur de syntaxe ?) : voir le log ci-dessus."
+        git checkout -q -- .
+        return 1
+    fi
     local diff
     diff="$(git diff --name-only)"
     if [ -n "$diff" ]; then
@@ -154,7 +158,7 @@ check_format() {
 
 check_tests() {
     section "Tests des projets touchés"
-    changed_files | test_projects
+    changed_files | without_excluded | test_projects
 }
 
 # --- Exécution ---------------------------------------------------------------------
