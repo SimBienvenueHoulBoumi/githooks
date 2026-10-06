@@ -121,9 +121,14 @@ CC_PATTERN="^($CC_TYPES)(\([a-z0-9._-]+\))?!?: .+"
 # REPLY = longueur de la première ligne écrite par l'auteur : le suffixe
 # « (#123) » ajouté par GitHub lors d'un merge squash n'est pas compté.
 authored_length() {
-    local subject="$1"
+    local subject="$1" continuation
     if [[ "$subject" =~ ^(.*)\ \(\#[0-9]+\)$ ]]; then subject="${BASH_REMATCH[1]}"; fi
-    REPLY="${#subject}"
+    # Caractères et non octets, quelle que soit la locale (Git Bash sous Windows
+    # est en locale C : « é » compterait double). En UTF-8, on retire du nombre
+    # d'octets les octets de continuation (0x80 à 0xBF).
+    local LC_ALL=C
+    continuation="${subject//[^$'\x80'-$'\xbf']/}"
+    REPLY=$((${#subject} - ${#continuation}))
 }
 
 # Nommage des branches : <type>/<sujet>

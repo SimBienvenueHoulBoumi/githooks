@@ -175,3 +175,11 @@ setup() {
     run "$CHECK" commits
     [ "$status" -ne 0 ]
 }
+
+@test "longueur : caracteres et non octets, meme en locale C (Git Bash Windows)" {
+    source "$HOOKS/lib/common.sh"
+    LC_ALL=C authored_length "docs(securite): vérification SLSA corrigée, piège du dossier déplacé"
+    [ "$REPLY" -eq 68 ]
+    authored_length "fix: àéèùçôîï (#12)"
+    [ "$REPLY" -eq 13 ]
+}
