@@ -203,32 +203,46 @@ GH
     export PATH="$BATS_TEST_TMPDIR/bin:$PATH" GH_LOG="$BATS_TEST_TMPDIR/gh.log"
 }
 
-@test "proteger : flux main seul -> squash, branches supprimees au merge" {
+# Rulesets affichés par --dry-run → JSON (liste) dans $RULESETS
+rulesets_json() {
+    python3 -c 'import json,sys
+d=json.JSONDecoder(); t=sys.stdin.read(); i=t.index("{"); out=[]
+while i < len(t):
+    if t[i] in " \n": i+=1; continue
+    o,i=d.raw_decode(t,i); out.append(o)
+print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
+}
+
+@test "proteger : flux main seul -> squash, branches supprimees au merge, tags reserves" {
     require python3
     fake_gh_repo
     GH_BRANCHES="main" run "$PROTEGER" --dry-run
     [ "$status" -eq 0 ]
-    json="$(sed -n '/^{/,$p' <<<"$output")"
-    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
-        assert r["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
-        assert r["rules"][2]["parameters"]["allowed_merge_methods"]==["squash"]; \
-        assert r["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repogarde"' "$json"
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==2; b,t=r; \
+        assert b["name"]=="repogarde" and b["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
+        assert b["rules"][2]["parameters"]["allowed_merge_methods"]==["squash"]; \
+        assert b["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repogarde"; \
+        assert t["target"]=="tag" and t["conditions"]["ref_name"]["include"]==["refs/tags/v*"]' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : true"* ]]
+    [[ "$output" != *"branche par défaut"* ]]
 }
 
-@test "proteger : flux develop -> main et develop, merge commit permis" {
+@test "proteger : flux develop -> main en merge commit, develop squash ou merge, defaut develop" {
     require python3
     fake_gh_repo
     git config repogarde.integrationBranch develop
     git config repogarde.protectedBranches "main develop"
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde ci"
     [ "$status" -eq 0 ]
-    json="$(sed -n '/^{/,$p' <<<"$output")"
-    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
-        assert r["conditions"]["ref_name"]["include"]==["refs/heads/main","refs/heads/develop"]; \
-        assert r["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
-        assert [c["context"] for c in r["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","ci"]' "$json"
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==3; m,d,t=r; \
+        assert m["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
+        assert m["rules"][2]["parameters"]["allowed_merge_methods"]==["merge"]; \
+        assert d["name"]=="repogarde (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
+        assert d["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
+        assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","ci"]; \
+        assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
+    [[ "$output" == *"branche par défaut : develop"* ]]
 }
 
 @test "proteger : aucune branche protegee existante -> erreur" {
