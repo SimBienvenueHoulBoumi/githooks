@@ -40,6 +40,25 @@ include:
 
 Modèles complets : [`templates/project/`](templates/project). Versions et changelog : [releases](https://github.com/SimBienvenueHoulBoumi/githooks/releases) (automatiques, voir le guide).
 
+## Technologies prises en charge
+
+Détectées automatiquement, chacune vérifiée en CI sur un vrai projet (`test/e2e/`) :
+
+| Domaine | Technologies |
+|---|---|
+| **Java / JVM** | Maven, Gradle (Java, Kotlin, Groovy) — Spring Boot, Quarkus, Android |
+| **JavaScript / TypeScript** | npm, pnpm, yarn, bun, Deno — React, Next.js, Vue, Angular, Svelte, Nest |
+| **Python** | pip, uv, poetry, pipenv — Django, FastAPI, Flask, scripts |
+| **Autres langages** | Go · Rust · PHP (Laravel, Symfony) · Ruby (Rails) · .NET (C#, F#, ASP.NET) · Dart / Flutter · Swift · Elixir (Phoenix) · C / C++ / Objective-C (CMake, Meson) · Shell |
+| **Infrastructure** | Terraform / OpenTofu · Packer · Ansible · Helm · Kubernetes (kustomize) · Docker (Dockerfile, Compose) · GitHub Actions |
+| **Sans langage reconnu** | `Makefile`, `justfile`, `Taskfile` — ou toute commande via `.githooks.conf` |
+| **Hébergement** | GitHub, GitLab, Bitbucket, Gitea, serveur Git (hooks locaux) |
+| **CI** | GitHub Actions (action), GitLab CI (template) |
+| **Systèmes** | Linux, macOS, Windows (Git Bash) |
+| **Projets** | script isolé, projet unique, monorepo, multi-module |
+
+Détail par technologie (formateur, commande de test) : [Langages et types de projets](#langages-et-types-de-projets). Exemple complet : [githooks-demo](https://github.com/SimBienvenueHoulBoumi/githooks-demo).
+
 ## Installation personnelle (globale)
 
 ### Prérequis
