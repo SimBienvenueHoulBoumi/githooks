@@ -62,6 +62,16 @@ jobs:
             done
             return 1
           }
+          # Runs « pull_request » de la PR de release mis en attente d'approbation
+          # (GitHub traite le bot comme un contributeur externe) : approuvés,
+          # uniquement pour le commit exact de la branche de release
+          approuver_runs() {
+            gh api "repos/$GH_REPO/actions/runs?status=action_required&head_sha=$sha" \
+              --jq '.workflow_runs[].id' | while IFS= read -r id; do
+                gh api -X POST "repos/$GH_REPO/actions/runs/$id/approve" >/dev/null &&
+                  echo "✔ run $id approuvé"
+              done || true
+          }
           if [ -n "$PR_JSON" ]; then
             pr="$(jq -r .number <<<"$PR_JSON")"
           else
@@ -116,7 +126,10 @@ jobs:
               state="$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)"
               case "$state" in
                 CLEAN | BEHIND) break ;;
-                BLOCKED | UNKNOWN | UNSTABLE) sleep 30 ;;
+                BLOCKED | UNKNOWN | UNSTABLE)
+                  approuver_runs
+                  sleep 30
+                  ;;
                 *) echo "✖ PR #$pr non mergeable : $state"; exit 1 ;;
               esac
             done
