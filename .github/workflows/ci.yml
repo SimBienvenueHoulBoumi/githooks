@@ -12,7 +12,7 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: shellcheck
         run: shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
 
@@ -26,16 +26,16 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: stable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: lts/*
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.x"
       - name: Installer bats, lefthook, ruff, gitleaks
@@ -43,7 +43,7 @@ jobs:
           GITHOOKS_BIN: ${{ runner.temp }}/bin
         run: |
           npm install -g bats lefthook
-          pip install ruff
+          pip install ruff==0.16.10
           ci/install-gitleaks.sh
           echo "$GITHOOKS_BIN" >>"$GITHUB_PATH"
       - name: Tests
@@ -55,9 +55,29 @@ jobs:
   githooks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # Outils des vérifications de ce dépôt (workflows GitHub Actions)
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: false
+      - run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          echo "$(go env GOPATH)/bin" >>"$GITHUB_PATH"
+      - uses: ./
+        with:
+          strict: true
+
+  # Option MegaLinter de l'action, testée sur ce dépôt
+  megalinter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: ./
         with:
-          strict: true
+          checks: commits
+          megalinter: true
