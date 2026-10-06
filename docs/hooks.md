@@ -5,10 +5,10 @@
 | Hook | Rôle |
 |---|---|
 | `post-checkout` | Avertit dès qu'on arrive sur une branche mal nommée (non bloquant) |
-| `pre-commit` | Refuse les branches mal nommées, bloque les commits directs sur `main`/`master`, détecte les secrets, formate **uniquement le contenu stagé** (le travail non stagé est préservé) |
+| `pre-commit` | Refuse les branches mal nommées, bloque les commits directs sur les branches protégées (`main`/`master` par défaut), détecte les secrets, formate **uniquement le contenu stagé** (le travail non stagé est préservé) |
 | `prepare-commit-msg` | Préfixe le message d'après la branche : sur `feat/bean`, `git commit -m "ajoute X"` → `feat(bean): ajoute X` |
 | `commit-msg` | Impose [Conventional Commits](https://www.conventionalcommits.org), 72 caractères maximum |
-| `pre-push` | Refuse les branches mal nommées ; build et tests **du commit poussé**, seulement pour les projets touchés |
+| `pre-push` | Refuse les branches mal nommées et le push direct sur les branches protégées (`protectedBranches`, création initiale permise) ; build et tests **du commit poussé**, seulement pour les projets touchés |
 | `post-merge` | Après un `git pull` : supprime les branches locales mergées (classique ou squash) dont la branche distante a été supprimée ; jamais une branche contenant du travail non intégré |
 
 Contournement ponctuel : `git commit --no-verify`, `git push --no-verify` — la [CI](ci.md) refait les vérifications.

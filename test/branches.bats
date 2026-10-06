@@ -75,6 +75,37 @@ setup() { setup_repo; initial_commit; }
     [ "$status" -eq 0 ]
 }
 
+@test "pre-push : creation initiale de main permise, push direct ensuite refuse" {
+    git push -q -u origin main
+    git commit -q --no-verify --allow-empty -m "fix: x"
+    run git push -q origin main
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Push direct refusé sur 'main'"* ]]
+    [ "$(git rev-parse origin/main)" != "$(git rev-parse main)" ]
+}
+
+@test "pre-push : protectedBranches s'applique a develop, pas aux autres branches" {
+    git config repogarde.protectedBranches "main develop"
+    git push -q -u origin main
+    git switch -q -c develop
+    git push -q -u origin develop
+    git commit -q --no-verify --allow-empty -m "fix: x"
+    run git push -q origin develop
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Push direct refusé sur 'develop'"* ]]
+    git switch -q -c feat/x
+    run git push -q -u origin feat/x
+    [ "$status" -eq 0 ]
+}
+
+@test "pre-push : repogarde.skip protect-branch autorise le push sur main" {
+    git push -q -u origin main
+    git commit -q --no-verify --allow-empty -m "fix: x"
+    git config repogarde.skip "secrets protect-branch"
+    run git push -q origin main
+    [ "$status" -eq 0 ]
+}
+
 # Simule le merge d'une PR côté serveur, puis la suppression de sa branche
 server_merge_and_delete() {
     local tmp="$BATS_TEST_TMPDIR/serveur"
