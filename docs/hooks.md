@@ -27,6 +27,46 @@ Format `<type>(<scope>): <description>` ; `!` après le type pour un changement 
 
 Un `!` (`feat!: …`) ou un pied de page `BREAKING CHANGE:` donne une **version majeure**. Voir [releases automatiques](industrialisation.md#2-versions-et-releases-automatiques).
 
+## Assistant de commit : `git cc`
+
+Pour écrire un message conforme sans retenir le format, `git cc` guide pas à pas (alias installé par `install.sh`) :
+
+```text
+$ git cc
+Type de changement :
+   1) feat      nouvelle fonctionnalité
+   2) fix       correction de bug
+   …
+Type [feat] :                                   ← proposé d'après la branche feat/panier
+Scope (optionnel, « - » pour aucun) [panier] :
+Changement incompatible (version majeure) ? [o/N] :
+Description (58 caractères max) : feat(panier): ajoute le panier
+Corps (optionnel) : explique le pourquoi ; ligne vide pour terminer.
+> Le client garde ses articles entre deux visites.
+>
+Références (optionnel, ex. Closes #12) : Closes #12
+
+──── Message ────
+feat(panier): ajoute le panier
+
+Le client garde ses articles entre deux visites.
+
+Closes #12
+─────────────────
+Commiter ? [O/n] :
+```
+
+| Étape | Obligatoire | Aide |
+|---|---|---|
+| Type | oui | menu, proposé d'après la branche |
+| Scope | non | proposé d'après la branche |
+| Changement incompatible | non | ajoute `!` et le pied `BREAKING CHANGE: …` |
+| Description | oui | longueur de l'en-tête contrôlée (72 caractères) |
+| Corps | non | plusieurs lignes : le pourquoi |
+| Références | non | `Closes #12`, `Refs #34`… |
+
+Les options de `git commit` sont transmises (`git cc --no-verify`…) ; `bin/commit --dry-run` affiche le message sans commiter. Avec lefthook sans `install.sh` : `git config --global alias.cc '!bash /chemin/vers/repogarde/bin/commit'`.
+
 ## Nommage des branches
 
 Format `<type>/<sujet>` (sujet en `a-z0-9._-`, `/` pour sous-découper) : `feat/inscription`, `fix/user/login`, `hotfix/timeout-db`.

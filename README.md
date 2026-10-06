@@ -13,7 +13,7 @@
 
 ## Ce qu'il fait
 
-- **Commits** : Conventional Commits imposés, préfixe déduit de la branche.
+- **Commits** : Conventional Commits imposés, préfixe déduit de la branche ; assistant interactif `git cc` (en-tête, corps, pied).
 - **Branches** : format `<type>/<sujet>`, commande de renommage proposée, branches mergées supprimées automatiquement.
 - **Secrets** : gitleaks avant le commit et en CI.
 - **Formatage** : seul le contenu stagé, avec l'outil du projet ; le travail en cours est préservé.
