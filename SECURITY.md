@@ -34,8 +34,10 @@ Chaque release contient aussi une **preuve de provenance [SLSA](https://slsa.dev
 ```bash
 slsa-verifier verify-artifact "repogarde-$TAG.tar.gz" \
   --provenance-path "repogarde-$TAG.intoto.jsonl" \
-  --source-uri github.com/SimBienvenueHoulBoumi/repogarde --source-tag "$TAG"
+  --source-uri github.com/SimBienvenueHoulBoumi/repogarde --source-branch main
 ```
+
+(`--source-branch main` : les releases sont construites par le workflow lancé sur `main`, qui crée ensuite le tag.)
 
 ## Ce que repogarde fait pour la sécurité
 
