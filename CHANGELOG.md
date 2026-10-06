@@ -5,7 +5,7 @@
 
 ### Corrections
 
-* **ci:** suffixe (#NN) du squash non compté ([#35](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/35)) ([f0ca71d](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/f0ca71dbf89b9d96353fa3c8ab3b503e20137a36))
+* **ci:** suffixe « (#123) » ajouté par GitHub au squash non compté ([#35](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/35)) ([f0ca71d](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/f0ca71dbf89b9d96353fa3c8ab3b503e20137a36))
 
 ## [2.1.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.0...v2.1.1) (2026-10-06)
 
