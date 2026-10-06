@@ -3,5 +3,5 @@ variable "region" {
 }
 
 output "region" {
-  value = var.region
+  value = var.inexistante
 }

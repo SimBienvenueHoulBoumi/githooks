@@ -7,6 +7,7 @@
 # Chaque fixture test/e2e/<langage>/ contient :
 #   project/   le projet de départ, correctement formaté, tests au vert
 #   bad/       fichiers mal formatés copiés par-dessus le projet (optionnel)
+#   keep/      fichiers qui ne doivent PAS être modifiés (ex. templates Helm)
 #   break/     fichiers qui font échouer les tests (optionnel)
 #   e2e.env    REQUIRES="outils…"  SETUP="commande d'installation"
 #              PRECHECK="commande" (environnement complet ? sinon ignoré)
@@ -93,6 +94,26 @@ run_fixture() {
             return 1
         fi
         log "✔ ci/check.sh format"
+    fi
+
+    # 1 bis. Fichiers à ne jamais reformater
+    if [ -d "$fixture/keep" ]; then
+        cp -R "$fixture/keep/." .
+        git add -A
+        if ! git commit -q -m "ajoute des fichiers à préserver" >"$work/keep.log" 2>&1; then
+            cat "$work/keep.log"
+            ko "commit refusé (keep)"
+            return 1
+        fi
+        while IFS= read -r f; do
+            f="${f#./}"
+            if ! git show "HEAD:$f" | cmp -s - "$fixture/keep/$f"; then
+                git show "HEAD:$f" | diff "$fixture/keep/$f" - | head -20
+                ko "$f a été modifié alors qu'il doit être préservé"
+                return 1
+            fi
+        done < <(cd "$fixture/keep" && find . -type f)
+        log "✔ fichiers préservés"
     fi
 
     # 3. Tests au vert, puis cassés

@@ -1,0 +1,8 @@
+---
+- name: Exemple
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Message
+      ansible.builtin.debug:
+        msg: ok

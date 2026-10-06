@@ -279,3 +279,38 @@ load_engine() {
     run git commit -q -m "ajoute a"
     [[ "$output" == *"RUFF-DU-PROJET"* ]]
 }
+
+# --- Infrastructure as code ---------------------------------------------------
+
+@test "IaC : les YAML d'un chart Helm ne sont confies qu'a helm (jamais prettier)" {
+    load_engine
+    mkdir -p chart/templates
+    touch chart/Chart.yaml package.json
+    plugins_for_file_r chart/templates/svc.yaml
+    nearest_project_r chart/templates/svc.yaml "$REPLY"
+    [ "$REPLY" = "helm chart" ]
+    ! declare -F helm_format
+}
+
+@test "IaC : detection Kubernetes, Ansible, Terraform, Packer, Docker, Actions" {
+    load_engine
+    mkdir -p k8s infra ansible img .github/workflows
+    touch k8s/kustomization.yaml infra/main.tf ansible/ansible.cfg img/build.pkr.hcl Dockerfile
+    [ "$(nearest_project k8s/deploy.yaml "kubernetes node")" = "kubernetes k8s" ]
+    [ "$(nearest_project infra/vars.tf terraform)" = "terraform infra" ]
+    [ "$(nearest_project ansible/site.yml "ansible node")" = "ansible ansible" ]
+    [ "$(nearest_project img/vars.pkrvars.hcl packer)" = "packer img" ]
+    [[ " $(plugins_for_file Dockerfile.prod) " == *" docker "* ]]
+    has_marker . actions
+}
+
+@test "IaC : workflow GitHub modifie -> actionlint lance au push" {
+    require actionlint
+    mkdir -p .github/workflows
+    printf 'name: ci\non: push\njobs:\n  b:\n    runs-onn: ubuntu-latest\n    steps:\n      - run: echo\n' >.github/workflows/ci.yml
+    git add -A
+    git commit -q -m "ci: workflow"
+    run git push -q origin feat/x
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"actionlint"* ]]
+}
