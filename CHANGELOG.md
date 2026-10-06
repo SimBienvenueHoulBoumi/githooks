@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.0.0...v2.0.1) (2026-10-06)
+
+
+### Corrections
+
+* **python:** pytest exigé seulement si le projet a des tests ([#24](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/24)) ([f79b518](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/f79b5185cb4493935f2b32f693e04bf74bc518be))
+
 ## [2.0.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v1.3.1...v2.0.0) (2026-10-06)
 
 
