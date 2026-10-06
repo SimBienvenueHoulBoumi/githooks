@@ -17,8 +17,8 @@ hide_unstaged() {
     git diff --quiet && return 0
     local gitdir f
     gitdir="$(git rev-parse --absolute-git-dir)"
-    UNSTAGED_PATCH="$gitdir/githooks-unstaged.patch"
-    UNSTAGED_BACKUP="$gitdir/githooks-backup"
+    UNSTAGED_PATCH="$gitdir/repogarde-unstaged.patch"
+    UNSTAGED_BACKUP="$gitdir/repogarde-backup"
     rm -rf "$UNSTAGED_BACKUP"
     mkdir -p "$UNSTAGED_BACKUP"
     git diff --binary >"$UNSTAGED_PATCH"
@@ -70,7 +70,7 @@ run_on_commit() {
     if [ "$sha" = "$(git rev-parse HEAD)" ]; then
         if [ -n "$(git status --porcelain)" ]; then
             local before; before="$(git rev-parse -q --verify refs/stash || true)"
-            git stash push -q --include-untracked -m "githooks pre-push"
+            git stash push -q --include-untracked -m "repogarde pre-push"
             [ "$(git rev-parse -q --verify refs/stash || true)" != "$before" ] && STASHED=1
             trap restore_stash EXIT INT TERM
             echo "ℹ Modifications locales mises de côté : tests sur le commit poussé."

@@ -1,10 +1,10 @@
-# Action GitHub : mêmes règles que les hooks githooks, en CI (non contournable).
+# Action GitHub : mêmes règles que les hooks repogarde, en CI (non contournable).
 #
 #   - uses: actions/checkout@v4
 #     with:
 #       fetch-depth: 0
-#   - uses: SimBienvenueHoulBoumi/githooks@v1 # x-release-please-major
-name: githooks
+#   - uses: SimBienvenueHoulBoumi/repogarde@v1 # x-release-please-major
+name: repogarde
 description: Vérifie messages de commit, nom de branche, secrets, formatage et tests des projets touchés ; linters via MegaLinter en option.
 author: SimBienvenueHoulBoumi
 
@@ -33,7 +33,7 @@ runs:
       shell: bash
       env:
         GITLEAKS_VERSION: ${{ inputs.gitleaks-version }}
-        GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
+        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
       run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" gitleaks
 
     # Les workflows du projet sont vérifiés par actionlint (étape tests)
@@ -42,17 +42,17 @@ runs:
       shell: bash
       env:
         ACTIONLINT_VERSION: ${{ inputs.actionlint-version }}
-        GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
+        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
       run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" actionlint
 
-    - name: Vérifications githooks
+    - name: Vérifications repogarde
       shell: bash
       env:
-        GITHOOKS_CHECKS: ${{ inputs.checks }}
-        GITHOOKS_STRICT: ${{ inputs.strict }}
-        GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
+        REPOGARDE_CHECKS: ${{ inputs.checks }}
+        REPOGARDE_STRICT: ${{ inputs.strict }}
+        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
         GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-        GITHOOKS_PR_TITLE: ${{ github.event.pull_request.title }}
+        REPOGARDE_PR_TITLE: ${{ github.event.pull_request.title }}
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: bash "$GITHUB_ACTION_PATH/ci/check.sh"
 

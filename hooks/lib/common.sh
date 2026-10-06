@@ -6,29 +6,74 @@
 HOOK_NAME="$(basename "$0")"
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-# Avertissement ; si GITHOOKS_WARN_FILE est défini (CI), il est aussi journalisé
+# Avertissement ; si REPOGARDE_WARN_FILE est défini (CI), il est aussi journalisé
 # pour le mode strict (outil manquant = échec)
 warn() {
     echo "⚠ $*" >&2
-    if [ -n "${GITHOOKS_WARN_FILE:-}" ]; then echo "$*" >>"$GITHOOKS_WARN_FILE"; fi
+    if [ -n "${REPOGARDE_WARN_FILE:-}" ]; then echo "$*" >>"$REPOGARDE_WARN_FILE"; fi
 }
 step() { echo "▶ $*"; }
 has() { command -v "$1" >/dev/null 2>&1; }
 
-# Config hooks.* chargée UNE fois par processus : chaque appel git coûte cher
+# Anciens noms (githooks ≤ v1) : toujours acceptés, avec un avertissement unique
+# par processus. Volontairement hors de `warn` : le mode strict de la CI ne doit
+# pas faire échouer un projet qui n'a pas encore migré.
+DEPRECATED_SEEN=""
+deprecated() {
+    case "$DEPRECATED_SEEN" in *"|$1|"*) return 0 ;; esac
+    DEPRECATED_SEEN="$DEPRECATED_SEEN|$1|"
+    echo "ℹ $1 : ancien nom (githooks), à remplacer par $2." >&2
+}
+
+# Variables d'environnement GITHOOKS_* → REPOGARDE_*
+for _v in BIN BASE BRANCH CHECKS STRICT PR_TITLE CACHE; do
+    if eval "[ -z \"\${REPOGARDE_$_v:-}\" ] && [ -n \"\${GITHOOKS_$_v:-}\" ]"; then
+        eval "export REPOGARDE_$_v=\"\$GITHOOKS_$_v\""
+        deprecated "GITHOOKS_$_v" "REPOGARDE_$_v"
+    fi
+done
+unset _v
+
+# Config repogarde.* chargée UNE fois par processus : chaque appel git coûte cher
 # (20 à 50 ms sous Windows), et un hook lit la config des dizaines de fois.
-# Priorité : git config (local puis global), puis .githooks.conf versionné.
+# Priorité : git config (local puis global), puis .repogarde.conf versionné.
 CFG_GIT=""
 CFG_FILE=""
 CFG_LOADED=""
 # Racine du dépôt, calculée une fois et réutilisée par les hooks
 GIT_TOPLEVEL=""
+
+# Normalise la sortie de --get-regexp : clés hooks.* (anciennes) renommées en
+# repogarde.* et placées AVANT les nouvelles, qui l'emportent donc (dernière valeur)
+cfg_normalize() {
+    local line old="" new=""
+    while IFS= read -r line; do
+        case "$line" in
+            hooks.*) old="$old${line/#hooks./repogarde.}"$'\n' ;;
+            ?*) new="$new$line"$'\n' ;;
+        esac
+    done <<<"$1"
+    [ -z "$old" ] || deprecated "$2 hooks.*" "repogarde.*"
+    REPLY="$old$new"
+}
+
 cfg_load() {
-    CFG_GIT="$(git config --get-regexp '^hooks\.' 2>/dev/null || true)"
-    CFG_FILE=""
+    local file=""
     GIT_TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-    if [ -n "$GIT_TOPLEVEL" ] && [ -f "$GIT_TOPLEVEL/.githooks.conf" ]; then
-        CFG_FILE="$(git config -f "$GIT_TOPLEVEL/.githooks.conf" --get-regexp '^hooks\.' 2>/dev/null || true)"
+    cfg_normalize "$(git config --get-regexp '^(hooks|repogarde)\.' 2>/dev/null || true)" "git config"
+    CFG_GIT="$REPLY"
+    CFG_FILE=""
+    if [ -n "$GIT_TOPLEVEL" ]; then
+        if [ -f "$GIT_TOPLEVEL/.repogarde.conf" ]; then
+            file="$GIT_TOPLEVEL/.repogarde.conf"
+        elif [ -f "$GIT_TOPLEVEL/.githooks.conf" ]; then
+            file="$GIT_TOPLEVEL/.githooks.conf"
+            deprecated ".githooks.conf" ".repogarde.conf (section [repogarde])"
+        fi
+    fi
+    if [ -n "$file" ]; then
+        cfg_normalize "$(git config -f "$file" --get-regexp '^(hooks|repogarde)\.' 2>/dev/null || true)" "${file##*/} :"
+        CFG_FILE="$REPLY"
     fi
     CFG_LOADED=1
 }
@@ -36,7 +81,7 @@ cfg_load() {
 # À appeler si la config change dans le même processus (tests)
 cfg_reset() { cfg_load; }
 
-# REPLY = dernière valeur de hooks.<$1> dans $2 (sortie de --get-regexp, où git
+# REPLY = dernière valeur de repogarde.<$1> dans $2 (sortie de --get-regexp, où git
 # met les noms en minuscules : comparaison insensible à la casse). Échec si absente.
 cfg_lookup() {
     local line found="" nocase=""
@@ -44,10 +89,10 @@ cfg_lookup() {
     shopt -q nocasematch && nocase=1
     shopt -s nocasematch
     while IFS= read -r line; do
-        if [[ "$line" == "hooks.$1 "* ]]; then
+        if [[ "$line" == "repogarde.$1 "* ]]; then
             REPLY="${line#* }"
             found=1
-        elif [[ "$line" == "hooks.$1" ]]; then
+        elif [[ "$line" == "repogarde.$1" ]]; then
             REPLY=true # clé sans valeur
             found=1
         fi
@@ -56,7 +101,7 @@ cfg_lookup() {
     [ -n "$found" ]
 }
 
-# REPLY = réglage hooks.<$1>, ou $2 par défaut (sans sous-processus)
+# REPLY = réglage repogarde.<$1>, ou $2 par défaut (sans sous-processus)
 cfg_r() {
     [ -n "$CFG_LOADED" ] || cfg_load
     cfg_lookup "$1" "$CFG_GIT" || cfg_lookup "$1" "$CFG_FILE" || REPLY="${2-}"
@@ -155,12 +200,12 @@ EOF
      git push origin -u $(suggest_branch_name "$branch") && git push origin --delete $branch
 
 Exceptions autorisées : $(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")
-  (modifier : git config hooks.allowedBranches "main develop release/*")
-Désactiver pour ce dépôt : git config hooks.skip branch-name
+  (modifier : git config repogarde.allowedBranches "main develop release/*")
+Désactiver pour ce dépôt : git config repogarde.skip branch-name
 EOF
 }
 
-# Vrai si l'élément est désactivé (hooks.skip, git config ou .githooks.conf).
+# Vrai si l'élément est désactivé (repogarde.skip, git config ou .repogarde.conf).
 # Valeurs : true|all, ou liste séparée par espaces/virgules parmi
 # pre-commit prepare-commit-msg commit-msg pre-push post-checkout
 # branch-name protect-branch secrets format tests, ou un langage (node, python…)
@@ -176,7 +221,7 @@ skipped() {
 # Le hook entier est-il désactivé ? (à appeler en tête de hook)
 exit_if_skipped() {
     if skipped "$HOOK_NAME"; then
-        echo "ℹ $HOOK_NAME désactivé (git config hooks.skip)."
+        echo "ℹ $HOOK_NAME désactivé (git config repogarde.skip)."
         exit 0
     fi
 }
@@ -184,12 +229,12 @@ exit_if_skipped() {
 # lefthook refuse de fonctionner (gros avertissement) quand core.hooksPath est
 # défini globalement. Pour lui seul, on présente une copie de la config globale
 # de l'utilisateur SANS core.hooksPath : il récupère ses remotes et installe ses
-# hooks dans .git/hooks, sans jamais toucher au dossier githooks global.
+# hooks dans .git/hooks, sans jamais toucher au dossier repogarde global.
 lefthook_without_global_hookspath() {
     local global cfg key value
     git config --global --get core.hooksPath >/dev/null 2>&1 || return 0
     global="${GIT_CONFIG_GLOBAL:-$HOME/.gitconfig}"
-    cfg="$(git rev-parse --absolute-git-dir)/githooks-lefthook.gitconfig"
+    cfg="$(git rev-parse --absolute-git-dir)/repogarde-lefthook.gitconfig"
     # Copie régénérée seulement si la config globale a changé
     if [ ! -f "$cfg" ] || [ "$global" -nt "$cfg" ]; then
         : >"$cfg.tmp"
@@ -206,33 +251,34 @@ lefthook_without_global_hookspath() {
 }
 
 # Projet géré par lefthook (lefthook.yml) : lui déléguer le hook, pour appliquer
-# sa config (remote githooks à la version figée + jobs du projet) même quand
-# githooks est installé globalement (core.hooksPath, que lefthook refuse).
+# sa config (remote repogarde à la version figée + jobs du projet) même quand
+# repogarde est installé globalement (core.hooksPath, que lefthook refuse).
 delegate_to_lefthook() {
     local f
-    [ -n "${GITHOOKS_RUNNER:-}" ] && return 0
+    [ -n "${REPOGARDE_RUNNER:-}" ] && return 0
     [ -n "$GIT_TOPLEVEL" ] || return 0
     for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
         [ -f "$GIT_TOPLEVEL/$f" ] || continue
         if has lefthook; then
-            export GITHOOKS_RUNNER=lefthook
+            export REPOGARDE_RUNNER=lefthook
             lefthook_without_global_hookspath
             exec lefthook run "$HOOK_NAME" "$@"
         fi
-        warn "Projet lefthook ($f) mais lefthook absent : règles githooks par défaut. Installe lefthook."
+        warn "Projet lefthook ($f) mais lefthook absent : règles repogarde par défaut. Installe lefthook."
         return 0
     done
 }
 
-# Exécute les hooks propres au projet (.githooks/<hook> ou .git/hooks/<hook>),
+# Exécute les hooks propres au projet (.repogarde/<hook> ou .git/hooks/<hook>),
 # ignorés par git dès que core.hooksPath pointe ici.
 # Désactivé sous lefthook : .git/hooks contient ses propres hooks (boucle infinie)
 # et les hooks du projet sont alors déclarés dans lefthook.yml.
 run_local_hook() {
     local candidate real
-    [ "${GITHOOKS_RUNNER:-}" = lefthook ] && return 0
-    for candidate in ".githooks/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
+    [ "${REPOGARDE_RUNNER:-}" = lefthook ] && return 0
+    for candidate in ".repogarde/$HOOK_NAME" ".githooks/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
         [ -x "$candidate" ] || continue
+        [ "$candidate" = ".githooks/$HOOK_NAME" ] && deprecated ".githooks/" ".repogarde/"
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
         echo "ℹ Hook local du projet : $candidate"

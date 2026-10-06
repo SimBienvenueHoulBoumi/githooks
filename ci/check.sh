@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # Vérifications CI : mêmes règles que les hooks, mais non contournables.
-# Fonctionne sur GitHub Actions, GitLab CI ou tout autre CI (variables GITHOOKS_*).
+# Fonctionne sur GitHub Actions, GitLab CI ou tout autre CI (variables REPOGARDE_*).
 #
 #   ci/check.sh [commits] [branch] [secrets] [format] [tests]   (défaut : tout)
 #
 # Variables (toutes optionnelles, détectées automatiquement sur GitHub/GitLab) :
-#   GITHOOKS_CHECKS   liste des vérifications (si aucun argument)
-#   GITHOOKS_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
-#   GITHOOKS_BRANCH   nom de branche à vérifier
-#   GITHOOKS_STRICT   "true" : un outil de formatage/test manquant fait échouer
-#   GITHOOKS_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
-#   GITHOOKS_BIN      dossier des outils installés (gitleaks), ajouté au PATH
+#   REPOGARDE_CHECKS   liste des vérifications (si aucun argument)
+#   REPOGARDE_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
+#   REPOGARDE_BRANCH   nom de branche à vérifier
+#   REPOGARDE_STRICT   "true" : un outil de formatage/test manquant fait échouer
+#   REPOGARDE_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
+#   REPOGARDE_BIN      dossier des outils installés (gitleaks), ajouté au PATH
 set -euo pipefail
 
-GITHOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+REPOGARDE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
-source "$GITHOOKS_DIR/hooks/lib/common.sh"
+source "$REPOGARDE_DIR/hooks/lib/common.sh"
 # shellcheck source=../hooks/lib/lang.sh
-source "$GITHOOKS_DIR/hooks/lib/lang.sh"
+source "$REPOGARDE_DIR/hooks/lib/lang.sh"
 
-export PATH="${GITHOOKS_BIN:-$HOME/.local/bin}:$PATH"
+export PATH="${REPOGARDE_BIN:-$HOME/.local/bin}:$PATH"
 cd "$(git rev-parse --show-toplevel)"
 
 # --- Affichage -----------------------------------------------------------------
@@ -29,7 +29,7 @@ section() { echo; echo "━━ $* ━━"; }
 # Erreur annotée (visible dans l'onglet "Files changed" sur GitHub)
 ci_error() {
     if [ "${GITHUB_ACTIONS:-}" = true ]; then
-        echo "::error title=githooks::$*"
+        echo "::error title=repogarde::$*"
     else
         echo "✖ $*" >&2
     fi
@@ -43,7 +43,7 @@ is_commit() { git cat-file -e "$1^{commit}" 2>/dev/null; }
 # Commit de base des changements à vérifier (vide = tout l'historique)
 detect_base() {
     local v def
-    if [ -n "${GITHOOKS_BASE:-}" ]; then echo "$GITHOOKS_BASE"; return; fi
+    if [ -n "${REPOGARDE_BASE:-}" ]; then echo "$REPOGARDE_BASE"; return; fi
     # GitLab merge request
     if [ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ]; then echo "$CI_MERGE_REQUEST_DIFF_BASE_SHA"; return; fi
     # GitHub pull request
@@ -64,7 +64,7 @@ detect_base() {
 detect_branch() {
     # Tag : pas de nom de branche à vérifier
     if [ -n "${CI_COMMIT_TAG:-}" ] || [ "${GITHUB_REF_TYPE:-}" = tag ]; then return; fi
-    echo "${GITHOOKS_BRANCH:-${GITHUB_HEAD_REF:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}}}}"
+    echo "${REPOGARDE_BRANCH:-${GITHUB_HEAD_REF:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}}}}"
 }
 
 # Fichiers ajoutés/modifiés depuis la base (tous les fichiers suivis sans base)
@@ -99,7 +99,7 @@ check_commits() {
         fi
     done < <(git rev-list --no-merges "$BASE..HEAD")
     # Titre de la PR : message du commit final en cas de merge squash
-    local title="${GITHOOKS_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
+    local title="${REPOGARDE_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
     if [ -n "$title" ]; then
         if ! [[ "$title" =~ $CC_PATTERN ]]; then
             ci_error "Titre de la PR « $title » : format attendu <type>(<scope>): <description> (il devient le message du commit en squash)."
@@ -177,10 +177,10 @@ check_tests() {
 
 # --- Exécution ---------------------------------------------------------------------
 
-CHECKS="${*:-${GITHOOKS_CHECKS:-commits branch secrets format tests}}"
-GITHOOKS_WARN_FILE="$(mktemp)"
-export GITHOOKS_WARN_FILE
-trap 'rm -f "$GITHOOKS_WARN_FILE"' EXIT
+CHECKS="${*:-${REPOGARDE_CHECKS:-commits branch secrets format tests}}"
+REPOGARDE_WARN_FILE="$(mktemp)"
+export REPOGARDE_WARN_FILE
+trap 'rm -f "$REPOGARDE_WARN_FILE"' EXIT
 
 # Historique complet nécessaire pour comparer à la base
 if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
@@ -188,11 +188,11 @@ if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
 fi
 
 BASE="$(detect_base)"
-echo "githooks CI — base : ${BASE:-aucune (historique complet)} — vérifications : $CHECKS"
+echo "repogarde CI — base : ${BASE:-aucune (historique complet)} — vérifications : $CHECKS"
 
 failed=""
 for check in $CHECKS; do
-    # Étapes désactivables par le projet (.githooks.conf versionné)
+    # Étapes désactivables par le projet (.repogarde.conf versionné)
     case "$check" in
         commits) key="commit-msg" ;;
         branch) key="branch-name" ;;
@@ -200,16 +200,16 @@ for check in $CHECKS; do
     esac
     if skipped "$key"; then
         section "$check"
-        echo "ℹ Désactivé par .githooks.conf (skip $key)."
+        echo "ℹ Désactivé par .repogarde.conf (skip $key)."
         continue
     fi
     declare -F "check_$check" >/dev/null || { ci_error "Vérification inconnue : $check"; failed="$failed $check"; continue; }
     "check_$check" || failed="$failed $check"
 done
 
-if [ "${GITHOOKS_STRICT:-false}" = true ] && [ -s "$GITHOOKS_WARN_FILE" ]; then
+if [ "${REPOGARDE_STRICT:-false}" = true ] && [ -s "$REPOGARDE_WARN_FILE" ]; then
     section "Mode strict"
-    while IFS= read -r w; do ci_error "$w"; done <"$GITHOOKS_WARN_FILE"
+    while IFS= read -r w; do ci_error "$w"; done <"$REPOGARDE_WARN_FILE"
     failed="$failed strict"
 fi
 
@@ -218,4 +218,4 @@ if [ -n "$failed" ]; then
     echo "✖ Échec :$failed"
     exit 1
 fi
-echo "✔ Toutes les vérifications githooks sont passées."
+echo "✔ Toutes les vérifications repogarde sont passées."

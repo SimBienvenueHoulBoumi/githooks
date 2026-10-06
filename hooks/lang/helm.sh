@@ -14,7 +14,7 @@ helm_test() {
     step "Helm : lint + template"
     helm lint --quiet . || return 1
     rendered="$(mktemp)"
-    helm template githooks . >"$rendered" || { rm -f "$rendered"; return 1; }
+    helm template repogarde . >"$rendered" || { rm -f "$rendered"; return 1; }
     if has kubeconform; then
         step "Helm : kubeconform (schémas Kubernetes)"
         kubeconform -strict -summary -ignore-missing-schemas -cache "$(kubeconform_cache)" <"$rendered" || rc=1

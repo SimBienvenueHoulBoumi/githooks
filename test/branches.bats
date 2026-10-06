@@ -24,9 +24,9 @@ setup() { setup_repo; initial_commit; }
     done
 }
 
-@test "hooks.allowedBranches remplace les exceptions" {
+@test "repogarde.allowedBranches remplace les exceptions" {
     source "$HOOKS/lib/common.sh"
-    git config hooks.allowedBranches "main"
+    git config repogarde.allowedBranches "main"
     cfg_reset
     ! branch_name_valid develop
     branch_name_valid main
@@ -61,8 +61,8 @@ setup() { setup_repo; initial_commit; }
     [[ "$output" == *"Commit direct sur 'main' interdit"* ]]
 }
 
-@test "main : hooks.skip protect-branch l'autorise" {
-    git config hooks.skip "secrets protect-branch"
+@test "main : repogarde.skip protect-branch l'autorise" {
+    git config repogarde.skip "secrets protect-branch"
     run git commit -q --allow-empty -m "fix: x"
     [ "$status" -eq 0 ]
 }
@@ -113,7 +113,7 @@ push_branch() {
 }
 
 @test "post-merge : desactivable (skip prune-branches)" {
-    git config hooks.skip "secrets prune-branches"
+    git config repogarde.skip "secrets prune-branches"
     git push -q -u origin main
     push_branch feat/z
     server_merge_and_delete feat/z

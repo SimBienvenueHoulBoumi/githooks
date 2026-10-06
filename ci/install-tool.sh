@@ -2,11 +2,11 @@
 # Installe un outil de vérification pour la CI : version figée, somme SHA-256 vérifiée.
 #   ci/install-tool.sh gitleaks [version]     défaut : $GITLEAKS_VERSION ou 8.30.1
 #   ci/install-tool.sh actionlint [version]   défaut : $ACTIONLINT_VERSION ou 1.7.12
-# Destination : $GITHOOKS_BIN (défaut ~/.local/bin), ajouté au PATH par ci/check.sh.
+# Destination : $REPOGARDE_BIN (défaut ~/.local/bin), ajouté au PATH par ci/check.sh.
 set -euo pipefail
 
 TOOL="${1:?usage : install-tool.sh gitleaks|actionlint [version]}"
-BIN="${GITHOOKS_BIN:-$HOME/.local/bin}"
+BIN="${REPOGARDE_BIN:-${GITHOOKS_BIN:-$HOME/.local/bin}}" # GITHOOKS_BIN : ancien nom
 
 if command -v "$TOOL" >/dev/null 2>&1; then
     echo "ℹ $TOOL déjà présent : $(command -v "$TOOL")"

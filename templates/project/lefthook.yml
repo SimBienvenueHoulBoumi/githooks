@@ -1,9 +1,9 @@
-# Hooks git du projet : règles githooks partagées, version figée.
+# Hooks git du projet : règles repogarde partagées, version figée.
 # Poste développeur : installer lefthook (https://lefthook.dev) puis `lefthook install`.
 min_version: 2.0.0
 
 remotes:
-  - git_url: https://github.com/SimBienvenueHoulBoumi/githooks
+  - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
     ref: v1.3.1 # x-release-please-version
     configs:
       - lefthook-remote.yml

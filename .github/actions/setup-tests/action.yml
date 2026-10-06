@@ -16,9 +16,9 @@ runs:
     - name: Installer bats, lefthook, ruff, gitleaks
       shell: bash
       env:
-        GITHOOKS_BIN: ${{ runner.temp }}/bin
+        REPOGARDE_BIN: ${{ runner.temp }}/bin
       run: |
         npm install -g bats@1.13.0 lefthook@2.1.17
         pip install ruff==0.16.10
         ci/install-gitleaks.sh
-        echo "$GITHOOKS_BIN" >>"$GITHUB_PATH"
+        echo "$REPOGARDE_BIN" >>"$GITHUB_PATH"

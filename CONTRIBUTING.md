@@ -4,13 +4,13 @@
 
 ```bash
 brew install bats-core shellcheck actionlint gitleaks lefthook   # ou équivalents apt / winget
-./install.sh   # hooks githooks sur ce dépôt (il se teste lui-même)
+./install.sh   # hooks repogarde sur ce dépôt (il se teste lui-même)
 ```
 
 ## Avant chaque PR
 
 ```bash
-shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
+shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/repogarde
 actionlint .github/workflows/*.yml
 bats test/                      # tests unitaires et d'intégration
 test/e2e/run.sh python go       # tests réels (les langages dont l'outillage est installé)

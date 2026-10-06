@@ -1,6 +1,6 @@
-# Déployer githooks dans une organisation
+# Déployer repogarde dans une organisation
 
-githooks impose les mêmes règles à tous les projets (messages de commit, nommage des branches, secrets, formatage, tests) à **trois niveaux** :
+repogarde impose les mêmes règles à tous les projets (messages de commit, nommage des branches, secrets, formatage, tests) à **trois niveaux** :
 
 | Niveau | Rôle | Contournable ? |
 |---|---|---|
@@ -10,14 +10,14 @@ githooks impose les mêmes règles à tous les projets (messages de commit, nomm
 
 Les hooks locaux font gagner du temps ; **la CI et la protection des branches garantissent les règles**.
 
-## 1. Héberger githooks
+## 1. Héberger repogarde
 
 Le dépôt doit être **lisible par tous les développeurs et par la CI** :
 
-- GitLab : importer/mirrorer le dépôt dans un groupe interne (ex. `outils/githooks`) ;
+- GitLab : importer/mirrorer le dépôt dans un groupe interne (ex. `outils/repogarde`) ;
 - GitHub : dépôt public, ou interne à l'organisation.
 
-Remplacer `SimBienvenueHoulBoumi/githooks` par ce chemin dans les templates (`templates/`).
+Remplacer `SimBienvenueHoulBoumi/repogarde` par ce chemin dans les templates (`templates/`).
 
 ## 2. Versions et releases (automatiques)
 
@@ -90,38 +90,38 @@ Outils recommandés : `gitleaks` (secrets) et les formateurs des langages utilis
   Ces deux snippets **font échouer le build si lefthook n'est pas installé** : c'est voulu (le poste doit être équipé). Hors CI uniquement.
 - Python / autres : documenter `lefthook install` dans le README du projet, ou l'ajouter à `make setup`.
 
-## 4. Adopter githooks dans un projet
+## 4. Adopter repogarde dans un projet
 
 Copier depuis `templates/project/` :
 
 | Fichier | Rôle |
 |---|---|
-| `lefthook.yml` | Hooks locaux : règles githooks (version figée) + jobs propres au projet |
-| `.github/workflows/githooks.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
+| `lefthook.yml` | Hooks locaux : règles repogarde (version figée) + jobs propres au projet |
+| `.github/workflows/repogarde.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
 | `gitlab-ci.yml` | À fusionner dans `.gitlab-ci.yml` (choisir une image avec les outils du projet) |
-| `.githooks.conf` | Réglages partagés : exceptions de branches, étapes désactivées, commandes personnalisées |
+| `.repogarde.conf` | Réglages partagés : exceptions de branches, étapes désactivées, commandes personnalisées |
 
-`.githooks.conf` est lu **par les hooks et par la CI** : une exception décidée en revue de code s'applique partout.
+`.repogarde.conf` est lu **par les hooks et par la CI** : une exception décidée en revue de code s'applique partout.
 
-Avec `strict: true` (GitHub) / `GITHOOKS_STRICT: "true"` (GitLab), un outil de formatage ou de test absent de l'image CI fait échouer la vérification au lieu d'être ignoré.
+Avec `strict: true` (GitHub) / `REPOGARDE_STRICT: "true"` (GitLab), un outil de formatage ou de test absent de l'image CI fait échouer la vérification au lieu d'être ignoré.
 
 ## 5. Protéger les branches (serveur)
 
 ### Merges en squash
 
-Une PR = un commit sur `main`, dont le message est le **titre de la PR** : changelog propre, une ligne par PR. Réglages (*Settings → General → Pull Requests*) : autoriser uniquement *squash merging*, message par défaut *Pull request title*. La CI githooks vérifie que ce titre suit Conventional Commits ; utiliser `!` dans le titre pour un changement majeur (`feat!: …`).
+Une PR = un commit sur `main`, dont le message est le **titre de la PR** : changelog propre, une ligne par PR. Réglages (*Settings → General → Pull Requests*) : autoriser uniquement *squash merging*, message par défaut *Pull request title*. La CI repogarde vérifie que ce titre suit Conventional Commits ; utiliser `!` dans le titre pour un changement majeur (`feat!: …`).
 
 ### Branches mergées : supprimées automatiquement
 
 - Serveur — GitHub : *Settings → General → Automatically delete head branches* ; GitLab : *Settings → Merge requests → Enable "Delete source branch" option by default*.
-- Postes : le hook `post-merge` de githooks supprime, après un `git pull`, les branches locales dont la branche distante a disparu et dont toutes les modifications sont dans la branche courante (merge classique ou squash) ; une branche avec du travail non intégré est conservée.
+- Postes : le hook `post-merge` de repogarde supprime, après un `git pull`, les branches locales dont la branche distante a disparu et dont toutes les modifications sont dans la branche courante (merge classique ou squash) ; une branche avec du travail non intégré est conservée.
 
 ### GitHub
 
 *Settings → Rules → Rulesets* (ou *Branches → Branch protection rules*) sur `main` :
 
 - Require a pull request before merging
-- Require status checks to pass → ajouter **`githooks`**
+- Require status checks to pass → ajouter **`repogarde`**
 - Block force pushes
 - (optionnel) Restrict branch names / commit metadata avec les regex du README
 
@@ -145,6 +145,6 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
 
 Les erreurs apparaissent en annotations sur GitHub et dans le log du job sur GitLab, avec la commande de correction.
 
-## 7. Poste avec l'installation globale githooks
+## 7. Poste avec l'installation globale repogarde
 
 `install.sh --global` (usage personnel) et lefthook cohabitent : dans un dépôt contenant un `lefthook.yml`, les hooks globaux délèguent à lefthook (config du projet, version figée), sans `lefthook install` et sans conflit de `core.hooksPath`.

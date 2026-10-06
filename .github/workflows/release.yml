@@ -100,7 +100,7 @@ jobs:
           manifest-file: .release-please-manifest.json
           skip-github-pull-request: true
 
-  # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/githooks@v1`
+  # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repogarde@v1`
   tag-major:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
@@ -138,7 +138,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
-          name="githooks-$TAG"
+          name="repogarde-$TAG"
           git archive --format=tar.gz --prefix="$name/" -o "$name.tar.gz" "$TAG"
           cosign sign-blob --yes --bundle "$name.tar.gz.sigstore.json" "$name.tar.gz"
           gh release upload "$TAG" "$name.tar.gz" "$name.tar.gz.sigstore.json" --clobber
