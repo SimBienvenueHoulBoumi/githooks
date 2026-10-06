@@ -150,6 +150,11 @@ find_up() {
     done
 }
 
+# Cache des téléchargements entre deux lancements (schémas, providers)
+GITHOOKS_CACHE="${GITHOOKS_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/githooks}"
+cache_dir() { mkdir -p "$GITHOOKS_CACHE/$1" && echo "$GITHOOKS_CACHE/$1"; }
+kubeconform_cache() { cache_dir kubeconform; }
+
 # Outil absent : avertissement dans un projet, silence pour un fichier isolé
 # (évite le bruit, ex. un README.md dans un projet Java sans prettier)
 tool_missing() {
@@ -164,7 +169,8 @@ EXCLUDE_DONE=""
 is_excluded() {
     local pat
     if [ -z "$EXCLUDE_DONE" ]; then
-        EXCLUDE_PATTERNS="$(cfg exclude)"
+        cfg_r exclude
+        EXCLUDE_PATTERNS="$REPLY"
         EXCLUDE_DONE=1
     fi
     [ -n "$EXCLUDE_PATTERNS" ] || return 1

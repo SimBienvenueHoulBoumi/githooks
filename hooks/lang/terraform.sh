@@ -17,7 +17,9 @@ terraform_test() {
     bin="$(terraform_bin)"
     [ -n "$bin" ] || { warn "Terraform : terraform/tofu absent, validation ignorée."; return 0; }
     step "Terraform : init -backend=false + validate"
-    "$bin" init -backend=false -input=false -no-color >/dev/null || return 1
+    # Providers partagés entre modules et entre lancements
+    TF_PLUGIN_CACHE_DIR="${TF_PLUGIN_CACHE_DIR:-$(cache_dir terraform-plugins)}" \
+        "$bin" init -backend=false -input=false -no-color >/dev/null || return 1
     "$bin" validate -no-color || return 1
     if has tflint; then
         step "Terraform : tflint"
