@@ -143,3 +143,13 @@ setup() {
     run "$CHECK" format
     [ "$status" -ne 0 ]
 }
+
+@test "ci : titre de PR conforme / non conforme (message du commit en squash)" {
+    git commit -q --no-verify --allow-empty -m "feat: a"
+    GITHOOKS_PR_TITLE="feat(api): ajoute la route" run "$CHECK" commits
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Titre de la PR conforme"* ]]
+    GITHOOKS_PR_TITLE="Ajout de la route" run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Titre de la PR « Ajout de la route »"* ]]
+}

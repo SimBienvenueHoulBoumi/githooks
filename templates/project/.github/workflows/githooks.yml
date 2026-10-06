@@ -4,6 +4,8 @@ name: githooks
 
 on:
   pull_request:
+    # edited : revérifie quand le titre de la PR change (message du commit en squash)
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
