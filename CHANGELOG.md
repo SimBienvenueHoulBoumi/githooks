@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.1.1...v1.2.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* **post-merge:** supprime les branches locales mergées ([5336330](https://github.com/SimBienvenueHoulBoumi/githooks/commit/53363305d9344b7172a31ff02a882a926bdf54a4))
+* **post-merge:** supprime les branches locales mergées ([306cd2a](https://github.com/SimBienvenueHoulBoumi/githooks/commit/306cd2ac9c4171ca1ddd5cba26f31705037e9108))
+
+
+### Documentation
+
+* suppression automatique des branches mergées ([9015039](https://github.com/SimBienvenueHoulBoumi/githooks/commit/9015039243ef2983af4057bf959dd71966448dac))
+
 ## [1.1.1](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.1.0...v1.1.1) (2026-10-06)
 
 
