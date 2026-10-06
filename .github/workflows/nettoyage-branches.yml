@@ -1,0 +1,54 @@
+# Supprime la branche d'une PR mergée, réutilisable par tout projet :
+#
+#   on:
+#     pull_request:
+#       types: [closed]
+#   jobs:
+#     nettoyage:
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v2
+#       permissions: { contents: write, pull-requests: read }
+#
+# Contrairement à la suppression automatique de GitHub, une branche encore
+# source d'une autre PR ouverte est conservée (release/… ou hotfix/… mergée
+# vers main et vers develop), de même que les branches protégées.
+name: nettoyage-branches
+
+on:
+  workflow_call:
+    inputs:
+      protected-branches:
+        description: Branches jamais supprimées (séparées par des espaces)
+        type: string
+        default: main master develop
+
+permissions: {}
+
+jobs:
+  nettoyage:
+    if: github.event.pull_request.merged && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Supprimer la branche mergée
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          PROTECTED: ${{ inputs.protected-branches }}
+        run: |
+          if [[ " $PROTECTED " == *" $BRANCH "* ]]; then
+            echo "Branche protégée « $BRANCH » conservée."
+            exit 0
+          fi
+          open="$(gh pr list --head "$BRANCH" --state open --json number -q 'map("#\(.number)") | join(" ")')"
+          if [ -n "$open" ]; then
+            echo "::notice::« $BRANCH » conservée : encore utilisée par $open"
+            exit 0
+          fi
+          if gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$BRANCH" 2>/dev/null; then
+            echo "::notice::Branche « $BRANCH » supprimée"
+          else
+            echo "Branche « $BRANCH » déjà supprimée."
+          fi
