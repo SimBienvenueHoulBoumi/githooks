@@ -3,7 +3,7 @@
 #   - mauvaise cible (flux integrationBranch) : PR reciblée, ou fermée si une PR
 #     de la même branche vise déjà la bonne cible (doublon) ;
 #   - titre non conforme (il devient le message du commit en squash) : remplacé
-#     par le message du commit s'il est seul et conforme, sinon déduit de la branche.
+#     par le commit conforme au plus fort impact de version, sinon déduit de la branche.
 # Les modifications faites avec GITHUB_TOKEN ne relancent pas la CI : les valeurs
 # corrigées sont transmises aux vérifications du même run (GITHUB_ENV).
 #
@@ -47,9 +47,21 @@ git fetch -q origin "$target" 2>/dev/null || true
 base_sha="$(git merge-base "$HEAD_SHA" "origin/$target" 2>/dev/null || true)"
 new=""
 if [ -n "$base_sha" ]; then
-    subjects="$(git log --no-merges --format=%s "$base_sha..$HEAD_SHA")"
-    if [ "$(grep -c . <<<"$subjects")" = 1 ] && header_valid "$subjects"; then
-        new="$subjects"
+    # Commit conforme au plus fort impact de version (incompatible, feat, fix
+    # ou perf, sinon le premier) : en squash, seul le titre décide de la version
+    valid=""
+    while IFS= read -r subject; do
+        header_valid "$subject" && valid="$valid$subject"$'\n'
+    done < <(git log --no-merges --reverse --format=%s "$base_sha..$HEAD_SHA")
+    scope='(\([a-z0-9._-]+\))?'
+    for motif in "^[a-z]+$scope!: " "^feat$scope: " "^(fix|perf)$scope: " "."; do
+        new="$(grep -m1 -E "$motif" <<<"$valid" || true)"
+        [ -z "$new" ] || break
+    done
+    # Pied BREAKING CHANGE : le titre doit porter le « ! » pour survivre au squash
+    if [ -n "$new" ] && [[ ! "$new" =~ ^[a-z]+(\([a-z0-9._-]+\))?!: ]] &&
+        git log --no-merges --format=%b "$base_sha..$HEAD_SHA" | grep -qE '^BREAKING[ -]CHANGE: '; then
+        new="$(sed -E 's/^([a-z]+(\([a-z0-9._-]+\))?): /\1!: /' <<<"$new")"
     fi
 fi
 if [ -z "$new" ]; then

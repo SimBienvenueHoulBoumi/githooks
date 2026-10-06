@@ -270,10 +270,33 @@ flux_develop() {
     grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
 }
 
-@test "fix-pr : plusieurs commits -> titre deduit de la branche" {
+@test "fix-pr : plusieurs commits -> celui au plus fort impact de version" {
     fake_gh
     flux_develop
     git commit -q --allow-empty -m "test: panier"
+    git commit -q --allow-empty -m "fix: arrondi"
+    export HEAD_SHA="$(git rev-parse HEAD)"
+    BASE=develop TITLE="Ajout du panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : pied BREAKING CHANGE -> « ! » ajoute au titre" {
+    fake_gh
+    flux_develop
+    git commit -q --allow-empty -m "fix: format" -m "BREAKING CHANGE: nouveau format"
+    export HEAD_SHA="$(git rev-parse HEAD)"
+    BASE=develop TITLE="wip" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier)!: ajoute le panier$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : aucun commit conforme -> titre deduit de la branche" {
+    fake_gh
+    git config repogarde.integrationBranch develop
+    git push -q origin HEAD:main HEAD:develop
+    git fetch -q origin
+    git commit -q --no-verify --allow-empty -m "wip"
     export HEAD=feat/ajout-du-panier HEAD_SHA="$(git rev-parse HEAD)"
     BASE=develop TITLE="Ajout du panier" run "$FIX"
     [ "$status" -eq 0 ]
