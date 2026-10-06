@@ -21,6 +21,12 @@ inputs:
   actionlint-version:
     description: Version d'actionlint installée pour vérifier les workflows du projet
     default: 1.7.12
+  fix-pr:
+    description: >-
+      "true" : sur une PR, recible une PR mal visée (flux integrationBranch, ou
+      ferme un doublon) et remplace un titre non conforme, avant de vérifier.
+      Demande « permissions: pull-requests: write ». Ignoré pour les PR de forks.
+    default: "false"
   megalinter:
     description: "true : lance aussi MegaLinter (linters de ~50 langages, fichiers modifiés). Linux uniquement."
     default: "false"
@@ -45,14 +51,32 @@ runs:
         REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
       run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" actionlint
 
+    - name: Correction de la PR (cible, titre)
+      if: >-
+        inputs.fix-pr == 'true' && github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR: ${{ github.event.pull_request.number }}
+        HEAD: ${{ github.event.pull_request.head.ref }}
+        BASE: ${{ github.event.pull_request.base.ref }}
+        TITLE: ${{ github.event.pull_request.title }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: bash "$GITHUB_ACTION_PATH/ci/fix-pr.sh"
+
     - name: Vérifications repogarde
+      if: env.REPOGARDE_PR_CLOSED != 'true'
       shell: bash
       env:
         REPOGARDE_CHECKS: ${{ inputs.checks }}
         REPOGARDE_STRICT: ${{ inputs.strict }}
         REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
         GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-        REPOGARDE_PR_TITLE: ${{ github.event.pull_request.title }}
+        # Valeurs corrigées par l'étape précédente (fix-pr), sinon celles de la PR
+        REPOGARDE_PR_TITLE: ${{ env.REPOGARDE_FIXED_TITLE || github.event.pull_request.title }}
+        REPOGARDE_TARGET: ${{ env.REPOGARDE_FIXED_TARGET }}
+        REPOGARDE_BASE: ${{ env.REPOGARDE_FIXED_BASE }}
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: bash "$GITHUB_ACTION_PATH/ci/check.sh"
 

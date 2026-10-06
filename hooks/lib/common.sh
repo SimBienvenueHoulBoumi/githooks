@@ -188,6 +188,45 @@ pr_targets_r() {
     esac
 }
 
+# Vrai si $1 est un en-tête conforme (format et 72 caractères)
+header_valid() {
+    [[ "$1" =~ $CC_PATTERN ]] || return 1
+    authored_length "$1"
+    [ "$REPLY" -le 72 ]
+}
+
+# REPLY = titre de PR conforme déduit de la branche $1 :
+#   feat/ajout-panier → « feat: ajout panier », hotfix/crash → « fix: crash »,
+#   release/1.2.0 → « chore(release): 1.2.0 », develop → livraison sur main
+suggest_pr_title_r() {
+    local branch="$1" type rest
+    cfg_r integrationBranch ""
+    if [ -n "$REPLY" ] && [ "$branch" = "$REPLY" ]; then
+        local integration="$REPLY"
+        cfg_r mainBranch main
+        REPLY="chore(release): livrer $integration sur $REPLY"
+        return 0
+    fi
+    type="${branch%%/*}"
+    rest="${branch#*/}"
+    [ "$rest" != "$branch" ] || { type=chore; rest="$branch"; }
+    case "$type" in
+        feature) type=feat ;;
+        bugfix | hotfix) type=fix ;;
+        release) REPLY="chore(release): $rest"; return 0 ;;
+    esac
+    [[ "$type" =~ ^($CC_TYPES)$ ]] || type=chore
+    rest="${rest//[\/_-]/ }"
+    REPLY="$type: $rest"
+    # 72 caractères au plus (coupe sur un mot)
+    authored_length "$REPLY"
+    while [ "$REPLY" -gt 72 ]; do
+        if [[ "$rest" == *" "* ]]; then rest="${rest% *}"; else rest="${rest%?}"; fi
+        authored_length "$type: $rest"
+    done
+    REPLY="$type: $rest"
+}
+
 # Propose un nom valide à partir d'un nom invalide (Feat/Mon Truc → feat/mon-truc)
 suggest_branch_name() {
     local b type rest

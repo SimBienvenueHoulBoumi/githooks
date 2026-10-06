@@ -38,7 +38,7 @@ La CI vérifie alors la cible de chaque PR :
 | `develop` | `main` |
 | `release/…`, `hotfix/…` | `main` ou `develop` |
 
-Une PR mal ciblée est refusée, avec la commande de correction (`gh pr edit --base develop`).
+Une PR mal ciblée est refusée, avec la commande de correction (`gh pr edit --base develop`). Avec l'entrée `fix-pr: true` de l'action, elle est **reciblée automatiquement** (ou fermée si une PR de la même branche vise déjà la bonne cible), et un titre non conforme est remplacé : par le commit conforme au plus fort impact de version (incompatible, puis `feat`, puis `fix`/`perf` ; « ! » ajouté si un pied `BREAKING CHANGE` existe), sinon déduit de la branche.
 
 ## Réglages locaux (non partagés)
 
