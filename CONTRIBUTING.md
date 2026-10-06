@@ -29,10 +29,10 @@ La CI relance tout sur Linux, macOS et Windows, plus un job e2e par langage avec
 
 ## Ajouter un langage ou un outil
 
-1. `hooks/lang/<nom>.sh` : `register`, `<nom>_format`, `<nom>_test` (voir le README).
+1. `hooks/lang/<nom>.sh` : `register`, `<nom>_format`, `<nom>_test` (voir `docs/technologies.md`).
 2. `test/e2e/<nom>/` : `project/` (sain), `bad/` (mal formaté), `break/` (tests cassés), `keep/` (à ne pas modifier), `e2e.env`.
 3. Ajouter `<nom>` à la matrice de `.github/workflows/e2e.yml` avec l'installation de son outillage.
-4. Mettre à jour le tableau des langages du README.
+4. Mettre à jour le tableau de `docs/technologies.md`.
 
 ## Releases
 
