@@ -22,7 +22,7 @@ kubernetes_test() {
     fi
     if [ "$rc" = 0 ] && has kubeconform; then
         step "Kubernetes : kubeconform (schémas)"
-        kubeconform -strict -summary -ignore-missing-schemas <"$rendered" || rc=1
+        kubeconform -strict -summary -ignore-missing-schemas -cache "$(kubeconform_cache)" <"$rendered" || rc=1
     fi
     rm -f "$rendered"
     return "$rc"

@@ -23,7 +23,8 @@ La CI relance tout sur Linux, macOS et Windows, plus un job e2e par langage avec
 - **Branches** : `<type>/<sujet>` (`feat/helm-unittest`, `fix/windows-paths`).
 - **Commits** : [Conventional Commits](https://www.conventionalcommits.org). Le type détermine la version publiée : `fix` → correctif, `feat` → mineure, `!` → majeure.
 - **Bash 3.2** (macOS) : pas de tableaux associatifs ni de `mapfile`. Dans les fonctions appelées par fichier, pas de sous-processus (`$(…)`) : résultat dans `REPLY`.
-- **Noms de tests bats en ASCII** (bats Windows ignore les autres).
+- **Noms de tests bats en ASCII** (bats Windows ignore les autres). Dans `languages.bats`, le nom commence par un préfixe couvert par les filtres Windows de `ci.yml` (`detection`, `format`, `pre-push`…) : un test vérifie qu'aucun n'est oublié.
+- **Performance** : chaque création de processus coûte 20 à 50 ms sous Windows. Lire la config avec `cfg_r` (sans sous-shell), réutiliser `GIT_TOPLEVEL`, éviter `$(…)` dans les boucles.
 - Un outil absent n'est **jamais bloquant** côté poste (`warn` / `tool_missing`) ; le mode strict de la CI le rend bloquant.
 
 ## Ajouter un langage ou un outil

@@ -7,7 +7,7 @@ source "$(dirname "$0")/lib/lang.sh"
 source "$(dirname "$0")/lib/safety.sh"
 exit_if_skipped
 delegate_to_lefthook "$@"
-cd "$(git rev-parse --show-toplevel)"
+cd "$GIT_TOPLEVEL"
 
 # git fournit les refs poussées sur stdin : on les transmet au hook local
 REFS="$(cat)"

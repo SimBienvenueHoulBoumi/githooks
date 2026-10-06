@@ -27,6 +27,7 @@ setup() { setup_repo; initial_commit; }
 @test "hooks.allowedBranches remplace les exceptions" {
     source "$HOOKS/lib/common.sh"
     git config hooks.allowedBranches "main"
+    cfg_reset
     ! branch_name_valid develop
     branch_name_valid main
 }

@@ -154,10 +154,11 @@ load_engine() {
 }
 
 @test ".githooks.conf : git config local prioritaire" {
-    load_engine
     printf '[hooks]\n\tallowedBranches = main\n' >.githooks.conf
+    load_engine
     [ "$(cfg allowedBranches)" = main ]
     git config hooks.allowedBranches "main develop"
+    cfg_reset
     [ "$(cfg allowedBranches)" = "main develop" ]
 }
 
@@ -327,4 +328,15 @@ load_engine() {
     touch -r pyproject.toml tests/test_x.py
     run python_test
     [ "$status" -ne 0 ]
+}
+
+@test "config : lue une seule fois, cles insensibles a la casse, derniere valeur" {
+    git config hooks.allowedBranches "a"
+    git config --add hooks.allowedBranches "b"
+    git config hooks.skip ""
+    load_engine
+    [ "$(cfg allowedbranches)" = b ]
+    [ "$(cfg ALLOWEDBRANCHES)" = b ]
+    [ -z "$(cfg skip)" ]
+    [ "$(cfg inexistante defaut)" = defaut ]
 }

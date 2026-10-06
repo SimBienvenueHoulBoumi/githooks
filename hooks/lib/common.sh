@@ -15,17 +15,58 @@ warn() {
 step() { echo "▶ $*"; }
 has() { command -v "$1" >/dev/null 2>&1; }
 
-# Lit un réglage hooks.<clé> : git config (local puis global) en priorité,
-# puis .githooks.conf versionné à la racine du projet, sinon la valeur par défaut.
-#   cfg allowedBranches "main master"
-cfg() {
-    local root
-    git config --get "hooks.$1" 2>/dev/null && return 0
-    root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-    [ -n "$root" ] && [ -f "$root/.githooks.conf" ] &&
-        git config -f "$root/.githooks.conf" --get "hooks.$1" 2>/dev/null && return 0
-    [ $# -ge 2 ] && printf '%s\n' "$2"
+# Config hooks.* chargée UNE fois par processus : chaque appel git coûte cher
+# (20 à 50 ms sous Windows), et un hook lit la config des dizaines de fois.
+# Priorité : git config (local puis global), puis .githooks.conf versionné.
+CFG_GIT=""
+CFG_FILE=""
+CFG_LOADED=""
+# Racine du dépôt, calculée une fois et réutilisée par les hooks
+GIT_TOPLEVEL=""
+cfg_load() {
+    CFG_GIT="$(git config --get-regexp '^hooks\.' 2>/dev/null || true)"
+    CFG_FILE=""
+    GIT_TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [ -n "$GIT_TOPLEVEL" ] && [ -f "$GIT_TOPLEVEL/.githooks.conf" ]; then
+        CFG_FILE="$(git config -f "$GIT_TOPLEVEL/.githooks.conf" --get-regexp '^hooks\.' 2>/dev/null || true)"
+    fi
+    CFG_LOADED=1
+}
+
+# À appeler si la config change dans le même processus (tests)
+cfg_reset() { cfg_load; }
+
+# REPLY = dernière valeur de hooks.<$1> dans $2 (sortie de --get-regexp, où git
+# met les noms en minuscules : comparaison insensible à la casse). Échec si absente.
+cfg_lookup() {
+    local line found="" nocase=""
+    REPLY=""
+    shopt -q nocasematch && nocase=1
+    shopt -s nocasematch
+    while IFS= read -r line; do
+        if [[ "$line" == "hooks.$1 "* ]]; then
+            REPLY="${line#* }"
+            found=1
+        elif [[ "$line" == "hooks.$1" ]]; then
+            REPLY=true # clé sans valeur
+            found=1
+        fi
+    done <<<"$2"
+    [ -n "$nocase" ] || shopt -u nocasematch
+    [ -n "$found" ]
+}
+
+# REPLY = réglage hooks.<$1>, ou $2 par défaut (sans sous-processus)
+cfg_r() {
+    [ -n "$CFG_LOADED" ] || cfg_load
+    cfg_lookup "$1" "$CFG_GIT" || cfg_lookup "$1" "$CFG_FILE" || REPLY="${2-}"
     return 0
+}
+
+# Lit un réglage : cfg allowedBranches "main master" (2e argument = défaut)
+cfg() {
+    cfg_r "$@"
+    [ -z "$REPLY" ] || printf '%s\n' "$REPLY"
 }
 
 # Conventional Commits (partagé par commit-msg et prepare-commit-msg)
@@ -58,7 +99,8 @@ EOF
 branch_name_valid() {
     local branch="$1" allowed pat
     [ -z "$branch" ] && return 0 # HEAD détachée
-    allowed="$(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")"
+    cfg_r allowedBranches "$DEFAULT_ALLOWED_BRANCHES"
+    allowed="$REPLY"
     set -f # pas d'expansion de "release/*" sur le disque
     for pat in $allowed; do
         # shellcheck disable=SC2254
@@ -124,7 +166,8 @@ EOF
 # branch-name protect-branch secrets format tests, ou un langage (node, python…)
 skipped() {
     local v
-    v="$(cfg skip)"
+    cfg_r skip
+    v="$REPLY"
     [ "$v" = true ] || [ "$v" = all ] && return 0
     case " ${v//,/ } " in *" $1 "*) return 0 ;; esac
     return 1
@@ -166,11 +209,11 @@ lefthook_without_global_hookspath() {
 # sa config (remote githooks à la version figée + jobs du projet) même quand
 # githooks est installé globalement (core.hooksPath, que lefthook refuse).
 delegate_to_lefthook() {
-    local root f
+    local f
     [ -n "${GITHOOKS_RUNNER:-}" ] && return 0
-    root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 0
+    [ -n "$GIT_TOPLEVEL" ] || return 0
     for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
-        [ -f "$root/$f" ] || continue
+        [ -f "$GIT_TOPLEVEL/$f" ] || continue
         if has lefthook; then
             export GITHOOKS_RUNNER=lefthook
             lefthook_without_global_hookspath
@@ -196,3 +239,7 @@ run_local_hook() {
         "$candidate" "$@" || return $?
     done
 }
+
+# Chargement immédiat dans le processus qui source ce fichier : un appel $(cfg …)
+# s'exécute dans un sous-shell et ne pourrait pas remplir le cache du parent.
+cfg_load

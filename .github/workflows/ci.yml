@@ -17,10 +17,11 @@ jobs:
         run: shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
 
   tests:
+    name: tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -29,27 +30,65 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: stable
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: lts/*
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.x"
-      - name: Installer bats, lefthook, ruff, gitleaks
-        env:
-          GITHOOKS_BIN: ${{ runner.temp }}/bin
-        run: |
-          npm install -g bats@1.13.0 lefthook@2.1.17
-          pip install ruff==0.16.10
-          ci/install-gitleaks.sh
-          echo "$GITHOOKS_BIN" >>"$GITHUB_PATH"
+      - uses: ./.github/actions/setup-tests
       - name: Tests
         env:
           BATS_TEST_TIMEOUT: "300" # une boucle infinie échoue au lieu de bloquer la CI
         run: bats --print-output-on-failure test/
+
+  # Windows : créer un processus y coûte ~20-50 ms (émulation de fork par Git
+  # Bash) contre ~1 ms ailleurs ; les tests sont donc répartis en parallèle.
+  tests-windows:
+    name: tests windows (${{ matrix.part }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { part: branches, files: test/branches.bats test/test_names.bats }
+          - { part: ci, files: test/ci_check.bats }
+          - { part: messages, files: test/commit_messages.bats }
+          - { part: lefthook, files: test/lefthook.bats }
+          - { part: safety, files: test/safety.bats }
+          - { part: languages-1, files: test/languages.bats, filter: '^(detection|config|find_up|IaC|performance|python)' }
+          - { part: languages-2, files: test/languages.bats, filter: '^(format|\.githooks|pre-push)' }
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Machine jetable : l'analyse temps réel de Defender ralentit chaque création de fichier
+      - name: Désactiver l'analyse temps réel de Defender
+        shell: pwsh
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-tests
+      - name: Tests
+        env:
+          BATS_TEST_TIMEOUT: "300"
+          FILES: ${{ matrix.files }}
+          FILTER: ${{ matrix.filter }}
+        run: |
+          # shellcheck disable=SC2086 # liste de fichiers volontairement découpée
+          if [ -n "$FILTER" ]; then
+            bats --print-output-on-failure --filter "$FILTER" $FILES
+          else
+            bats --print-output-on-failure $FILES
+          fi
+
+  # Nom attendu par la protection de main : synthèse des parties Windows
+  tests-windows-summary:
+    name: tests (windows-latest)
+    needs: tests-windows
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULT: ${{ needs.tests-windows.result }}
+        run: |
+          echo "Tests Windows : $RESULT"
+          [ "$RESULT" = success ]
 
   # githooks se vérifie avec sa propre action (dogfooding)
   githooks:

@@ -17,7 +17,7 @@ helm_test() {
     helm template githooks . >"$rendered" || { rm -f "$rendered"; return 1; }
     if has kubeconform; then
         step "Helm : kubeconform (schémas Kubernetes)"
-        kubeconform -strict -summary -ignore-missing-schemas <"$rendered" || rc=1
+        kubeconform -strict -summary -ignore-missing-schemas -cache "$(kubeconform_cache)" <"$rendered" || rc=1
     fi
     rm -f "$rendered"
     [ "$rc" = 0 ] || return 1
