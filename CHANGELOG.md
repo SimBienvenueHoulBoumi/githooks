@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.0.1...v2.0.2) (2026-10-06)
+
+
+### Corrections
+
+* **maven:** nom complet du plugin Spotless ([#26](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/26)) ([66f9d0b](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/66f9d0b52826af721c7f3398d5556d93b75b85ea))
+
+
+### Documentation
+
+* site de documentation sur GitHub Pages ([#23](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/23)) ([43864ee](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/43864ee3ac1b0bf53826520ffa221e0de2235880))
+
 ## [2.0.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.0.0...v2.0.1) (2026-10-06)
 
 
