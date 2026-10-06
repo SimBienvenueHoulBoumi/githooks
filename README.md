@@ -102,6 +102,7 @@ Vérifier : `git config --global core.hooksPath` doit afficher `…/githooks/hoo
 | `pre-commit` | Refuse les branches mal nommées, bloque les commits directs sur `main`/`master`, détecte les secrets (gitleaks), formate uniquement le contenu stagé (le travail non stagé est préservé) |
 | `prepare-commit-msg` | Préfixe le message d'après la branche : sur `feat/bean`, `git commit -m "ajoute X"` → `feat(bean): ajoute X` |
 | `commit-msg` | Impose [Conventional Commits](https://www.conventionalcommits.org) (`feat(scope): …`), 72 caractères max |
+| `post-merge` | Après un `git pull` : supprime les branches locales mergées dont la branche distante a été supprimée (jamais une branche contenant du travail non intégré) |
 | `pre-push` | Refuse les branches mal nommées, build et tests complets **du commit poussé** (pas du dossier de travail) |
 
 ## Nommage des branches
@@ -201,7 +202,7 @@ git config hooks.skip "protect-branch,format" # désactive des étapes
 git config hooks.skip "node"                  # désactive un langage
 ```
 
-Désactivables : hooks (`pre-commit`, `pre-push`…), étapes (`branch-name`, `protect-branch`, `secrets`, `format`, `tests`), langages et outils (`maven`, `node`, `helm`, `docker`…).
+Désactivables : hooks (`pre-commit`, `pre-push`…), étapes (`branch-name`, `protect-branch`, `secrets`, `format`, `tests`, `prune-branches`), langages et outils (`maven`, `node`, `helm`, `docker`…).
 
 Contournement ponctuel : `git commit --no-verify`, `git push --no-verify`.
 
@@ -236,7 +237,7 @@ Regex à reporter :
 ```bash
 brew install bats-core shellcheck   # ou apt install bats shellcheck
 bats test/                          # tests (dépôts jetables ; ceux dont l'outil manque sont ignorés)
-shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
+shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
 ```
 
 La CI lance shellcheck, actionlint et les tests sur Linux, macOS et Windows (`ci.yml`), un projet réel par langage (`e2e.yml`) et l'évaluation OpenSSF (`scorecard.yml`). Voir [CONTRIBUTING.md](CONTRIBUTING.md).

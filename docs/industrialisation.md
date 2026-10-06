@@ -111,6 +111,11 @@ Avec `strict: true` (GitHub) / `GITHOOKS_STRICT: "true"` (GitLab), un outil de f
 
 ## 5. Protéger les branches (serveur)
 
+### Branches mergées : supprimées automatiquement
+
+- Serveur — GitHub : *Settings → General → Automatically delete head branches* ; GitLab : *Settings → Merge requests → Enable "Delete source branch" option by default*.
+- Postes : le hook `post-merge` de githooks supprime, après un `git pull`, les branches locales mergées dont la branche distante a disparu (`git branch -d` : jamais de travail non intégré perdu).
+
 ### GitHub
 
 *Settings → Rules → Rulesets* (ou *Branches → Branch protection rules*) sur `main` :
