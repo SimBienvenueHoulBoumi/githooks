@@ -19,6 +19,6 @@ runs:
         REPOGARDE_BIN: ${{ runner.temp }}/bin
       run: |
         npm install -g bats@1.13.0 lefthook@2.1.17
-        pip install ruff==0.16.10
+        pip install --require-hashes -r ci/requirements/tests.txt
         ci/install-gitleaks.sh
         echo "$REPOGARDE_BIN" >>"$GITHUB_PATH"

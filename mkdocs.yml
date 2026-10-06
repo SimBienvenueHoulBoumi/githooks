@@ -85,3 +85,4 @@ validation:
 # Fichiers de docs/ non publiés
 exclude_docs: |
   requirements.txt
+  requirements.in
