@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.2.0...v2.2.1) (2026-10-06)
+
+
+### Documentation
+
+* lien vers l'extension VS Code ([#44](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/44)) ([c37216c](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/c37216cb758a2fcba1220d7270a448766c4baeb9))
+
 ## [2.2.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.2...v2.2.0) (2026-10-06)
 
 
