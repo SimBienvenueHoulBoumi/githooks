@@ -28,7 +28,8 @@ import re, sys, pathlib
 root = pathlib.Path(sys.argv[1]).parent
 ci = (root / ".github/workflows/ci.yml").read_text()
 listed = set(re.findall(r"test/[\w-]+\.bats", ci))
-missing = sorted(str(p.relative_to(root)) for p in (root / "test").glob("*.bats") if str(p.relative_to(root)) not in listed)
+# as_posix : chemins en "/" aussi sous Windows, comme dans ci.yml
+missing = sorted(p.relative_to(root).as_posix() for p in (root / "test").glob("*.bats") if p.relative_to(root).as_posix() not in listed)
 print("\n".join(missing))
 sys.exit(1 if missing else 0)
 PY
