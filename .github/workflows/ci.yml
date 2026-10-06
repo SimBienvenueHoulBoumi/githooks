@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: shellcheck
-        run: shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/repogarde
+        run: shellcheck bin/commit ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/repogarde
 
   tests:
     name: tests (${{ matrix.os }})
@@ -48,7 +48,7 @@ jobs:
         include:
           - { part: branches, files: test/branches.bats test/test_names.bats test/compat.bats test/install.bats }
           - { part: ci, files: test/ci_check.bats }
-          - { part: messages, files: test/commit_messages.bats }
+          - { part: messages, files: test/commit_messages.bats test/commit_assistant.bats }
           - { part: lefthook, files: test/lefthook.bats }
           - { part: safety, files: test/safety.bats }
           - { part: languages-1, files: test/languages.bats, filter: '^(detection|config|find_up|IaC|performance|python)' }
