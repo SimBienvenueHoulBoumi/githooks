@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.1.0](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.0.1...v1.1.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* **ci:** option MegaLinter (GitHub et GitLab) ([3289a3c](https://github.com/SimBienvenueHoulBoumi/githooks/commit/3289a3c5d3b362cd142a684074f679e6f200fcb9))
+* exclusion de chemins, outils du projet, e2e 17 langages ([768c5ed](https://github.com/SimBienvenueHoulBoumi/githooks/commit/768c5edd1750bf03dd7fdaf1680d10d4e02e3e64))
+* **iac:** Ansible, Helm, Kubernetes, Docker, Terraform, Packer, Actions ([8fe71c7](https://github.com/SimBienvenueHoulBoumi/githooks/commit/8fe71c76731a9b8846b0d8619a5c767da6fe3806))
+* maturité (IaC, e2e réels, perf, sécurité, MegaLinter) ([bd23580](https://github.com/SimBienvenueHoulBoumi/githooks/commit/bd235801f46503eaec6ec5d19ce295674bc68557))
+
+
+### Corrections
+
+* **python:** cache de bytecode neuf, pas de faux succès des tests ([d1d4cb6](https://github.com/SimBienvenueHoulBoumi/githooks/commit/d1d4cb63cd222b6e7da767a37973b09006556c38))
+
+
+### Performances
+
+* config lue une fois, Gradle ciblé, caches de téléchargement ([57ac929](https://github.com/SimBienvenueHoulBoumi/githooks/commit/57ac92943bab182fb496a681f7405dfcf350d7a0))
+* hooks plus rapides, CI Windows parallélisée ([190b4a9](https://github.com/SimBienvenueHoulBoumi/githooks/commit/190b4a92c150990b91ae720e7e280fdfe93cec85))
+* **lang:** détection sans sous-processus (300 fichiers : 53 s → 0,7 s) ([1784d1f](https://github.com/SimBienvenueHoulBoumi/githooks/commit/1784d1f6a8a4d108ab4e6cbf86addd91c4ac7637))
+
+
+### Documentation
+
+* conventions de performance et de nommage des tests ([0351033](https://github.com/SimBienvenueHoulBoumi/githooks/commit/0351033a7ddf034b52bcdbfde19c6f181aa62fa3))
+* licence MIT ([76e918a](https://github.com/SimBienvenueHoulBoumi/githooks/commit/76e918aa279547d589cfe04dc010c59f96c4ec96))
+* sécurité, contribution, modèles d'issues, Dependabot ([08e23ab](https://github.com/SimBienvenueHoulBoumi/githooks/commit/08e23abe5802cae7a55199dd1bc99c08a73b0242))
+
 ## [1.0.1](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.0.0...v1.0.1) (2026-10-05)
 
 
