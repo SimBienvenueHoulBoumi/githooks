@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.3.0...v1.3.1) (2026-10-06)
+
+
+### Corrections
+
+* **release:** attend que la PR suive le dernier commit ([#18](https://github.com/SimBienvenueHoulBoumi/githooks/issues/18)) ([ee09c32](https://github.com/SimBienvenueHoulBoumi/githooks/commit/ee09c323a209c8c0aeb3e7ecd33427543aaa4b6d))
+* **release:** reporte le résultat réel de la CI en statuts ([#20](https://github.com/SimBienvenueHoulBoumi/githooks/issues/20)) ([277d696](https://github.com/SimBienvenueHoulBoumi/githooks/commit/277d6965575e471c3df6b8adfcced00aa2a1dc5a))
+
 ## [1.3.0](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.2.0...v1.3.0) (2026-10-06)
 
 
