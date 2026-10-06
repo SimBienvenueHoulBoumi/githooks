@@ -2,6 +2,7 @@
 # Installe ou retire les hooks repogarde.
 #   ./install.sh                       active les hooks pour le dépôt courant
 #   ./install.sh --global              active les hooks pour tous les dépôts
+#                                      (et l'assistant de commit : git cc)
 #   ./install.sh --uninstall [--global]
 #                                      retire les hooks (seulement s'ils sont ceux de repogarde)
 #   ./install.sh --uninstall --global --purge [--scan DOSSIER]
@@ -56,6 +57,28 @@ is_repogarde_hooks() {
     return 1
 }
 
+# Alias « git cc » → assistant de commit, sans écraser un alias existant
+ALIAS_VALUE="!bash \"$ROOT/bin/commit\""
+install_alias() {
+    local current
+    current="$(git config "$1" --get alias.cc || true)"
+    if [ -n "$current" ] && [[ "$current" != *"/bin/commit"* ]]; then
+        echo "⚠ Alias git cc déjà utilisé ('$current') : assistant de commit non installé." >&2
+        return 0
+    fi
+    git config "$1" alias.cc "$ALIAS_VALUE"
+    echo "✔ Assistant de commit : git cc"
+}
+
+uninstall_alias() {
+    local current
+    current="$(git config "$1" --get alias.cc || true)"
+    if [[ "$current" == *"/bin/commit"* ]]; then
+        git config "$1" --unset alias.cc
+        echo "✔ Alias git cc retiré ($1)."
+    fi
+}
+
 uninstall_scope() {
     local current
     current="$(git config "$1" --get core.hooksPath || true)"
@@ -102,6 +125,7 @@ purge() {
 
 if [ "$ACTION" = uninstall ]; then
     uninstall_scope "$SCOPE"
+    uninstall_alias "$SCOPE"
     if [ -n "$PURGE" ]; then
         purge
         echo
@@ -116,7 +140,7 @@ if [ -n "$PURGE$SCAN" ]; then
     exit 1
 fi
 
-chmod +x "$HOOKS"/pre-commit "$HOOKS"/prepare-commit-msg "$HOOKS"/commit-msg "$HOOKS"/pre-push "$HOOKS"/post-checkout "$HOOKS"/post-merge
+chmod +x "$ROOT/bin/commit" "$HOOKS"/pre-commit "$HOOKS"/prepare-commit-msg "$HOOKS"/commit-msg "$HOOKS"/pre-push "$HOOKS"/post-checkout "$HOOKS"/post-merge
 
 CURRENT="$(git config "$SCOPE" --get core.hooksPath || true)"
 if [ -n "$CURRENT" ] && [ "$CURRENT" != "$HOOKS" ]; then
@@ -125,6 +149,7 @@ fi
 
 git config "$SCOPE" core.hooksPath "$HOOKS"
 echo "✔ Hooks activés ($SCOPE) → $HOOKS"
+install_alias "$SCOPE"
 
 if [ "$SCOPE" = --global ]; then
     echo "ℹ Un core.hooksPath local (ex. husky) reste prioritaire dans le dépôt concerné."
