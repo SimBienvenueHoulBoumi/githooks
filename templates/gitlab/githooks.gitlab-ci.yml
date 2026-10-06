@@ -15,6 +15,9 @@
 #
 # Variables surchargeables : GITHOOKS_URL, GITHOOKS_REF, GITHOOKS_CHECKS,
 # GITHOOKS_STRICT, GITLEAKS_VERSION. Prérequis de l'image : bash, git, curl.
+#
+# Linters (optionnel) : GITHOOKS_MEGALINTER: "true" ajoute le job
+# githooks-megalinter (MegaLinter, fichiers modifiés, config .mega-linter.yml).
 
 .githooks:
   stage: test
@@ -38,3 +41,18 @@
 
 githooks:
   extends: .githooks
+
+githooks-megalinter:
+  stage: test
+  image: oxsecurity/megalinter:v10.1.0
+  variables:
+    GIT_DEPTH: "0"
+    DEFAULT_WORKSPACE: $CI_PROJECT_DIR
+    VALIDATE_ALL_CODEBASE: "false"
+  # MegaLinter s'exécute dans le point d'entrée de l'image
+  script: ["true"]
+  rules:
+    - if: $GITHOOKS_MEGALINTER == "true" && $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $GITHOOKS_MEGALINTER == "true" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $GITHOOKS_MEGALINTER == "true" && $CI_COMMIT_BRANCH
