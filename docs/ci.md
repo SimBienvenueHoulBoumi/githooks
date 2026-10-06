@@ -46,6 +46,7 @@ jobs:
 | `checks` | `commits branch secrets format tests` | vérifications lancées |
 | `strict` | `false` | un outil de formatage / test absent fait échouer |
 | `megalinter` | `false` | lance aussi MegaLinter |
+| `fix-pr` | `false` | sur une PR : recible une PR mal visée (flux `integrationBranch`, doublon fermé) et remplace un titre non conforme, puis vérifie avec les valeurs corrigées ; demande `permissions: pull-requests: write` |
 | `gitleaks-version` | `8.30.1` | version installée (somme SHA-256 vérifiée) |
 | `actionlint-version` | `1.7.12` | version installée pour vérifier les workflows |
 

@@ -210,3 +210,86 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" != *"Cible"* ]]
 }
+
+# --- ci/fix-pr.sh (entrée fix-pr de l'action) : gh simulé ----------------------
+
+FIX="$BATS_TEST_DIRNAME/../ci/fix-pr.sh"
+
+# Faux gh : journalise ses arguments ; « pr list » renvoie $GH_DUP (doublon)
+fake_gh() {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cat >"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
+#!/usr/bin/env bash
+echo "$*" >>"$GH_LOG"
+[ "$1 $2" = "pr list" ] && echo "${GH_DUP:-}"
+exit 0
+GH
+    chmod +x "$BATS_TEST_TMPDIR/bin/gh"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH" GH_LOG="$BATS_TEST_TMPDIR/gh.log"
+    export GITHUB_ENV="$BATS_TEST_TMPDIR/github_env" PR=7
+    : >"$GH_LOG"
+    : >"$GITHUB_ENV"
+}
+
+# main et develop sur le remote, branche feat/x avec un commit
+flux_develop() {
+    git config repogarde.integrationBranch develop
+    git push -q origin HEAD:main HEAD:develop
+    git fetch -q origin
+    git commit -q --allow-empty -m "feat(panier): ajoute le panier"
+    export HEAD=feat/x HEAD_SHA="$(git rev-parse HEAD)"
+}
+
+@test "fix-pr : PR vers main recible vers develop, titre conforme garde" {
+    fake_gh
+    flux_develop
+    BASE=main TITLE="feat: panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "pr edit 7 --base develop" "$GH_LOG"
+    ! grep -q -- "--title" "$GH_LOG"
+    grep -q "^REPOGARDE_FIXED_TARGET=develop$" "$GITHUB_ENV"
+    grep -q "^REPOGARDE_FIXED_BASE=$BASE_SHA$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : doublon ferme au lieu d'etre recible" {
+    fake_gh
+    flux_develop
+    GH_DUP=3 BASE=main TITLE="feat: panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "pr close 7 --comment Doublon de #3" "$GH_LOG"
+    ! grep -q -- "--base" "$GH_LOG"
+    grep -q "^REPOGARDE_PR_CLOSED=true$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : titre non conforme remplace par le commit unique" {
+    fake_gh
+    flux_develop
+    BASE=develop TITLE="Feat/x" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "pr edit 7 --title feat(panier): ajoute le panier" "$GH_LOG"
+    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : plusieurs commits -> titre deduit de la branche" {
+    fake_gh
+    flux_develop
+    git commit -q --allow-empty -m "test: panier"
+    export HEAD=feat/ajout-du-panier HEAD_SHA="$(git rev-parse HEAD)"
+    BASE=develop TITLE="Ajout du panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "^REPOGARDE_FIXED_TITLE=feat: ajout du panier$" "$GITHUB_ENV"
+}
+
+@test "titres deduits des branches" {
+    source "$BATS_TEST_DIRNAME/../hooks/lib/common.sh"
+    git config repogarde.integrationBranch develop
+    cfg_reset
+    for paire in "hotfix/crash-login:fix: crash login" "release/1.2.0:chore(release): 1.2.0" \
+        "develop:chore(release): livrer develop sur main" "wip:chore: wip" \
+        "feature/a_b:feat: a b"; do
+        suggest_pr_title_r "${paire%%:*}"
+        [ "$REPLY" = "${paire#*:}" ] || { echo "${paire%%:*} -> « $REPLY »"; return 1; }
+    done
+    suggest_pr_title_r "feat/$(printf 'mot-%.0s' {1..30})fin"
+    header_valid "$REPLY" || { echo "trop long : $REPLY"; return 1; }
+}
