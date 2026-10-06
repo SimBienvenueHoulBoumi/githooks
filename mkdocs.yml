@@ -49,6 +49,7 @@ nav:
   - CI (GitHub, GitLab): ci.md
   - En organisation: industrialisation.md
   - Migration depuis githooks: migration.md
+  - Désinstallation: desinstallation.md
   - Limites: limites.md
   - Sécurité: securite.md
   - Contribuer: contribuer.md
