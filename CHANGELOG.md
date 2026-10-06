@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.2.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.2...v2.2.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* assistant de commit interactif git cc ([#39](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/39)) ([b854312](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/b8543124236fa2669495618924ef602c657a089f))
+
+
+### Corrections
+
+* désinstallation sûre et complète ([#38](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/38)) ([8332e84](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/8332e84355487887c31ed38e4b715e38361d1a8e))
+* **release:** PR de release en retard sur main mergée quand même ([#42](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/42)) ([ed822ab](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/ed822ab124219e1bf0151ddcc85e78d149f72229))
+
 ## [2.1.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.1...v2.1.2) (2026-10-06)
 
 
