@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.0...v2.1.1) (2026-10-06)
+
+
+### Corrections
+
+* **release:** attend que la PR de release soit mergeable ([#34](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/34)) ([1952ae9](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/1952ae96ff6129d38776ed6a58c85a6bff4b0ed2))
+
+
+### Documentation
+
+* **securite:** vérification SLSA corrigée, piège du dossier déplacé ([#31](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/31)) ([75524c0](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/75524c011b0a8c0207c97f99abf55ea97954a26e))
+
 ## [2.1.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.0.2...v2.1.0) (2026-10-06)
 
 
