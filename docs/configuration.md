@@ -18,6 +18,28 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
     exclude = vendor/* generated/*      # chemins ni formatés ni testés
 ```
 
+## Flux avec branche d'intégration (`develop`)
+
+Par défaut, tout part de `main` et y revient par PR. Pour un flux à deux branches longues, où le travail s'intègre dans `develop` puis est livré sur `main` :
+
+```ini
+[repogarde]
+    integrationBranch = develop     # active le flux
+    mainBranch = main               # défaut : main
+    protectedBranches = main develop
+    allowedBranches = main develop release/* release-please--* dependabot/* renovate/*
+```
+
+La CI vérifie alors la cible de chaque PR :
+
+| Branche de la PR | Cible attendue |
+|---|---|
+| travail (`feat/…`, `fix/…`), bots (`dependabot/…`) | `develop` |
+| `develop` | `main` |
+| `release/…`, `hotfix/…` | `main` ou `develop` |
+
+Une PR mal ciblée est refusée, avec la commande de correction (`gh pr edit --base develop`).
+
 ## Réglages locaux (non partagés)
 
 Prioritaires sur `.repogarde.conf` :
