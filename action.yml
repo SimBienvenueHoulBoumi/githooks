@@ -18,6 +18,9 @@ inputs:
   gitleaks-version:
     description: Version de gitleaks installée pour la vérification des secrets
     default: 8.30.1
+  actionlint-version:
+    description: Version d'actionlint installée pour vérifier les workflows du projet
+    default: 1.7.12
   megalinter:
     description: "true : lance aussi MegaLinter (linters de ~50 langages, fichiers modifiés). Linux uniquement."
     default: "false"
@@ -31,7 +34,16 @@ runs:
       env:
         GITLEAKS_VERSION: ${{ inputs.gitleaks-version }}
         GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
-      run: '"$GITHUB_ACTION_PATH/ci/install-gitleaks.sh"'
+      run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" gitleaks
+
+    # Les workflows du projet sont vérifiés par actionlint (étape tests)
+    - name: Installer actionlint
+      if: contains(inputs.checks, 'tests') && hashFiles('.github/workflows/*.yml', '.github/workflows/*.yaml') != ''
+      shell: bash
+      env:
+        ACTIONLINT_VERSION: ${{ inputs.actionlint-version }}
+        GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
+      run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" actionlint
 
     - name: Vérifications githooks
       shell: bash
@@ -41,7 +53,7 @@ runs:
         GITHOOKS_BIN: ${{ runner.temp }}/githooks-bin
         GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      run: '"$GITHUB_ACTION_PATH/ci/check.sh"'
+      run: bash "$GITHUB_ACTION_PATH/ci/check.sh"
 
     # Linters : délégués à MegaLinter plutôt que réimplémentés. Configuration
     # éventuelle dans le .mega-linter.yml du projet.
