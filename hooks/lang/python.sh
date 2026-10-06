@@ -24,6 +24,15 @@ python_format() {
     fi
 }
 
+# Vrai si le projet contient des tests : un requirements.txt seul (outils de
+# documentation, scripts) ne doit pas exiger pytest.
+python_has_tests() {
+    [ -f manage.py ] && return 0
+    find . \( -name node_modules -o -name .venv -o -name .git -o -name site-packages \) -prune -o \
+        \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print 2>/dev/null |
+        grep -q .
+}
+
 python_test() {
     local rc=0 cache
     # Cache de bytecode neuf : Python réutilise un .pyc si la source a même taille
@@ -38,6 +47,7 @@ python_test() {
         rm -rf "$cache"
         return "$rc"
     fi
+    if ! python_has_tests; then echo "ℹ Python : aucun test."; rm -rf "$cache"; return 0; fi
     if ! python_has pytest; then warn "Python : pytest absent, tests ignorés."; rm -rf "$cache"; return 0; fi
     step "Python : pytest"
     python_run pytest -q -p no:cacheprovider || rc=$?

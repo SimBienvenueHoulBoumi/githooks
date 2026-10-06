@@ -153,3 +153,15 @@ setup() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"Titre de la PR « Ajout de la route »"* ]]
 }
+
+@test "ci : requirements.txt sans tests (ex. outils de doc) -> pas d'exigence pytest en strict" {
+    mkdir -p docs
+    printf 'mkdocs==1.6.1\n' >docs/requirements.txt
+    printf '# Doc\n' >docs/index.md
+    git add -A
+    git commit -q --no-verify -m "docs: site"
+    run env REPOGARDE_STRICT=true PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" "$CHECK" tests
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Python : aucun test"* ]]
+    [[ "$output" != *"pytest absent"* ]]
+}

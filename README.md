@@ -28,7 +28,7 @@
 # lefthook.yml — hooks du projet (version figée)
 remotes:
   - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v1.3.1 # x-release-please-version
+    ref: v2.0.0 # x-release-please-version
     configs: [lefthook-remote.yml]
 ```
 
@@ -36,7 +36,7 @@ remotes:
 # .github/workflows/repogarde.yml (extrait) — la CI fait foi
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: SimBienvenueHoulBoumi/repogarde@v1 # x-release-please-major
+- uses: SimBienvenueHoulBoumi/repogarde@v2 # x-release-please-major
   with: { strict: true }
 ```
 
