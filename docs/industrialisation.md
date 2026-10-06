@@ -54,7 +54,7 @@ go install github.com/evilmartians/lefthook/v2@latest
 
 Puis, dans chaque projet : `lefthook install` (une fois après le clone).
 
-Outils recommandés : `gitleaks` (secrets) et les formateurs des langages utilisés (voir le README).
+Outils recommandés : `gitleaks` (secrets) et les formateurs des langages utilisés (voir [Technologies](technologies.md)).
 
 **Installation automatique** au premier build, pour ne dépendre de personne :
 
@@ -123,13 +123,13 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
 - Require a pull request before merging
 - Require status checks to pass → ajouter **`repogarde`**
 - Block force pushes
-- (optionnel) Restrict branch names / commit metadata avec les regex du README
+- (optionnel) Restrict branch names / commit metadata avec les [expressions régulières](ci.md#regles-cote-serveur)
 
 ### GitLab
 
 - *Settings → Repository → Protected branches* : `main` → *Allowed to push: No one*, *Allowed to merge: Developers*
 - *Settings → Merge requests* : **Pipelines must succeed**
-- (Premium) *Settings → Repository → Push rules* : regex de nom de branche et de message de commit (voir le README)
+- (Premium) *Settings → Repository → Push rules* : regex de nom de branche et de message de commit ([expressions régulières](ci.md#regles-cote-serveur))
 
 ## 6. Ce que vérifie la CI
 
