@@ -82,7 +82,9 @@ server_merge_and_delete() {
 
 push_branch() {
     git switch -q -c "$1"
-    git commit -q --allow-empty -m "feat: travail sur $1"
+    echo "$1" >"travail-${1//\//-}.txt"
+    git add -A
+    git commit -q -m "feat: travail sur $1"
     git push -q -u origin "$1"
 }
 
@@ -106,7 +108,7 @@ push_branch() {
     git push -q origin main --no-verify
     git reset -q --hard HEAD~1
     run git pull -q
-    [[ "$output" == *"feat/y : supprimée sur le serveur mais pas intégrée"* ]]
+    [[ "$output" == *"feat/y : supprimée sur le serveur mais des modifications manquent"* ]]
     git show-ref -q --verify refs/heads/feat/y
 }
 
@@ -118,4 +120,44 @@ push_branch() {
     git switch -q main
     git pull -q
     git show-ref -q --verify refs/heads/feat/z
+}
+
+# Simule un merge squash de la PR côté serveur, puis la suppression de sa branche
+server_squash_and_delete() {
+    local tmp="$BATS_TEST_TMPDIR/serveur"
+    git clone -q -b main "$REMOTE" "$tmp"
+    git -C "$tmp" config core.hooksPath /dev/null
+    git -C "$tmp" config user.name serveur
+    git -C "$tmp" config user.email serveur@example.com
+    git -C "$tmp" merge -q --squash "origin/$1"
+    git -C "$tmp" commit -q -m "feat: $1 (#1)"
+    git -C "$tmp" push -q origin main
+    git -C "$tmp" push -q origin --delete "$1"
+    rm -rf "$tmp"
+}
+
+@test "post-merge : branche mergee en squash -> supprimee en local" {
+    git push -q -u origin main
+    git switch -q -c feat/sq
+    echo a >a.txt && git add a.txt && git commit -q -m "feat: a"
+    echo b >b.txt && git add b.txt && git commit -q -m "feat: b"
+    git push -q -u origin feat/sq
+    server_squash_and_delete feat/sq
+    git switch -q main
+    run git pull -q
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"mergée en squash"*"feat/sq"* ]]
+    ! git show-ref -q --verify refs/heads/feat/sq
+}
+
+@test "post-merge : squash puis travail local supplementaire -> conservee" {
+    git push -q -u origin main
+    git switch -q -c feat/sq2
+    echo a >a.txt && git add a.txt && git commit -q -m "feat: a"
+    git push -q -u origin feat/sq2
+    server_squash_and_delete feat/sq2
+    echo c >c.txt && git add c.txt && git commit -q --no-verify -m "feat: travail non poussé"
+    git switch -q main
+    run git pull -q
+    git show-ref -q --verify refs/heads/feat/sq2
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Hook post-merge (après git pull) : supprime les branches locales dont la
-# branche distante a été supprimée (PR mergée) ET entièrement intégrées.
-# `git branch -d` refuse toute branche contenant du travail non mergé : aucune
-# perte possible. Désactivable : skip = prune-branches.
+# branche distante a été supprimée (PR mergée) ET entièrement intégrées, y
+# compris par un merge squash. Une branche dont des modifications manquent est
+# conservée : aucune perte possible. Désactivable : skip = prune-branches.
 set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
@@ -18,14 +18,27 @@ remote="$(git config --get "branch.$current.remote" || true)"
 [ -n "$remote" ] || exit 0
 git remote prune "$remote" >/dev/null 2>&1 || exit 0
 
+# Vrai si toutes les modifications de la branche $1 sont déjà dans la branche
+# courante (merge squash) : la branche est résumée en un seul commit, que
+# `git cherry` retrouve dans l'historique s'il a un équivalent.
+squash_merged() {
+    local base tree summary
+    base="$(git merge-base HEAD "$1")" || return 1
+    tree="$(git rev-parse "$1^{tree}")"
+    summary="$(git commit-tree "$tree" -p "$base" -m githooks-squash-check)"
+    [[ "$(git cherry HEAD "$summary")" == "-"* ]]
+}
+
 git for-each-ref --format='%(refname:short)%09%(upstream:track)' refs/heads |
     while IFS=$'\t' read -r branch track; do
         [ "$track" = "[gone]" ] || continue
         [ "$branch" = "$current" ] && continue
         if git branch -d -q "$branch" 2>/dev/null; then
             echo "🧹 Branche locale supprimée (mergée et supprimée sur le serveur) : $branch"
+        elif squash_merged "$branch" && git branch -D -q "$branch"; then
+            echo "🧹 Branche locale supprimée (mergée en squash et supprimée sur le serveur) : $branch"
         else
-            echo "ℹ $branch : supprimée sur le serveur mais pas intégrée ici (merge squash ou rebase ?), conservée."
+            echo "ℹ $branch : supprimée sur le serveur mais des modifications manquent ici, conservée."
             echo "  Pour la supprimer quand même : git branch -D $branch"
         fi
     done

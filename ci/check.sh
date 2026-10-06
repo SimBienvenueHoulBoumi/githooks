@@ -9,6 +9,7 @@
 #   GITHOOKS_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
 #   GITHOOKS_BRANCH   nom de branche à vérifier
 #   GITHOOKS_STRICT   "true" : un outil de formatage/test manquant fait échouer
+#   GITHOOKS_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
 #   GITHOOKS_BIN      dossier des outils installés (gitleaks), ajouté au PATH
 set -euo pipefail
 
@@ -97,6 +98,19 @@ check_commits() {
             bad=1
         fi
     done < <(git rev-list --no-merges "$BASE..HEAD")
+    # Titre de la PR : message du commit final en cas de merge squash
+    local title="${GITHOOKS_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
+    if [ -n "$title" ]; then
+        if ! [[ "$title" =~ $CC_PATTERN ]]; then
+            ci_error "Titre de la PR « $title » : format attendu <type>(<scope>): <description> (il devient le message du commit en squash)."
+            bad=1
+        elif [ "${#title}" -gt 72 ]; then
+            ci_error "Titre de la PR « $title » : plus de 72 caractères."
+            bad=1
+        else
+            echo "✔ Titre de la PR conforme."
+        fi
+    fi
     if [ "$bad" = 1 ]; then
         echo "Types :"
         types_help 2>&1

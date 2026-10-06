@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Lancé par le workflow de release sur sa PR (GITHUB_TOKEN ne déclenche que ce type)
+  workflow_dispatch:
 
 permissions:
   contents: read

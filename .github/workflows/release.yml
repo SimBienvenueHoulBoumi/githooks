@@ -1,18 +1,21 @@
-# Releases automatiques à partir des Conventional Commits :
-# 1. release-please tient à jour une PR "release x.y.z" (changelog + versions
-#    dans les templates) ;
-# 2. cette PR est mergée automatiquement dès que la CI passe ;
-# 3. le merge crée le tag vX.Y.Z, la release GitHub, et déplace le tag majeur vX.
-#
-# Secret RELEASE_PLEASE_TOKEN (jeton fine-grained : Contents + Pull requests en
-# écriture sur ce dépôt) : nécessaire pour que la CI tourne sur la PR de release
-# (les événements créés par GITHUB_TOKEN ne déclenchent pas de workflow).
-# Sans lui, la PR est créée mais doit être mergée à la main (exception admin).
+# Releases entièrement automatiques, sans jeton personnel :
+# 1. release-please tient à jour une PR "release x.y.z" (changelog + versions) ;
+# 2. ce workflow déclenche la CI sur cette PR (workflow_dispatch : seul type
+#    d'événement que GITHUB_TOKEN a le droit de déclencher), attend les
+#    vérifications obligatoires, puis la merge (squash) ;
+# 3. release-please, relancé dans le même run, crée le tag vX.Y.Z et la
+#    release ; les jobs suivants déplacent le tag majeur et signent l'archive.
 name: release
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+# Une release à la fois ; un nouveau push attend la fin de la précédente
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 # Aucun droit par défaut : chaque job déclare le strict nécessaire
 permissions: {}
@@ -20,29 +23,53 @@ permissions: {}
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: write
       pull-requests: write
-    env:
-      HAS_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+      actions: write # déclencher la CI sur la PR de release
+      checks: read
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      major: ${{ steps.release.outputs.major }}
+      release_created: ${{ steps.release.outputs.release_created || steps.publish.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name || steps.publish.outputs.tag_name }}
+      major: ${{ steps.release.outputs.major || steps.publish.outputs.major }}
     steps:
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Merge automatique de la PR de release (dès que la CI passe)
-        if: steps.release.outputs.pr && env.HAS_TOKEN == 'true'
+      - name: CI sur la PR de release, puis merge
+        id: merge
+        if: steps.release.outputs.pr
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr || '{}').number }}
-        run: gh pr merge "$PR_NUMBER" --auto --merge --repo "$GITHUB_REPOSITORY"
+          GH_TOKEN: ${{ github.token }}
+          PR_JSON: ${{ steps.release.outputs.pr }}
+        run: |
+          pr="$(jq -r .number <<<"$PR_JSON")"
+          branch="$(jq -r .headBranchName <<<"$PR_JSON")"
+          sha="$(gh pr view "$pr" --json headRefOid -q .headRefOid)"
+          echo "PR #$pr ($branch @ ${sha:0:7}) : lancement de la CI"
+          gh workflow run ci.yml --ref "$branch"
+          # Attendre que les vérifications obligatoires apparaissent puis se terminent
+          for _ in $(seq 1 30); do
+            gh pr checks "$pr" --required >/dev/null 2>&1 && break
+            [ "$(gh pr checks "$pr" --required --json state -q length 2>/dev/null || echo 0)" -gt 0 ] && break
+            sleep 10
+          done
+          gh pr checks "$pr" --required --watch --interval 30
+          gh pr merge "$pr" --squash --match-head-commit "$sha"
+          echo "merged=true" >>"$GITHUB_OUTPUT"
+
+      # Le merge fait par GITHUB_TOKEN ne relance pas ce workflow : on publie ici
+      - id: publish
+        if: steps.merge.outputs.merged == 'true'
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-pull-request: true
 
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/githooks@v1`
   tag-major:

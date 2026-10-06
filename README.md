@@ -102,7 +102,7 @@ Vérifier : `git config --global core.hooksPath` doit afficher `…/githooks/hoo
 | `pre-commit` | Refuse les branches mal nommées, bloque les commits directs sur `main`/`master`, détecte les secrets (gitleaks), formate uniquement le contenu stagé (le travail non stagé est préservé) |
 | `prepare-commit-msg` | Préfixe le message d'après la branche : sur `feat/bean`, `git commit -m "ajoute X"` → `feat(bean): ajoute X` |
 | `commit-msg` | Impose [Conventional Commits](https://www.conventionalcommits.org) (`feat(scope): …`), 72 caractères max |
-| `post-merge` | Après un `git pull` : supprime les branches locales mergées dont la branche distante a été supprimée (jamais une branche contenant du travail non intégré) |
+| `post-merge` | Après un `git pull` : supprime les branches locales mergées (classique ou squash) dont la branche distante a été supprimée ; jamais une branche contenant du travail non intégré |
 | `pre-push` | Refuse les branches mal nommées, build et tests complets **du commit poussé** (pas du dossier de travail) |
 
 ## Nommage des branches

@@ -29,17 +29,13 @@ Les numéros de version sont **calculés automatiquement** à partir des Convent
 | `feat: …` | fonctionnalité : 1.**4**.2 → 1.**5**.0 |
 | `feat!: …` ou `BREAKING CHANGE:` dans le corps | majeure : **1**.4.2 → **2**.0.0 |
 
-À chaque push sur `main` : release-please met à jour une PR « release x.y.z » (changelog + version dans les templates), la CI la vérifie, puis elle est **mergée automatiquement**. Ce merge crée le tag `vX.Y.Z`, la release GitHub et déplace le tag majeur `vX`. Aucune action humaine.
+À chaque push sur `main`, le workflow `release` :
 
-Prérequis (une fois) :
+1. met à jour la PR « release x.y.z » (changelog + version dans les templates) ;
+2. lance la CI sur cette PR et attend les vérifications obligatoires ;
+3. la merge, crée le tag `vX.Y.Z` et la release, déplace le tag majeur `vX` et joint une archive signée.
 
-1. *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests* ;
-2. *Settings → General → Allow auto-merge* ;
-3. un jeton *fine-grained* (*Settings développeur → Personal access tokens → Fine-grained*) limité au dépôt githooks, droits **Contents** et **Pull requests** en écriture, enregistré comme secret :
-   ```bash
-   gh secret set RELEASE_PLEASE_TOKEN --repo <owner>/githooks   # colle le jeton (saisie masquée)
-   ```
-   Sans ce jeton, la PR de release est créée mais la CI n'y tourne pas (limite GitHub pour `GITHUB_TOKEN`) : il faut la merger avec l'exception administrateur (`gh pr merge <n> --merge --admin`). En organisation, préférer une **GitHub App** à un jeton personnel.
+**Aucun jeton à créer** : le workflow n'utilise que `GITHUB_TOKEN` (il déclenche la CI par `workflow_dispatch`, seul type d'événement autorisé à ce jeton). Prérequis : *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests*.
 
 Pour suspendre les releases automatiques : désactiver le workflow `release` (*Actions → release → Disable workflow*).
 
@@ -111,10 +107,14 @@ Avec `strict: true` (GitHub) / `GITHOOKS_STRICT: "true"` (GitLab), un outil de f
 
 ## 5. Protéger les branches (serveur)
 
+### Merges en squash
+
+Une PR = un commit sur `main`, dont le message est le **titre de la PR** : changelog propre, une ligne par PR. Réglages (*Settings → General → Pull Requests*) : autoriser uniquement *squash merging*, message par défaut *Pull request title*. La CI githooks vérifie que ce titre suit Conventional Commits ; utiliser `!` dans le titre pour un changement majeur (`feat!: …`).
+
 ### Branches mergées : supprimées automatiquement
 
 - Serveur — GitHub : *Settings → General → Automatically delete head branches* ; GitLab : *Settings → Merge requests → Enable "Delete source branch" option by default*.
-- Postes : le hook `post-merge` de githooks supprime, après un `git pull`, les branches locales mergées dont la branche distante a disparu (`git branch -d` : jamais de travail non intégré perdu).
+- Postes : le hook `post-merge` de githooks supprime, après un `git pull`, les branches locales dont la branche distante a disparu et dont toutes les modifications sont dans la branche courante (merge classique ou squash) ; une branche avec du travail non intégré est conservée.
 
 ### GitHub
 
