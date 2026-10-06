@@ -18,6 +18,8 @@
         "action.yml",
         "README.md",
         "docs/industrialisation.md",
+        "docs/index.md",
+        "docs/ci.md",
         "templates/gitlab/repogarde.gitlab-ci.yml",
         "templates/project/lefthook.yml",
         "templates/project/gitlab-ci.yml",

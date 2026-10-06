@@ -100,6 +100,14 @@ jobs:
           manifest-file: .release-please-manifest.json
           skip-github-pull-request: true
 
+      # Le merge fait par GITHUB_TOKEN ne déclenche pas non plus le site : on le relance
+      - name: Republier la documentation (changelog)
+        if: steps.publish.outputs.release_created
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run docs.yml --ref main
+
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repogarde@v1`
   tag-major:
     needs: release-please
