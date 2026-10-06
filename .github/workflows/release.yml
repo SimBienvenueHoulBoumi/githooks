@@ -25,7 +25,7 @@ permissions: {}
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       contents: write
       pull-requests: write
@@ -90,6 +90,18 @@ jobs:
                 -f target_url="$run_url" -f description="CI de la PR de release" >/dev/null
               echo "✔ $ctx"
             done
+          # D'autres vérifications peuvent aussi tourner sur la PR (workflows
+          # pull_request) : on attend que GitHub la déclare mergeable (toutes
+          # les vérifications terminées et vertes) ; sinon, pas de merge.
+          for _ in $(seq 1 90); do
+            state="$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)"
+            case "$state" in
+              CLEAN) break ;;
+              BLOCKED | UNKNOWN | UNSTABLE) sleep 30 ;;
+              *) echo "✖ PR #$pr non mergeable : $state"; exit 1 ;;
+            esac
+          done
+          [ "$state" = CLEAN ] || { echo "✖ PR #$pr toujours $state après 45 min"; exit 1; }
           gh pr merge "$pr" --squash --match-head-commit "$sha"
           echo "merged=true" >>"$GITHUB_OUTPUT"
 
