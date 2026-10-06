@@ -63,6 +63,8 @@ jobs:
           done
           echo "PR #$pr ($branch @ ${sha:0:7}) : lancement de la CI"
           gh workflow run ci.yml --ref "$branch"
+          # CodeQL aussi : chaque commit de main doit être analysé
+          gh workflow run codeql.yml --ref "$branch"
           run_id=""
           for _ in $(seq 1 30); do
             run_id="$(gh run list --workflow ci.yml --branch "$branch" --event workflow_dispatch \
