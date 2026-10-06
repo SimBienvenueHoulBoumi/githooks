@@ -31,6 +31,8 @@ flowchart LR
 
 **Plus de 25 technologies** détectées automatiquement — Java, JavaScript/TypeScript, Python, Go, Rust, PHP, Ruby, .NET, Flutter, Swift, Elixir, C/C++, Terraform, Helm, Kubernetes, Ansible, Docker… → [la liste complète](technologies.md).
 
+**Dans VS Code** — l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) applique les mêmes règles dans l'éditeur : assistant de commit, nom de branche vérifié dans la barre d'état, alerte si les hooks ne s'exécutent plus.
+
 ## En 30 secondes
 
 ```yaml title="lefthook.yml — hooks du projet"

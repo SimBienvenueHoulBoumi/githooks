@@ -42,6 +42,8 @@ remotes:
 
 Modèles complets : [`templates/project/`](templates/project) · Exemple : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Usage personnel (tous les dépôts du poste) : `./install.sh --global`.
 
+**Dans VS Code** : l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) guide la rédaction des commits, signale une branche mal nommée et des hooks inactifs.
+
 ## Liens
 
 [Démarrage rapide](https://simbienvenuehoulboumi.github.io/repogarde/demarrage/) · [Configuration](https://simbienvenuehoulboumi.github.io/repogarde/configuration/) · [CI](https://simbienvenuehoulboumi.github.io/repogarde/ci/) · [En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/) · [Migration depuis githooks](https://simbienvenuehoulboumi.github.io/repogarde/migration/) · [Sécurité](SECURITY.md) · [Contribuer](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
