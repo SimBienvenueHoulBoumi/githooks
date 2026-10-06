@@ -18,7 +18,7 @@
 - **Secrets** : gitleaks avant le commit et en CI.
 - **Formatage** : seul le contenu stagé, avec l'outil du projet ; le travail en cours est préservé.
 - **Tests** : au push et en CI, seulement les projets touchés, sur le commit poussé.
-- **Releases** : version, changelog, tag et archive signée, sans intervention.
+- **Versions** : les commits étant conventionnels, la version suivante (semver) et le changelog se déduisent de l'historique ; repogarde publie ainsi ses propres releases (tag, changelog, archive signée) sans intervention.
 
 **Plus de 25 technologies** : Java (Maven, Gradle), JavaScript / TypeScript, Python, Go, Rust, PHP, Ruby, .NET, Dart / Flutter, Swift, Elixir, C / C++, Shell, Terraform, Packer, Ansible, Helm, Kubernetes, Docker, GitHub Actions — [détail](https://simbienvenuehoulboumi.github.io/repogarde/technologies/). Linux, macOS, Windows.
 
@@ -42,10 +42,10 @@ remotes:
 
 Modèles complets : [`templates/project/`](templates/project) · Exemple : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Usage personnel (tous les dépôts du poste) : `./install.sh --global`.
 
-**Dans VS Code** : l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) guide la rédaction des commits, signale une branche mal nommée et des hooks inactifs.
+**Dans VS Code** : l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) guide la rédaction des commits, signale une branche mal nommée et des hooks inactifs. En attendant sa publication sur le Marketplace : `.vsix` dans ses [releases](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode/releases), puis `code --install-extension repogarde-X.Y.Z.vsix`.
 
 ## Liens
 
-[Démarrage rapide](https://simbienvenuehoulboumi.github.io/repogarde/demarrage/) · [Configuration](https://simbienvenuehoulboumi.github.io/repogarde/configuration/) · [CI](https://simbienvenuehoulboumi.github.io/repogarde/ci/) · [En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/) · [Migration depuis githooks](https://simbienvenuehoulboumi.github.io/repogarde/migration/) · [Sécurité](SECURITY.md) · [Contribuer](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Démarrage rapide](https://simbienvenuehoulboumi.github.io/repogarde/demarrage/) · [Hooks et règles](https://simbienvenuehoulboumi.github.io/repogarde/hooks/) · [Technologies](https://simbienvenuehoulboumi.github.io/repogarde/technologies/) · [Configuration](https://simbienvenuehoulboumi.github.io/repogarde/configuration/) · [CI](https://simbienvenuehoulboumi.github.io/repogarde/ci/) · [En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/) · [Migration depuis githooks](https://simbienvenuehoulboumi.github.io/repogarde/migration/) · [Désinstallation](https://simbienvenuehoulboumi.github.io/repogarde/desinstallation/) · [Sécurité](SECURITY.md) · [Contribuer](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 Licence [MIT](LICENSE).
