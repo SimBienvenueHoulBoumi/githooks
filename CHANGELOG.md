@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.1...v2.1.2) (2026-10-06)
+
+
+### Corrections
+
+* **ci:** suffixe (#NN) du squash non compté ([#35](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/35)) ([f0ca71d](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/f0ca71dbf89b9d96353fa3c8ab3b503e20137a36))
+
 ## [2.1.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.1.0...v2.1.1) (2026-10-06)
 
 
