@@ -21,6 +21,8 @@ Remplacer `SimBienvenueHoulBoumi/repogarde` par ce chemin dans les templates (`t
 
 ## 2. Versions et releases (automatiques)
 
+Les projets peuvent obtenir les mêmes releases automatiques : voir [Versions et releases](releases.md). Ci-dessous, celles de repogarde lui-même.
+
 Les numéros de version sont **calculés automatiquement** à partir des Conventional Commits par [release-please](https://github.com/googleapis/release-please) :
 
 | Commits depuis la dernière release | Nouvelle version |

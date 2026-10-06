@@ -72,7 +72,7 @@ Les options de `git commit` sont transmises (`git cc --no-verify`…) ; `bin/com
 Format `<type>/<sujet>` (sujet en `a-z0-9._-`, `/` pour sous-découper) : `feat/inscription`, `fix/user/login`, `hotfix/timeout-db`.
 
 - Averti à la création, refusé au commit et au push, avec la commande de renommage à copier.
-- Exceptions par défaut : `main`, `master`, `develop`, `release/*` (réglage `allowedBranches`).
+- Exceptions par défaut : `main`, `master`, `develop`, `release/*` et les branches des bots (`release-please--*`, `dependabot/*`, `renovate/*`) ; réglage `allowedBranches`.
 - Le type devient le préfixe du commit, le sujet son scope (omis au-delà de 20 caractères).
 - Alias : `feature/` → `feat`, `bugfix/` et `hotfix/` → `fix`.
 - Un message déjà conforme n'est jamais modifié ; merge, squash et amend sont ignorés.

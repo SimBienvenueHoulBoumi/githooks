@@ -18,7 +18,7 @@
 - **Secrets** : gitleaks avant le commit et en CI.
 - **Formatage** : seul le contenu stagé, avec l'outil du projet ; le travail en cours est préservé.
 - **Tests** : au push et en CI, seulement les projets touchés, sur le commit poussé.
-- **Releases** : version, changelog, tag et archive signée, sans intervention.
+- **Releases** : workflow réutilisable : version (semver) calculée depuis les commits, changelog, PR de release validée par la CI puis mergée, tag et release, sans jeton ni intervention.
 
 **Plus de 25 technologies** : Java (Maven, Gradle), JavaScript / TypeScript, Python, Go, Rust, PHP, Ruby, .NET, Dart / Flutter, Swift, Elixir, C / C++, Shell, Terraform, Packer, Ansible, Helm, Kubernetes, Docker, GitHub Actions — [détail](https://simbienvenuehoulboumi.github.io/repogarde/technologies/). Linux, macOS, Windows.
 
@@ -46,6 +46,6 @@ Modèles complets : [`templates/project/`](templates/project) · Exemple : [repo
 
 ## Liens
 
-[Démarrage rapide](https://simbienvenuehoulboumi.github.io/repogarde/demarrage/) · [Configuration](https://simbienvenuehoulboumi.github.io/repogarde/configuration/) · [CI](https://simbienvenuehoulboumi.github.io/repogarde/ci/) · [En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/) · [Migration depuis githooks](https://simbienvenuehoulboumi.github.io/repogarde/migration/) · [Sécurité](SECURITY.md) · [Contribuer](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Démarrage rapide](https://simbienvenuehoulboumi.github.io/repogarde/demarrage/) · [Configuration](https://simbienvenuehoulboumi.github.io/repogarde/configuration/) · [CI](https://simbienvenuehoulboumi.github.io/repogarde/ci/) · [Versions et releases](https://simbienvenuehoulboumi.github.io/repogarde/releases/) · [En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/) · [Migration depuis githooks](https://simbienvenuehoulboumi.github.io/repogarde/migration/) · [Sécurité](SECURITY.md) · [Contribuer](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 Licence [MIT](LICENSE).
