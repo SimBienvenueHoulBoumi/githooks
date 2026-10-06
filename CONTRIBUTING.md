@@ -1,0 +1,38 @@
+# Contribuer
+
+## Mise en place
+
+```bash
+brew install bats-core shellcheck actionlint gitleaks lefthook   # ou équivalents apt / winget
+./install.sh   # hooks githooks sur ce dépôt (il se teste lui-même)
+```
+
+## Avant chaque PR
+
+```bash
+shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
+actionlint .github/workflows/*.yml
+bats test/                      # tests unitaires et d'intégration
+test/e2e/run.sh python go       # tests réels (les langages dont l'outillage est installé)
+```
+
+La CI relance tout sur Linux, macOS et Windows, plus un job e2e par langage avec son vrai outillage.
+
+## Conventions
+
+- **Branches** : `<type>/<sujet>` (`feat/helm-unittest`, `fix/windows-paths`).
+- **Commits** : [Conventional Commits](https://www.conventionalcommits.org). Le type détermine la version publiée : `fix` → correctif, `feat` → mineure, `!` → majeure.
+- **Bash 3.2** (macOS) : pas de tableaux associatifs ni de `mapfile`. Dans les fonctions appelées par fichier, pas de sous-processus (`$(…)`) : résultat dans `REPLY`.
+- **Noms de tests bats en ASCII** (bats Windows ignore les autres).
+- Un outil absent n'est **jamais bloquant** côté poste (`warn` / `tool_missing`) ; le mode strict de la CI le rend bloquant.
+
+## Ajouter un langage ou un outil
+
+1. `hooks/lang/<nom>.sh` : `register`, `<nom>_format`, `<nom>_test` (voir le README).
+2. `test/e2e/<nom>/` : `project/` (sain), `bad/` (mal formaté), `break/` (tests cassés), `keep/` (à ne pas modifier), `e2e.env`.
+3. Ajouter `<nom>` à la matrice de `.github/workflows/e2e.yml` avec l'installation de son outillage.
+4. Mettre à jour le tableau des langages du README.
+
+## Releases
+
+Automatiques : release-please calcule la version à partir des commits de `main` et publie (voir `docs/industrialisation.md`).

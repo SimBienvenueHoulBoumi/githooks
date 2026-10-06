@@ -1,0 +1,32 @@
+name: Bug
+description: Un hook ou la CI ne se comporte pas comme prévu
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version de githooks
+      placeholder: v1.0.1
+    validations:
+      required: true
+  - type: dropdown
+    id: contexte
+    attributes:
+      label: Contexte
+      options: [Hook local (lefthook), Hook local (installation globale), CI GitHub, CI GitLab]
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Système, langage / framework du projet
+      placeholder: macOS 15, Spring Boot (Maven)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction et sortie obtenue
+      description: Commandes lancées et sortie complète du hook (sans secrets)
+    validations:
+      required: true

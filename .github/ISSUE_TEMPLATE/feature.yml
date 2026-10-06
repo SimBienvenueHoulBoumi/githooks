@@ -1,0 +1,16 @@
+name: Demande d'évolution
+description: Nouveau langage, outil ou règle
+labels: [enhancement]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Besoin
+      description: Le problème rencontré, pas seulement la solution imaginée
+    validations:
+      required: true
+  - type: textarea
+    id: outils
+    attributes:
+      label: Outils concernés
+      placeholder: "ex. golangci-lint pour Go, commande : golangci-lint run"
