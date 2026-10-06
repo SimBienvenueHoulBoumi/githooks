@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v1.3.1...v2.0.0) (2026-10-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* githooks devient repogarde ([#21](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/21))
+
+### Fonctionnalités
+
+* githooks devient repogarde ([#21](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/21)) ([c6d7428](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/c6d7428d17294c7a47bea9984ca7c107d2acad83))
+
 ## [1.3.1](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.3.0...v1.3.1) (2026-10-06)
 
 
