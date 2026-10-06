@@ -17,7 +17,8 @@ setup() {
     export REPOGARDE_BASE="$BASE_SHA" REPOGARDE_BRANCH=feat/x
     # isole des variables CI de l'environnement d'exécution
     unset GITHUB_ACTIONS GITHUB_BASE_REF GITHUB_HEAD_REF GITHUB_REF_NAME CI_COMMIT_BRANCH \
-        CI_MERGE_REQUEST_SOURCE_BRANCH_NAME CI_MERGE_REQUEST_DIFF_BASE_SHA
+        CI_MERGE_REQUEST_SOURCE_BRANCH_NAME CI_MERGE_REQUEST_DIFF_BASE_SHA \
+        CI_MERGE_REQUEST_TARGET_BRANCH_NAME REPOGARDE_TARGET
 }
 
 @test "ci : commits conformes" {
@@ -182,4 +183,30 @@ setup() {
     [ "$REPLY" -eq 68 ]
     authored_length "fix: àéèùçôîï (#12)"
     [ "$REPLY" -eq 13 ]
+}
+
+@test "ci : flux develop, cibles de PR autorisees" {
+    git config repogarde.integrationBranch develop
+    git config repogarde.allowedBranches "main develop release/* release-please--* dependabot/*"
+    for paire in feat/x:develop develop:main release/1.2.0:main release/1.2.0:develop \
+        hotfix/crash:main dependabot/maven/x:develop release-please--branches--main:main; do
+        REPOGARDE_BRANCH="${paire%%:*}" REPOGARDE_TARGET="${paire#*:}" run "$CHECK" branch
+        [ "$status" -eq 0 ] || { echo "devrait passer : $paire"; echo "$output"; return 1; }
+    done
+}
+
+@test "ci : flux develop, mauvaise cible refusee avec la correction" {
+    git config repogarde.integrationBranch develop
+    REPOGARDE_TARGET=main run "$CHECK" branch
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"cible attendue develop"* ]]
+    [[ "$output" == *"gh pr edit --base develop"* ]]
+    REPOGARDE_BRANCH=develop REPOGARDE_TARGET=release/1.0.0 run "$CHECK" branch
+    [ "$status" -ne 0 ]
+}
+
+@test "ci : sans integrationBranch, toute cible acceptee" {
+    REPOGARDE_TARGET=develop run "$CHECK" branch
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Cible"* ]]
 }
