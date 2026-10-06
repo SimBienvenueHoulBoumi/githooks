@@ -8,6 +8,7 @@
 #   REPOGARDE_CHECKS   liste des vérifications (si aucun argument)
 #   REPOGARDE_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
 #   REPOGARDE_BRANCH   nom de branche à vérifier
+#   REPOGARDE_TARGET   branche cible de la PR / MR (flux integrationBranch)
 #   REPOGARDE_STRICT   "true" : un outil de formatage/test manquant fait échouer
 #   REPOGARDE_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
 #   REPOGARDE_BIN      dossier des outils installés (gitleaks), ajouté au PATH
@@ -65,6 +66,11 @@ detect_branch() {
     # Tag : pas de nom de branche à vérifier
     if [ -n "${CI_COMMIT_TAG:-}" ] || [ "${GITHUB_REF_TYPE:-}" = tag ]; then return; fi
     echo "${REPOGARDE_BRANCH:-${GITHUB_HEAD_REF:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}}}}"
+}
+
+# Branche cible de la PR / MR (vide hors PR)
+detect_target() {
+    echo "${REPOGARDE_TARGET:-${GITHUB_BASE_REF:-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}}}"
 }
 
 # Fichiers ajoutés/modifiés depuis la base (tous les fichiers suivis sans base)
@@ -125,12 +131,24 @@ check_branch() {
     local branch
     branch="$(detect_branch)"
     if [ -z "$branch" ]; then echo "ℹ Pas de branche (tag ou HEAD détachée) : ignoré."; return 0; fi
-    if branch_name_valid "$branch"; then
-        echo "✔ « $branch » conforme."
+    if ! branch_name_valid "$branch"; then
+        ci_error "Branche « $branch » non conforme : <type>/<sujet>, ex. $(suggest_branch_name "$branch")."
+        branch_help "$branch" 2>&1
+        return 1
+    fi
+    echo "✔ « $branch » conforme."
+    # Flux avec branche d'intégration : la PR vise-t-elle la bonne branche ?
+    local target allowed
+    target="$(detect_target)"
+    pr_targets_r "$branch"
+    allowed="$REPLY"
+    [ -n "$target" ] && [ -n "$allowed" ] || return 0
+    if [[ " $allowed " == *" $target "* ]]; then
+        echo "✔ Cible « $target » conforme au flux."
         return 0
     fi
-    ci_error "Branche « $branch » non conforme : <type>/<sujet>, ex. $(suggest_branch_name "$branch")."
-    branch_help "$branch" 2>&1
+    ci_error "PR de « $branch » vers « $target » : cible attendue ${allowed// / ou } (réglage integrationBranch)."
+    echo "  Corriger : modifier la branche de base de la PR (Edit, à côté du titre), ou gh pr edit --base ${allowed%% *}"
     return 1
 }
 
