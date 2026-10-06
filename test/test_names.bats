@@ -20,3 +20,18 @@ sys.exit(1 if missing or not filters else 0)
 PY
     [ "$status" -eq 0 ] || { echo "Tests jamais lancés sous Windows :"; echo "$output"; return 1; }
 }
+
+@test "CI Windows : chaque fichier de tests est reparti dans une partie" {
+    command -v python3 >/dev/null || skip "python3 absent"
+    run python3 - "$BATS_TEST_DIRNAME" <<'PY'
+import re, sys, pathlib
+root = pathlib.Path(sys.argv[1]).parent
+ci = (root / ".github/workflows/ci.yml").read_text()
+listed = set(re.findall(r"test/[\w-]+\.bats", ci))
+# as_posix : chemins en "/" aussi sous Windows, comme dans ci.yml
+missing = sorted(p.relative_to(root).as_posix() for p in (root / "test").glob("*.bats") if p.relative_to(root).as_posix() not in listed)
+print("\n".join(missing))
+sys.exit(1 if missing else 0)
+PY
+    [ "$status" -eq 0 ] || { echo "Fichiers jamais lancés sous Windows :"; echo "$output"; return 1; }
+}

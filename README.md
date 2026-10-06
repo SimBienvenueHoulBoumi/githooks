@@ -1,9 +1,9 @@
-# githooks
+# repogarde
 
-[![CI](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/ci.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/ci.yml)
-[![e2e](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/e2e.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/githooks/actions/workflows/e2e.yml)
-[![Release](https://img.shields.io/github/v/release/SimBienvenueHoulBoumi/githooks)](https://github.com/SimBienvenueHoulBoumi/githooks/releases)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SimBienvenueHoulBoumi/githooks/badge)](https://scorecard.dev/viewer/?uri=github.com/SimBienvenueHoulBoumi/githooks)
+[![CI](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/ci.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/ci.yml)
+[![e2e](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/e2e.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/e2e.yml)
+[![Release](https://img.shields.io/github/v/release/SimBienvenueHoulBoumi/repogarde)](https://github.com/SimBienvenueHoulBoumi/repogarde/releases)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SimBienvenueHoulBoumi/repogarde/badge)](https://scorecard.dev/viewer/?uri=github.com/SimBienvenueHoulBoumi/repogarde)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 
 Hooks git réutilisables, qui s'adaptent au langage du projet : messages de commit, nommage des branches, secrets, formatage et tests.
@@ -18,27 +18,27 @@ Hooks git réutilisables, qui s'adaptent au langage du projet : messages de comm
 ```yaml
 # lefthook.yml
 remotes:
-  - git_url: https://github.com/SimBienvenueHoulBoumi/githooks
+  - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
     ref: v1.3.1 # x-release-please-version
     configs: [lefthook-remote.yml]
 ```
 
 ```yaml
-# .github/workflows/githooks.yml (extrait)
+# .github/workflows/repogarde.yml (extrait)
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: SimBienvenueHoulBoumi/githooks@v1 # x-release-please-major
+- uses: SimBienvenueHoulBoumi/repogarde@v1 # x-release-please-major
 ```
 
 ```yaml
 # .gitlab-ci.yml (extrait)
 include:
-  - project: outils/githooks
+  - project: outils/repogarde
     ref: v1.3.1 # x-release-please-version
-    file: templates/gitlab/githooks.gitlab-ci.yml
+    file: templates/gitlab/repogarde.gitlab-ci.yml
 ```
 
-Modèles complets : [`templates/project/`](templates/project). Versions et changelog : [releases](https://github.com/SimBienvenueHoulBoumi/githooks/releases) (automatiques, voir le guide).
+Modèles complets : [`templates/project/`](templates/project). Versions et changelog : [releases](https://github.com/SimBienvenueHoulBoumi/repogarde/releases) (automatiques, voir le guide).
 
 ## Technologies prises en charge
 
@@ -51,13 +51,27 @@ Détectées automatiquement, chacune vérifiée en CI sur un vrai projet (`test/
 | **Python** | pip, uv, poetry, pipenv — Django, FastAPI, Flask, scripts |
 | **Autres langages** | Go · Rust · PHP (Laravel, Symfony) · Ruby (Rails) · .NET (C#, F#, ASP.NET) · Dart / Flutter · Swift · Elixir (Phoenix) · C / C++ / Objective-C (CMake, Meson) · Shell |
 | **Infrastructure** | Terraform / OpenTofu · Packer · Ansible · Helm · Kubernetes (kustomize) · Docker (Dockerfile, Compose) · GitHub Actions |
-| **Sans langage reconnu** | `Makefile`, `justfile`, `Taskfile` — ou toute commande via `.githooks.conf` |
+| **Sans langage reconnu** | `Makefile`, `justfile`, `Taskfile` — ou toute commande via `.repogarde.conf` |
 | **Hébergement** | GitHub, GitLab, Bitbucket, Gitea, serveur Git (hooks locaux) |
 | **CI** | GitHub Actions (action), GitLab CI (template) |
 | **Systèmes** | Linux, macOS, Windows (Git Bash) |
 | **Projets** | script isolé, projet unique, monorepo, multi-module |
 
-Détail par technologie (formateur, commande de test) : [Langages et types de projets](#langages-et-types-de-projets). Exemple complet : [githooks-demo](https://github.com/SimBienvenueHoulBoumi/githooks-demo).
+Détail par technologie (formateur, commande de test) : [Langages et types de projets](#langages-et-types-de-projets). Exemple complet : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo).
+
+## Migration depuis githooks
+
+Le projet s'appelait **githooks** jusqu'à la v1. Les anciennes adresses GitHub sont redirigées, et les anciens noms **restent acceptés** (avec un message de migration, jamais bloquant) :
+
+| Ancien (githooks ≤ v1) | Nouveau (repogarde v2) |
+|---|---|
+| `.githooks.conf`, section `[hooks]` | `.repogarde.conf`, section `[repogarde]` |
+| `git config hooks.skip …` | `git config repogarde.skip …` |
+| variables `GITHOOKS_*` | `REPOGARDE_*` |
+| dossier `.githooks/<hook>` (hooks du projet) | `.repogarde/<hook>` |
+| `uses: …/githooks@v1`, job CI `githooks` | `uses: …/repogarde@v2`, job `repogarde` |
+
+Pour migrer un projet : renommer le fichier et sa section, passer `lefthook.yml` et le workflow en v2, et, si la protection de branche exige le job `githooks`, la faire exiger `repogarde`.
 
 ## Installation personnelle (globale)
 
@@ -75,24 +89,24 @@ Détail par technologie (formateur, commande de test) : [Langages et types de pr
 Le dépôt peut être cloné n'importe où : `install.sh` utilise son propre emplacement.
 
 ```bash
-git clone git@github.com:SimBienvenueHoulBoumi/githooks.git ~/githooks
-~/githooks/install.sh --global      # tous les dépôts de la machine
+git clone git@github.com:SimBienvenueHoulBoumi/repogarde.git ~/repogarde
+~/repogarde/install.sh --global      # tous les dépôts de la machine
 ```
 
 Pour un seul dépôt plutôt que toute la machine :
 
 ```bash
 cd mon-projet
-~/githooks/install.sh
+~/repogarde/install.sh
 ```
 
-Vérifier : `git config --global core.hooksPath` doit afficher `…/githooks/hooks`.
+Vérifier : `git config --global core.hooksPath` doit afficher `…/repogarde/hooks`.
 
 | Action | Commande |
 |---|---|
-| Mettre à jour | `git -C ~/githooks pull` (aucun projet à toucher) |
+| Mettre à jour | `git -C ~/repogarde pull` (aucun projet à toucher) |
 | Déplacer le dossier | relancer `install.sh --global` depuis le nouvel emplacement |
-| Désinstaller | `~/githooks/install.sh --uninstall --global` |
+| Désinstaller | `~/repogarde/install.sh --uninstall --global` |
 
 ## Hooks
 
@@ -111,7 +125,7 @@ Format imposé : `<type>/<sujet>` (sujet en `a-z0-9._-`, `/` pour sous-découper
 Ex. : `feat/inscription`, `fix/user/login`, `hotfix/timeout-db`.
 
 - Averti à la création (`post-checkout`), refusé au commit et au push, avec la commande de renommage à copier.
-- Exceptions par défaut : `main`, `master`, `develop`, `release/*` (modifiables via `hooks.allowedBranches`).
+- Exceptions par défaut : `main`, `master`, `develop`, `release/*` (modifiables via `repogarde.allowedBranches`).
 - Le type devient le préfixe du commit, le sujet son scope (omis au-delà de 20 caractères).
 - Types : `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 - Alias : `feature/` → `feat`, `bugfix/` et `hotfix/` → `fix`
@@ -163,7 +177,7 @@ Un outil absent est ignoré (avertissement dans un projet, silence pour un fichi
 
 **Testé en réel** : chaque langage et outil ci-dessus a un projet exemple (`test/e2e/`) vérifié en CI avec son outillage : formatage au commit, vérification CI, tests au vert puis cassés (et, pour Helm, templates laissés intacts).
 
-**Linters** : délégués à [MegaLinter](https://megalinter.io) (option `megalinter: true` de l'action, `GITHOOKS_MEGALINTER: "true"` sur GitLab) plutôt que réimplémentés.
+**Linters** : délégués à [MegaLinter](https://megalinter.io) (option `megalinter: true` de l'action, `REPOGARDE_MEGALINTER: "true"` sur GitLab) plutôt que réimplémentés.
 
 ### Ajouter un langage
 
@@ -179,10 +193,10 @@ Options : `standalone` (formate hors projet), `outermost` (multi-module), `fallb
 
 ## Configuration par projet
 
-Dans un fichier **`.githooks.conf` versionné** à la racine du projet (partagé avec l'équipe), au format `git config` :
+Dans un fichier **`.repogarde.conf` versionné** à la racine du projet (partagé avec l'équipe), au format `git config` :
 
 ```ini
-[hooks]
+[repogarde]
     # commandes personnalisées : remplacent la détection automatique
     format = npm run lint:fix --        # reçoit les fichiers stagés en arguments
     test = make ci                      # lancé à la racine
@@ -193,13 +207,13 @@ Dans un fichier **`.githooks.conf` versionné** à la racine du projet (partagé
     exclude = vendor/* generated/*      # chemins ni formatés ni testés
 ```
 
-Ou en local (non partagé, **prioritaire** sur `.githooks.conf`) :
+Ou en local (non partagé, **prioritaire** sur `.repogarde.conf`) :
 
 ```bash
-git config hooks.skip true                    # désactive tout
-git config hooks.skip "pre-push"              # désactive un hook
-git config hooks.skip "protect-branch,format" # désactive des étapes
-git config hooks.skip "node"                  # désactive un langage
+git config repogarde.skip true                    # désactive tout
+git config repogarde.skip "pre-push"              # désactive un hook
+git config repogarde.skip "protect-branch,format" # désactive des étapes
+git config repogarde.skip "node"                  # désactive un langage
 ```
 
 Désactivables : hooks (`pre-commit`, `pre-push`…), étapes (`branch-name`, `protect-branch`, `secrets`, `format`, `tests`, `prune-branches`), langages et outils (`maven`, `node`, `helm`, `docker`…).
@@ -208,7 +222,7 @@ Contournement ponctuel : `git commit --no-verify`, `git push --no-verify`.
 
 ## Hooks spécifiques à un projet
 
-Un script exécutable dans `.githooks/<hook>` ou `.git/hooks/<hook>` du projet est lancé en plus, avant les vérifications communes.
+Un script exécutable dans `.repogarde/<hook>` ou `.git/hooks/<hook>` du projet est lancé en plus, avant les vérifications communes.
 
 ## GitHub, GitLab, Bitbucket
 
@@ -237,7 +251,7 @@ Regex à reporter :
 ```bash
 brew install bats-core shellcheck   # ou apt install bats shellcheck
 bats test/                          # tests (dépôts jetables ; ceux dont l'outil manque sont ignorés)
-shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/githooks
+shellcheck ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh .lefthook/*/repogarde
 ```
 
 La CI lance shellcheck, actionlint et les tests sur Linux, macOS et Windows (`ci.yml`), un projet réel par langage (`e2e.yml`) et l'évaluation OpenSSF (`scorecard.yml`). Voir [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -249,6 +263,6 @@ La CI lance shellcheck, actionlint et les tests sur Linux, macOS et Windows (`ci
 - Hooks locaux = contournables (`--no-verify`) et à installer sur chaque poste. Pour imposer les règles à une équipe : CI + règles côté serveur (voir ci-dessus).
 - Gradle (`spotlessApply`) formate tout le projet, pas seulement les fichiers stagés : seuls les fichiers stagés sont re-stagés, mais d'autres fichiers mal formatés peuvent apparaître modifiés.
 - Si le formatage et des modifications non stagées touchent les mêmes lignes, le commit est formaté mais le dossier de travail reste dans son état d'origine (non formaté).
-- Langage non listé : le décrire dans `.githooks.conf` (`format`, `test`) ou ajouter un fichier `hooks/lang/<nom>.sh`.
+- Langage non listé : le décrire dans `.repogarde.conf` (`format`, `test`) ou ajouter un fichier `hooks/lang/<nom>.sh`.
 - Les fichiers isolés (hors projet) sont formatés mais n'ont pas de tests.
 - `pre-push` en dehors de la branche courante : tests dans un worktree temporaire (seul `node_modules` est relié, les autres dépendances locales non versionnées sont absentes).

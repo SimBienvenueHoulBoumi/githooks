@@ -18,10 +18,10 @@
         "action.yml",
         "README.md",
         "docs/industrialisation.md",
-        "templates/gitlab/githooks.gitlab-ci.yml",
+        "templates/gitlab/repogarde.gitlab-ci.yml",
         "templates/project/lefthook.yml",
         "templates/project/gitlab-ci.yml",
-        "templates/project/.github/workflows/githooks.yml"
+        "templates/project/.github/workflows/repogarde.yml"
       ]
     }
   }

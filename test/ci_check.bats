@@ -10,11 +10,11 @@ setup() {
     # contexte CI : pas de hooks (prepare-commit-msg corrigerait les messages testés)
     mkdir -p "$BATS_TEST_TMPDIR/nohooks"
     git config core.hooksPath "$BATS_TEST_TMPDIR/nohooks"
-    git config --unset hooks.skip # contexte CI : aucune config locale
+    git config --unset repogarde.skip # contexte CI : aucune config locale
     initial_commit
     BASE_SHA="$(git rev-parse HEAD)"
     git switch -q -c feat/x
-    export GITHOOKS_BASE="$BASE_SHA" GITHOOKS_BRANCH=feat/x
+    export REPOGARDE_BASE="$BASE_SHA" REPOGARDE_BRANCH=feat/x
     # isole des variables CI de l'environnement d'exécution
     unset GITHUB_ACTIONS GITHUB_BASE_REF GITHUB_HEAD_REF GITHUB_REF_NAME CI_COMMIT_BRANCH \
         CI_MERGE_REQUEST_SOURCE_BRANCH_NAME CI_MERGE_REQUEST_DIFF_BASE_SHA
@@ -46,13 +46,13 @@ setup() {
 @test "ci : nom de branche" {
     run "$CHECK" branch
     [ "$status" -eq 0 ]
-    GITHOOKS_BRANCH=Mauvais run "$CHECK" branch
+    REPOGARDE_BRANCH=Mauvais run "$CHECK" branch
     [ "$status" -ne 0 ]
     [[ "$output" == *"feat/mauvais"* ]]
 }
 
 @test "ci : branche detectee depuis les variables GitLab" {
-    unset GITHOOKS_BRANCH
+    unset REPOGARDE_BRANCH
     CI_COMMIT_BRANCH=Mauvais run "$CHECK" branch
     [ "$status" -ne 0 ]
     CI_MERGE_REQUEST_SOURCE_BRANCH_NAME=fix/ok run "$CHECK" branch
@@ -60,7 +60,7 @@ setup() {
 }
 
 @test "ci : tag, pas de verification de branche" {
-    unset GITHOOKS_BRANCH
+    unset REPOGARDE_BRANCH
     CI_COMMIT_TAG=v1.0.0 CI_COMMIT_BRANCH="" run "$CHECK" branch
     [ "$status" -eq 0 ]
 }
@@ -104,14 +104,14 @@ setup() {
     [ "$status" -ne 0 ]
 }
 
-@test "ci : skip via .githooks.conf versionne" {
+@test "ci : skip via .repogarde.conf versionne" {
     git commit -q --no-verify --allow-empty -m "wip"
-    printf '[hooks]\n\tskip = commit-msg\n' >.githooks.conf
-    git add .githooks.conf
+    printf '[repogarde]\n\tskip = commit-msg\n' >.repogarde.conf
+    git add .repogarde.conf
     git commit -q --no-verify -m "chore: conf"
     run "$CHECK" commits
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Désactivé par .githooks.conf"* ]]
+    [[ "$output" == *"Désactivé par .repogarde.conf"* ]]
 }
 
 @test "ci : mode strict, outil manquant = echec" {
@@ -119,7 +119,7 @@ setup() {
     printf 'const a=1\n' >a.js
     git add -A
     git commit -q --no-verify -m "feat: js"
-    run env PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" GITHOOKS_STRICT=true "$CHECK" format
+    run env PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" REPOGARDE_STRICT=true "$CHECK" format
     [ "$status" -ne 0 ]
     [[ "$output" == *"prettier introuvable"* ]]
 }
@@ -127,7 +127,7 @@ setup() {
 @test "ci : annotations GitHub" {
     git commit -q --no-verify --allow-empty -m "wip"
     GITHUB_ACTIONS=true run "$CHECK" commits
-    [[ "$output" == *"::error title=githooks::"* ]]
+    [[ "$output" == *"::error title=repogarde::"* ]]
 }
 
 @test "ci : verification inconnue" {
@@ -146,10 +146,10 @@ setup() {
 
 @test "ci : titre de PR conforme / non conforme (message du commit en squash)" {
     git commit -q --no-verify --allow-empty -m "feat: a"
-    GITHOOKS_PR_TITLE="feat(api): ajoute la route" run "$CHECK" commits
+    REPOGARDE_PR_TITLE="feat(api): ajoute la route" run "$CHECK" commits
     [ "$status" -eq 0 ]
     [[ "$output" == *"Titre de la PR conforme"* ]]
-    GITHOOKS_PR_TITLE="Ajout de la route" run "$CHECK" commits
+    REPOGARDE_PR_TITLE="Ajout de la route" run "$CHECK" commits
     [ "$status" -ne 0 ]
     [[ "$output" == *"Titre de la PR « Ajout de la route »"* ]]
 }

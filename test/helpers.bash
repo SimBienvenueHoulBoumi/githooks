@@ -1,5 +1,5 @@
 # Helpers communs aux tests bats : chaque test tourne dans un dépôt jetable
-# avec les hooks du dépôt githooks courant.
+# avec les hooks du dépôt repogarde courant.
 
 HOOKS="$(cd "$BATS_TEST_DIRNAME/../hooks" && pwd -P)"
 
@@ -13,7 +13,7 @@ setup_repo() {
     git config user.email test@example.com
     git config commit.gpgsign false
     git config core.hooksPath "$HOOKS"
-    git config hooks.skip secrets # gitleaks pas forcément installé
+    git config repogarde.skip secrets # gitleaks pas forcément installé
     git remote add origin "$REMOTE"
 }
 

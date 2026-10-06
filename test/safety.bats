@@ -35,7 +35,7 @@ setup() {
     # dossier de travail : formaté ET travail en cours conservé
     grep -q '^func main() {}$' main.go
     grep -q 'travail en cours' main.go
-    [ ! -e .git/githooks-unstaged.patch ] && [ ! -e .git/githooks-backup ]
+    [ ! -e .git/repogarde-unstaged.patch ] && [ ! -e .git/repogarde-backup ]
 }
 
 @test "pre-commit : partiellement stage, avec chevauchement -> worktree intact" {
@@ -56,7 +56,7 @@ setup() {
     ! git show HEAD:main.go | grep -q 'travail en cours'
     # dossier de travail : exactement comme avant le commit
     [ "$(cat main.go)" = "$before" ]
-    [ ! -e .git/githooks-unstaged.patch ] && [ ! -e .git/githooks-backup ]
+    [ ! -e .git/repogarde-unstaged.patch ] && [ ! -e .git/repogarde-backup ]
 }
 
 @test "pre-commit : suppression non stagee preservee" {

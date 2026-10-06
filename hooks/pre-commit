@@ -25,7 +25,7 @@ fi
 PROTECTED="$(cfg protectedBranches "main master")"
 if ! skipped protect-branch && [[ " $PROTECTED " == *" $BRANCH "* ]] && git rev-parse --verify -q HEAD >/dev/null; then
     echo "✖ Commit direct sur '$BRANCH' interdit. Crée une branche : git switch -c feat/ma-feature" >&2
-    echo "  (désactiver pour ce dépôt : git config hooks.skip protect-branch)" >&2
+    echo "  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" >&2
     exit 1
 fi
 

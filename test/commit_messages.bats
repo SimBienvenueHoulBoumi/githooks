@@ -14,7 +14,7 @@ setup() { setup_repo; initial_commit; }
 
 @test "commit-msg : message invalide refuse avec l'aide" {
     git switch -q -c wip-x 2>/dev/null
-    git config hooks.skip "secrets branch-name"
+    git config repogarde.skip "secrets branch-name"
     run git commit -q --allow-empty -m "n'importe quoi"
     [ "$status" -ne 0 ]
     [[ "$output" == *"Message de commit invalide"* ]]
@@ -59,8 +59,8 @@ setup() { setup_repo; initial_commit; }
     [ "$(subject)" = "feat(bean): ajoute" ]
 }
 
-@test "hooks.skip true desactive tout" {
-    git config hooks.skip true
+@test "repogarde.skip true desactive tout" {
+    git config repogarde.skip true
     run git commit -q --allow-empty -m "n'importe quoi"
     [ "$status" -eq 0 ]
 }

@@ -31,7 +31,7 @@ plugin_has_flag() {
     [[ " $REPLY " == *" $2 "* ]]
 }
 
-# Plugins actifs (non désactivés via hooks.skip <nom>), calculés une seule fois
+# Plugins actifs (non désactivés via repogarde.skip <nom>), calculés une seule fois
 ACTIVE_PLUGINS=""
 ACTIVE_PLUGINS_DONE=""
 active_plugins_init() {
@@ -151,8 +151,8 @@ find_up() {
 }
 
 # Cache des téléchargements entre deux lancements (schémas, providers)
-GITHOOKS_CACHE="${GITHOOKS_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/githooks}"
-cache_dir() { mkdir -p "$GITHOOKS_CACHE/$1" && echo "$GITHOOKS_CACHE/$1"; }
+REPOGARDE_CACHE="${REPOGARDE_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/repogarde}"
+cache_dir() { mkdir -p "$REPOGARDE_CACHE/$1" && echo "$REPOGARDE_CACHE/$1"; }
 kubeconform_cache() { cache_dir kubeconform; }
 
 # Outil absent : avertissement dans un projet, silence pour un fichier isolé
@@ -162,7 +162,7 @@ tool_missing() {
     return 0
 }
 
-# Chemins exclus (hooks.exclude) : globs séparés par des espaces, ex.
+# Chemins exclus (repogarde.exclude) : globs séparés par des espaces, ex.
 # "vendor/* generated/*" — code vendorisé, fichiers générés, fixtures de test.
 EXCLUDE_PATTERNS=""
 EXCLUDE_DONE=""
@@ -191,12 +191,12 @@ without_excluded() {
 
 # --- Formatage (pre-commit) --------------------------------------------------
 
-# Commande personnalisée : hooks.format reçoit les fichiers stagés en arguments
+# Commande personnalisée : repogarde.format reçoit les fichiers stagés en arguments
 format_custom() {
     local cmd="$1"
     shift
     step "Formatage personnalisé : $cmd"
-    sh -c "$cmd \"\$@\"" githooks-format "$@"
+    sh -c "$cmd \"\$@\"" repogarde-format "$@"
 }
 
 # Formate les fichiers stagés puis les re-stage (pre-commit)

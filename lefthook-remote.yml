@@ -1,40 +1,40 @@
 # Config lefthook partagée : à référencer depuis le lefthook.yml d'un projet
 #
 #   remotes:
-#     - git_url: https://github.com/SimBienvenueHoulBoumi/githooks
+#     - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
 #       ref: v1.0.0
 #       configs: [lefthook-remote.yml]
 #
-# Les scripts sont dans .lefthook/<hook>/githooks et relaient vers hooks/<hook>.
+# Les scripts sont dans .lefthook/<hook>/repogarde et relaient vers hooks/<hook>.
 min_version: 2.0.0
 
 pre-commit:
   scripts:
-    githooks:
+    repogarde:
       runner: bash
 
 prepare-commit-msg:
   scripts:
-    githooks:
+    repogarde:
       runner: bash
 
 commit-msg:
   scripts:
-    githooks:
+    repogarde:
       runner: bash
 
 pre-push:
   scripts:
-    githooks:
+    repogarde:
       runner: bash
       use_stdin: true
 
 post-checkout:
   scripts:
-    githooks:
+    repogarde:
       runner: bash
 
 post-merge:
   scripts:
-    githooks:
+    repogarde:
       runner: bash

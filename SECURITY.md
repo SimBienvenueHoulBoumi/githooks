@@ -22,14 +22,14 @@ Chaque release contient une archive source signée avec [Sigstore](https://www.s
 
 ```bash
 TAG=v1.1.0
-gh release download "$TAG" --repo SimBienvenueHoulBoumi/githooks -p "githooks-$TAG.tar.gz*"
-cosign verify-blob "githooks-$TAG.tar.gz" \
-  --bundle "githooks-$TAG.tar.gz.sigstore.json" \
-  --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/githooks/\.github/workflows/release\.yml@' \
+gh release download "$TAG" --repo SimBienvenueHoulBoumi/repogarde -p "repogarde-$TAG.tar.gz*"
+cosign verify-blob "repogarde-$TAG.tar.gz" \
+  --bundle "repogarde-$TAG.tar.gz.sigstore.json" \
+  --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/repogarde/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-## Ce que githooks fait pour la sécurité
+## Ce que repogarde fait pour la sécurité
 
 - Détection de secrets (gitleaks) dans les hooks et en CI ; gitleaks installé en CI à **version figée avec somme SHA-256 vérifiée**.
 - Actions GitHub figées par SHA, mises à jour par Dependabot ; workflows sans droits par défaut.
