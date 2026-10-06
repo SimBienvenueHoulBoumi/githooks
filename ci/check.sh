@@ -78,9 +78,15 @@ changed_files() {
 
 # --- Vérifications ---------------------------------------------------------------
 
+# Bots de mise à jour des dépendances : leurs titres (« bump <paquet> from X
+# to Y ») dépassent souvent 72 caractères ; seul leur format est exigé.
+BOTS='^[0-9]*\+?(dependabot|renovate)\[bot\]@'
+is_bot_branch() { [[ "$1" == dependabot/* || "$1" == renovate/* ]]; }
+
 check_commits() {
     section "Messages de commit (Conventional Commits)"
-    local sha subject bad=0 count=0
+    local sha subject bad=0 count=0 bot=""
+    is_bot_branch "$(detect_branch)" && bot=1
     if [ -z "$BASE" ]; then echo "ℹ Pas de base : vérification ignorée."; return 0; fi
     while IFS= read -r sha; do
         subject="$(git log -1 --format=%s "$sha")"
@@ -93,6 +99,8 @@ check_commits() {
         elif ! [[ "$subject" =~ $CC_PATTERN ]]; then
             ci_error "${sha:0:7} « $subject » : format attendu <type>(<scope>): <description>."
             bad=1
+        elif [[ "$(git log -1 --format=%ae "$sha")" =~ $BOTS ]]; then
+            continue
         elif authored_length "$subject" && [ "$REPLY" -gt 72 ]; then
             ci_error "${sha:0:7} « $subject » : première ligne > 72 caractères (hors suffixe « (#NN) » de GitHub)."
             bad=1
@@ -104,7 +112,7 @@ check_commits() {
         if ! [[ "$title" =~ $CC_PATTERN ]]; then
             ci_error "Titre de la PR « $title » : format attendu <type>(<scope>): <description> (il devient le message du commit en squash)."
             bad=1
-        elif [ "${#title}" -gt 72 ]; then
+        elif [ -z "$bot" ] && authored_length "$title" && [ "$REPLY" -gt 72 ]; then
             ci_error "Titre de la PR « $title » : plus de 72 caractères."
             bad=1
         else
@@ -114,7 +122,8 @@ check_commits() {
     if [ "$bad" = 1 ]; then
         echo "Types :"
         types_help 2>&1
-        echo "Corriger : git rebase -i $BASE (reword), puis git push --force-with-lease"
+        echo "Corriger : en merge squash, seul le titre de la PR devient le message final : le corriger suffit."
+        echo "Sinon (historique conservé) : git rebase -i $BASE (reword), puis git push --force-with-lease"
         return 1
     fi
     echo "✔ $count commit(s) conforme(s)."

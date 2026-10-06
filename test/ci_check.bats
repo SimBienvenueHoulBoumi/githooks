@@ -183,3 +183,24 @@ setup() {
     authored_length "fix: àéèùçôîï (#12)"
     [ "$REPLY" -eq 13 ]
 }
+
+@test "ci : bots (Dependabot, Renovate) -> format exige, longueur libre" {
+    long="fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod group"
+    GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com" \
+        git commit -q --no-verify --allow-empty -m "$long"
+    REPOGARDE_BRANCH=dependabot/maven/prod REPOGARDE_PR_TITLE="$long" run "$CHECK" commits
+    [ "$status" -eq 0 ]
+    GIT_AUTHOR_EMAIL="29139614+renovate[bot]@users.noreply.github.com" \
+        git commit -q --no-verify --allow-empty -m "Update dependency x"
+    REPOGARDE_BRANCH=renovate/x run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"« Update dependency x »"* ]]
+}
+
+@test "ci : humain -> longueur toujours limitee, aide sans force push en premier" {
+    git commit -q --no-verify --allow-empty -m "fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod group"
+    REPOGARDE_PR_TITLE="fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod" run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"72 caractères"* ]]
+    [[ "$output" == *"le corriger suffit"* ]]
+}
