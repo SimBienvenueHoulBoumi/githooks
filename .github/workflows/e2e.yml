@@ -101,7 +101,8 @@ jobs:
         env:
           LANG_E2E: ${{ matrix.lang }}
         run: |
-          gobin="$(go env GOPATH 2>/dev/null)/bin"
+          gobin=""
+          if command -v go >/dev/null; then gobin="$(go env GOPATH)/bin"; fi
           case "$LANG_E2E" in
             python) pip install ruff==0.16.10 pytest==9.1.1 ;;
             ansible) pip install ansible-lint==26.9.0 ;;

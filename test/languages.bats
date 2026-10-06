@@ -314,3 +314,17 @@ load_engine() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"actionlint"* ]]
 }
+
+@test "python : pas de faux succes avec un .pyc perime (meme taille, meme seconde)" {
+    require pytest
+    load_engine
+    mkdir -p tests
+    printf '[tool.pytest.ini_options]\npythonpath = ["."]\n' >pyproject.toml
+    printf 'def test_x():\n    assert 1 == 1\n' >tests/test_x.py
+    python_test >/dev/null 2>&1
+    pytest -q >/dev/null 2>&1 || true # laisse un .pyc dans __pycache__
+    printf 'def test_x():\n    assert 1 == 2\n' >tests/test_x.py
+    touch -r pyproject.toml tests/test_x.py
+    run python_test
+    [ "$status" -ne 0 ]
+}

@@ -25,16 +25,23 @@ python_format() {
 }
 
 python_test() {
-    local rc=0
+    local rc=0 cache
+    # Cache de bytecode neuf : Python réutilise un .pyc si la source a même taille
+    # et même date à la seconde près — fréquent quand le hook met de côté puis
+    # restaure des fichiers. Sans ça, les tests tourneraient sur l'ancien code.
+    cache="$(mktemp -d)"
+    export PYTHONPYCACHEPREFIX="$cache"
     # Django sans pytest-django : runner intégré
     if [ -f manage.py ] && ! grep -qs pytest-django pyproject.toml requirements*.txt setup.cfg Pipfile; then
         step "Python : manage.py test"
-        python_run python manage.py test
-        return
+        python_run python manage.py test || rc=$?
+        rm -rf "$cache"
+        return "$rc"
     fi
-    if ! python_has pytest; then warn "Python : pytest absent, tests ignorés."; return 0; fi
+    if ! python_has pytest; then warn "Python : pytest absent, tests ignorés."; rm -rf "$cache"; return 0; fi
     step "Python : pytest"
-    python_run pytest -q || rc=$?
+    python_run pytest -q -p no:cacheprovider || rc=$?
+    rm -rf "$cache"
     # 5 = aucun test collecté : pas une erreur
     if [ "$rc" -eq 5 ]; then echo "ℹ Python : aucun test trouvé."; return 0; fi
     return "$rc"
