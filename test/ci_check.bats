@@ -183,3 +183,54 @@ setup() {
     authored_length "fix: àéèùçôîï (#12)"
     [ "$REPLY" -eq 13 ]
 }
+
+# --- ci/version.sh (releases en mode tag) ----------------------------------------
+
+VERSION="$BATS_TEST_DIRNAME/../ci/version.sh"
+
+c() { git commit -q --no-verify --allow-empty -m "$1"; }
+
+@test "version : aucun tag -> version initiale des le premier fix ou feat, rien sur chore" {
+    c "chore: outillage"
+    [ -z "$("$VERSION" next 2>/dev/null)" ]
+    c "fix: a"
+    [ "$("$VERSION" next 2>/dev/null)" = 0.1.0 ]
+    [ "$(INITIAL_VERSION=1.0.0 "$VERSION" next 2>/dev/null)" = 1.0.0 ]
+}
+
+@test "version : depuis le tag le plus eleve, increment selon les commits" {
+    git tag v1.4.2
+    c "fix: a"
+    [ "$("$VERSION" next 2>/dev/null)" = 1.4.3 ]
+    c "feat: b"
+    [ "$("$VERSION" next 2>/dev/null)" = 1.5.0 ]
+    c "refactor!: c"
+    [ "$("$VERSION" next 2>/dev/null)" = 2.0.0 ]
+}
+
+@test "version : BREAKING CHANGE en pied -> majeure" {
+    git tag v1.0.0
+    git commit -q --no-verify --allow-empty -m "fix: a" -m "BREAKING CHANGE: format change"
+    [ "$("$VERSION" next 2>/dev/null)" = 2.0.0 ]
+}
+
+@test "version : livraison mergee en squash -> version annoncee par le titre" {
+    git tag v1.0.0
+    c "chore(release): v1.3.0"
+    [ "$("$VERSION" next 2>/dev/null)" = 1.3.0 ]
+}
+
+@test "version : notes groupees, incompatibles en tete" {
+    git tag v1.0.0
+    c "feat: panier"
+    c "fix(api): timeout"
+    c "feat!: nouvelle API"
+    c "docs: guide"
+    run "$VERSION" notes
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"### ⚠ Changements incompatibles"*"- feat!: nouvelle API"* ]]
+    [[ "$output" == *"### Fonctionnalités"*"- feat: panier"* ]]
+    [[ "$output" == *"### Corrections"*"- fix(api): timeout"* ]]
+    [[ "$output" == *"### Maintenance"*"- docs: guide"* ]]
+    [[ "$output" == *"_Depuis v1.0.0._"* ]]
+}
