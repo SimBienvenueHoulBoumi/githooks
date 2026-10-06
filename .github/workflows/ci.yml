@@ -47,7 +47,9 @@ jobs:
           ci/install-gitleaks.sh
           echo "$GITHOOKS_BIN" >>"$GITHUB_PATH"
       - name: Tests
-        run: bats test/
+        env:
+          BATS_TEST_TIMEOUT: "300" # une boucle infinie échoue au lieu de bloquer la CI
+        run: bats --print-output-on-failure test/
 
   # githooks se vérifie avec sa propre action (dogfooding)
   githooks:

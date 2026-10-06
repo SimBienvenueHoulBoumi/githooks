@@ -236,3 +236,26 @@ load_engine() {
     [ "$(find_up marker)" = "$(cd "$REPO" && pwd -P)/marker" ]
     ! find_up introuvable-xyz
 }
+
+@test "detection : multi-module sur 3 niveaux, sans boucle" {
+    load_engine
+    mkdir -p a/b/c/src
+    touch pom.xml a/pom.xml a/b/pom.xml a/b/c/pom.xml
+    [ "$(nearest_project a/b/c/src/A.java maven)" = "maven ." ]
+    # mémo : deuxième appel identique
+    [ "$(nearest_project a/b/c/src/B.java maven)" = "maven ." ]
+}
+
+@test "performance : commit de 300 fichiers en moins de 30 s" {
+    touch pom.xml
+    for d in a b c d e; do
+        mkdir -p "src/$d/sub"
+        for i in $(seq 1 60); do echo "# doc $i" >"src/$d/sub/F$i.md"; done
+    done
+    git add -A
+    start=$SECONDS
+    run git commit -q -m "ajoute 300 fichiers"
+    [ "$status" -eq 0 ]
+    echo "durée : $((SECONDS - start)) s"
+    [ $((SECONDS - start)) -lt 30 ]
+}
