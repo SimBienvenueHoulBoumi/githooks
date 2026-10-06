@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.0.2...v2.1.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* **release:** provenance SLSA et dépendances figées par empreinte ([#28](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/28)) ([de8eddc](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/de8eddcd096129219dc9a675b5e3cbedc33485e6))
+
 ## [2.0.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.0.1...v2.0.2) (2026-10-06)
 
 
