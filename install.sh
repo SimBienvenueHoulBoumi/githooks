@@ -29,7 +29,7 @@ if [ "$ACTION" = uninstall ]; then
     exit 0
 fi
 
-chmod +x "$HOOKS"/pre-commit "$HOOKS"/prepare-commit-msg "$HOOKS"/commit-msg "$HOOKS"/pre-push "$HOOKS"/post-checkout
+chmod +x "$HOOKS"/pre-commit "$HOOKS"/prepare-commit-msg "$HOOKS"/commit-msg "$HOOKS"/pre-push "$HOOKS"/post-checkout "$HOOKS"/post-merge
 
 CURRENT="$(git config "$SCOPE" --get core.hooksPath || true)"
 if [ -n "$CURRENT" ] && [ "$CURRENT" != "$HOOKS" ]; then

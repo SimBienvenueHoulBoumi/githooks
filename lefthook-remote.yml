@@ -33,3 +33,8 @@ post-checkout:
   scripts:
     githooks:
       runner: bash
+
+post-merge:
+  scripts:
+    githooks:
+      runner: bash
