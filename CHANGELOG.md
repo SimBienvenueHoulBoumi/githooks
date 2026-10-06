@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.1](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.1.0...v1.1.1) (2026-10-06)
+
+
+### Corrections
+
+* **action:** installe actionlint (mode strict) ([dff1f02](https://github.com/SimBienvenueHoulBoumi/githooks/commit/dff1f02876b7e8dbc56b95781d67406ea8a08d26))
+* **action:** installe actionlint, scripts appelés via bash ([d0a464b](https://github.com/SimBienvenueHoulBoumi/githooks/commit/d0a464be6fb5e916ffb8218aa1d7a0966e2f74b3))
+
+
+### Documentation
+
+* **readme:** technologies prises en charge ([550a54e](https://github.com/SimBienvenueHoulBoumi/githooks/commit/550a54e4b961c6b07d5f051f89c0f2dd984a49c7))
+
 ## [1.1.0](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.0.1...v1.1.0) (2026-10-06)
 
 
