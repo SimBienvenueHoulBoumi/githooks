@@ -42,7 +42,7 @@ Choisir le parcours qui correspond à l'usage.
     | Vérifier | `git config --global core.hooksPath` → `…/repogarde/hooks` |
     | Mettre à jour | `git -C ~/repogarde pull` |
     | Un seul dépôt | `cd mon-projet && ~/repogarde/install.sh` |
-    | Désinstaller | `~/repogarde/install.sh --uninstall --global` |
+    | Désinstaller | `~/repogarde/install.sh --uninstall --global` ([désinstallation complète](desinstallation.md)) |
 
     Un dépôt qui contient un `lefthook.yml` utilise automatiquement sa propre configuration (version figée).
 
