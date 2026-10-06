@@ -134,7 +134,8 @@ authored_length() {
 # Nommage des branches : <type>/<sujet>
 BRANCH_ALIASES="feature|bugfix|hotfix"
 BRANCH_PATTERN="^($CC_TYPES|$BRANCH_ALIASES)/[a-z0-9._-]+(/[a-z0-9._-]+)*$"
-DEFAULT_ALLOWED_BRANCHES="main master develop release/*"
+# Branches des bots (release-please, Dependabot, Renovate) : nommées par eux
+DEFAULT_ALLOWED_BRANCHES="main master develop release/* release-please--* dependabot/* renovate/*"
 
 # Liste des types avec leur rôle (affichée dans les messages d'aide)
 types_help() {
