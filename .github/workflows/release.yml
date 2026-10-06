@@ -50,7 +50,14 @@ jobs:
         run: |
           pr="$(jq -r .number <<<"$PR_JSON")"
           branch="$(jq -r .headBranchName <<<"$PR_JSON")"
-          sha="$(gh pr view "$pr" --json headRefOid -q .headRefOid)"
+          # Commit lu sur la branche (release-please vient de la mettre à jour) ;
+          # la PR peut l'afficher avec un léger retard : on attend qu'elle suive,
+          # sinon le merge (--match-head-commit) serait refusé.
+          sha="$(gh api "repos/$GH_REPO/commits/$branch" --jq .sha)"
+          for _ in $(seq 1 30); do
+            [ "$(gh pr view "$pr" --json headRefOid -q .headRefOid)" = "$sha" ] && break
+            sleep 5
+          done
           echo "PR #$pr ($branch @ ${sha:0:7}) : lancement de la CI"
           gh workflow run ci.yml --ref "$branch"
           # Attendre que les vérifications obligatoires apparaissent puis se terminent
