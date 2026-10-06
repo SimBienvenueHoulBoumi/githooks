@@ -4,10 +4,10 @@
 include:
   # githooks hébergé sur votre GitLab (recommandé : accès interne, pas de dépendance externe)
   - project: outils/githooks
-    ref: v1.1.0 # x-release-please-version
+    ref: v1.1.1 # x-release-please-version
     file: templates/gitlab/githooks.gitlab-ci.yml
   # ou depuis GitHub (dépôt public) :
-  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/githooks/v1.1.0/templates/gitlab/githooks.gitlab-ci.yml # x-release-please-version
+  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/githooks/v1.1.1/templates/gitlab/githooks.gitlab-ci.yml # x-release-please-version
 
 stages: [test]
 
