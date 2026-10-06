@@ -259,3 +259,23 @@ load_engine() {
     echo "durée : $((SECONDS - start)) s"
     [ $((SECONDS - start)) -lt 30 ]
 }
+
+@test "format : erreur de syntaxe -> commit refuse, message clair" {
+    require ruff
+    printf 'def f(:\n' >casse.py
+    git add casse.py
+    run git commit -q -m "ajoute casse"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Échec du formatage"* ]]
+}
+
+@test "format : outil du projet (.venv) prioritaire sur celui du poste" {
+    mkdir -p .venv/bin
+    printf '#!/bin/sh\n[ "$1" = --version ] && exit 0\necho RUFF-DU-PROJET >&2\n' >.venv/bin/ruff
+    chmod +x .venv/bin/ruff
+    touch pyproject.toml
+    printf 'x = 1\n' >a.py
+    git add a.py pyproject.toml
+    run git commit -q -m "ajoute a"
+    [[ "$output" == *"RUFF-DU-PROJET"* ]]
+}

@@ -10,8 +10,10 @@ cpp_format() {
 }
 
 cpp_test() {
+    # Recompile avant de tester : sinon les tests tournent sur l'ancien binaire
     if [ -f build/CTestTestfile.cmake ] && has ctest; then
-        step "C/C++ : ctest"; ctest --test-dir build --output-on-failure
+        step "C/C++ : cmake --build + ctest"
+        cmake --build build && ctest --test-dir build --output-on-failure
     elif [ -f builddir/build.ninja ] && has meson; then
         step "C/C++ : meson test"; meson test -C builddir
     else

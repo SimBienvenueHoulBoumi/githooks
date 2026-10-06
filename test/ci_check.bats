@@ -134,3 +134,12 @@ setup() {
     run "$CHECK" nimporte
     [ "$status" -ne 0 ]
 }
+
+@test "ci : formateur en erreur (syntaxe) -> echec" {
+    require ruff
+    printf 'def f(:\n' >casse.py
+    git add casse.py
+    git commit -q --no-verify -m "feat: casse"
+    run "$CHECK" format
+    [ "$status" -ne 0 ]
+}

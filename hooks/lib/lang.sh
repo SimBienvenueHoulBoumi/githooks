@@ -157,6 +157,32 @@ tool_missing() {
     return 0
 }
 
+# Chemins exclus (hooks.exclude) : globs séparés par des espaces, ex.
+# "vendor/* generated/*" — code vendorisé, fichiers générés, fixtures de test.
+EXCLUDE_PATTERNS=""
+EXCLUDE_DONE=""
+is_excluded() {
+    local pat
+    if [ -z "$EXCLUDE_DONE" ]; then
+        EXCLUDE_PATTERNS="$(cfg exclude)"
+        EXCLUDE_DONE=1
+    fi
+    [ -n "$EXCLUDE_PATTERNS" ] || return 1
+    set -f
+    for pat in $EXCLUDE_PATTERNS; do
+        # shellcheck disable=SC2254
+        case "$1" in $pat) set +f; return 0 ;; esac
+    done
+    set +f
+    return 1
+}
+
+# Filtre stdin : retire les chemins exclus
+without_excluded() {
+    local f
+    while IFS= read -r f; do is_excluded "$f" || printf '%s\n' "$f"; done
+}
+
 # --- Formatage (pre-commit) --------------------------------------------------
 
 # Commande personnalisée : hooks.format reçoit les fichiers stagés en arguments
@@ -179,7 +205,7 @@ format_files() {
     local mode="${1:-}" list f p d plugins plugin dir groups key cmd standalone failed=0
     list="$(mktemp)"
     groups="$(mktemp)"
-    while IFS= read -r f; do [ -f "$f" ] && echo "$f"; done >"$list"
+    while IFS= read -r f; do [ -f "$f" ] && ! is_excluded "$f" && echo "$f"; done >"$list"
     [ -s "$list" ] || { rm -f "$list" "$groups"; return 0; }
 
     cmd="$(cfg format)"
@@ -254,7 +280,8 @@ projects_for_files() {
         plugin_get "$p" MARKERS
         [ -n "$REPLY" ] && all="$all $p"
     done
-    awk '{ if (index($0, "/")) sub(/\/[^\/]*$/, ""); else $0 = "."; print }' | sort -u |
+    without_excluded |
+        awk '{ if (index($0, "/")) sub(/\/[^\/]*$/, ""); else $0 = "."; print }' | sort -u |
         while IFS= read -r dir; do
             nearest_project_r "$dir/x" "$all" && echo "${REPLY#* }"
         done | sort -u
