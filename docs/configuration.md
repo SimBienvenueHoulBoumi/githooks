@@ -13,7 +13,7 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
     test = make ci                      # lancée à la racine
     # Réglages
     skip = protect-branch python        # étapes, hooks ou langages désactivés
-    protectedBranches = main develop    # défaut : main master
+    protectedBranches = main develop    # commit et push directs interdits ; défaut : main master
     allowedBranches = main develop release/*
     exclude = vendor/* generated/*      # chemins ni formatés ni testés
 ```

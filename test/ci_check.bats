@@ -281,7 +281,7 @@ flux_develop() {
     grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
 }
 
-@test "fix-pr : pied BREAKING CHANGE -> « ! » ajoute au titre" {
+@test "fix-pr : pied BREAKING CHANGE -> ! ajoute au titre" {
     fake_gh
     flux_develop
     git commit -q --allow-empty -m "fix: format" -m "BREAKING CHANGE: nouveau format"

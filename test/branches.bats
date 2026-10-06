@@ -24,6 +24,14 @@ setup() { setup_repo; initial_commit; }
     done
 }
 
+@test "branches des bots acceptees par defaut (release-please, Dependabot, Renovate)" {
+    source "$HOOKS/lib/common.sh"
+    for ok in release-please--branches--main release-please--branches--main--components--app \
+        dependabot/npm_and_yarn/vitest-5.0.3 renovate/lock-file-maintenance; do
+        branch_name_valid "$ok" || { echo "devrait être valide : $ok"; return 1; }
+    done
+}
+
 @test "repogarde.allowedBranches remplace les exceptions" {
     source "$HOOKS/lib/common.sh"
     git config repogarde.allowedBranches "main"
@@ -64,6 +72,37 @@ setup() { setup_repo; initial_commit; }
 @test "main : repogarde.skip protect-branch l'autorise" {
     git config repogarde.skip "secrets protect-branch"
     run git commit -q --allow-empty -m "fix: x"
+    [ "$status" -eq 0 ]
+}
+
+@test "pre-push : creation initiale de main permise, push direct ensuite refuse" {
+    git push -q -u origin main
+    git commit -q --no-verify --allow-empty -m "fix: x"
+    run git push -q origin main
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Push direct refusé sur 'main'"* ]]
+    [ "$(git rev-parse origin/main)" != "$(git rev-parse main)" ]
+}
+
+@test "pre-push : protectedBranches s'applique a develop, pas aux autres branches" {
+    git config repogarde.protectedBranches "main develop"
+    git push -q -u origin main
+    git switch -q -c develop
+    git push -q -u origin develop
+    git commit -q --no-verify --allow-empty -m "fix: x"
+    run git push -q origin develop
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Push direct refusé sur 'develop'"* ]]
+    git switch -q -c feat/x
+    run git push -q -u origin feat/x
+    [ "$status" -eq 0 ]
+}
+
+@test "pre-push : repogarde.skip protect-branch autorise le push sur main" {
+    git push -q -u origin main
+    git commit -q --no-verify --allow-empty -m "fix: x"
+    git config repogarde.skip "secrets protect-branch"
+    run git push -q origin main
     [ "$status" -eq 0 ]
 }
 

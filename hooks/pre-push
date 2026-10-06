@@ -26,6 +26,23 @@ if ! skipped branch-name; then
     done <<< "$REFS"
 fi
 
+# Branches protégées : elles n'évoluent que par Pull Request. Seule la création
+# initiale sur le remote est permise (dépôt neuf).
+if ! skipped protect-branch; then
+    cfg_r protectedBranches "main master"
+    PROTECTED="$REPLY"
+    while read -r _ _ remote_ref remote_sha; do
+        [[ "$remote_ref" == refs/heads/* ]] || continue
+        branch="${remote_ref#refs/heads/}"
+        [[ " $PROTECTED " == *" $branch "* ]] || continue
+        [[ "$remote_sha" =~ ^0+$ ]] && continue
+        echo "✖ Push direct refusé sur '$branch' : elle n'évolue que par Pull Request." >&2
+        echo "  Crée une branche : git switch -c feat/ma-feature, puis ouvre une PR." >&2
+        echo "  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" >&2
+        exit 1
+    done <<<"$REFS"
+fi
+
 skipped tests && { echo "ℹ Tests désactivés (repogarde.skip)."; exit 0; }
 
 REMOTE="${1:-origin}"
