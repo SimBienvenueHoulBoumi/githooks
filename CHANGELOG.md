@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.2.0...v1.3.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* releases sans jeton et merges squash ([#15](https://github.com/SimBienvenueHoulBoumi/githooks/issues/15)) ([8455cfa](https://github.com/SimBienvenueHoulBoumi/githooks/commit/8455cfaac42b6e9f7399547dbaff50d1f083c930))
+
+
+### Corrections
+
+* **release:** dépôt explicite pour gh (job sans checkout) ([#17](https://github.com/SimBienvenueHoulBoumi/githooks/issues/17)) ([0c220da](https://github.com/SimBienvenueHoulBoumi/githooks/commit/0c220da8a8a7c9c501cba9535d9d2079af15d2a7))
+
 ## [1.2.0](https://github.com/SimBienvenueHoulBoumi/githooks/compare/v1.1.1...v1.2.0) (2026-10-06)
 
 
