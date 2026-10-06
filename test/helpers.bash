@@ -6,7 +6,7 @@ HOOKS="$(cd "$BATS_TEST_DIRNAME/../hooks" && pwd -P)"
 setup_repo() {
     REPO="$BATS_TEST_TMPDIR/repo"
     REMOTE="$BATS_TEST_TMPDIR/remote.git"
-    git init -q --bare "$REMOTE"
+    git init -q --bare -b main "$REMOTE" # indépendant de init.defaultBranch
     git init -q -b main "$REPO"
     cd "$REPO" || return 1
     git config user.name test

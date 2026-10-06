@@ -70,7 +70,7 @@ setup() { setup_repo; initial_commit; }
 # Simule le merge d'une PR côté serveur, puis la suppression de sa branche
 server_merge_and_delete() {
     local tmp="$BATS_TEST_TMPDIR/serveur"
-    git clone -q "$REMOTE" "$tmp"
+    git clone -q -b main "$REMOTE" "$tmp"
     git -C "$tmp" config core.hooksPath /dev/null
     git -C "$tmp" config user.name serveur
     git -C "$tmp" config user.email serveur@example.com
