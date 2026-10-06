@@ -32,6 +32,10 @@ on:
           et à workflow_dispatch.
         type: string
         default: ""
+      initial-version:
+        description: Version de la toute première release (aucun tag ni release existant).
+        type: string
+        default: 0.1.0
       config-file:
         type: string
         default: release-please-config.json
@@ -79,6 +83,7 @@ jobs:
           CONFIG_FILE: ${{ inputs.config-file }}
           WORKFLOWS: ${{ inputs.workflows }}
           CALLER: ${{ github.workflow_ref }}
+          INITIAL_VERSION: ${{ inputs.initial-version }}
         run: |
           existe() { gh api "repos/$GH_REPO/contents/$1?ref=$GITHUB_REF_NAME" --silent 2>/dev/null; }
           type="$RELEASE_TYPE"
@@ -95,6 +100,13 @@ jobs:
             echo "Type détecté : $type (fixer avec l'entrée release-type, ou $CONFIG_FILE)"
           fi
           echo "type=$type" >>"$GITHUB_OUTPUT"
+
+          # Première release : version initiale choisie (release-please partirait de 1.0.0)
+          if [ -z "$(gh release list --limit 1 --json tagName -q '.[].tagName')" ] &&
+            [ "$(gh api "repos/$GH_REPO/tags?per_page=1" --jq length)" = 0 ]; then
+            echo "Première release : $INITIAL_VERSION"
+            echo "release_as=$INITIAL_VERSION" >>"$GITHUB_OUTPUT"
+          fi
 
           if [ -z "$WORKFLOWS" ]; then
             appelant="${CALLER%%@*}"
@@ -116,6 +128,7 @@ jobs:
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           release-type: ${{ steps.config.outputs.type }}
+          release-as: ${{ steps.config.outputs.release_as }}
           config-file: ${{ inputs.config-file }}
           manifest-file: ${{ inputs.manifest-file }}
 
@@ -240,6 +253,7 @@ jobs:
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           release-type: ${{ steps.config.outputs.type }}
+          release-as: ${{ steps.config.outputs.release_as }}
           config-file: ${{ inputs.config-file }}
           manifest-file: ${{ inputs.manifest-file }}
           skip-github-pull-request: true

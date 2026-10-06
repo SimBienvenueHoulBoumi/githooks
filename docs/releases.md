@@ -82,6 +82,7 @@ Le type de projet est détecté d'après les fichiers à la racine :
 |---|---|---|
 | `release-type` | détection | type release-please (`maven`, `node`, `python`, `simple`…) |
 | `workflows` | détection | workflows lancés sur la PR de release ; par défaut ceux qui réagissent à `pull_request` et à `workflow_dispatch` |
+| `initial-version` | `0.1.0` | version de la première release (aucun tag existant) |
 | `config-file`, `manifest-file` | `release-please-config.json`, `.release-please-manifest.json` | configuration release-please |
 
 !!! warning "Workflows qui déploient"
