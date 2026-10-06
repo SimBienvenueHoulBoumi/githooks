@@ -118,6 +118,14 @@ cfg() {
 CC_TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
 CC_PATTERN="^($CC_TYPES)(\([a-z0-9._-]+\))?!?: .+"
 
+# REPLY = longueur de la première ligne écrite par l'auteur : le suffixe
+# « (#123) » ajouté par GitHub lors d'un merge squash n'est pas compté.
+authored_length() {
+    local subject="$1"
+    if [[ "$subject" =~ ^(.*)\ \(\#[0-9]+\)$ ]]; then subject="${BASH_REMATCH[1]}"; fi
+    REPLY="${#subject}"
+}
+
 # Nommage des branches : <type>/<sujet>
 BRANCH_ALIASES="feature|bugfix|hotfix"
 BRANCH_PATTERN="^($CC_TYPES|$BRANCH_ALIASES)/[a-z0-9._-]+(/[a-z0-9._-]+)*$"

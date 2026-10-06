@@ -38,7 +38,8 @@ EOF
     exit 1
 fi
 
-if [ "${#SUBJECT}" -gt 72 ]; then
-    echo "✖ Première ligne trop longue (${#SUBJECT} > 72 caractères)." >&2
+authored_length "$SUBJECT"
+if [ "$REPLY" -gt 72 ]; then
+    echo "✖ Première ligne trop longue ($REPLY > 72 caractères)." >&2
     exit 1
 fi

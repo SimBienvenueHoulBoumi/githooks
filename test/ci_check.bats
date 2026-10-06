@@ -165,3 +165,13 @@ setup() {
     [[ "$output" == *"Python : aucun test"* ]]
     [[ "$output" != *"pytest absent"* ]]
 }
+
+@test "ci : suffixe (#NN) d'un merge squash non compte dans les 72 caracteres" {
+    # 67 caractères écrits + « (#31) » ajouté par GitHub = 73
+    git commit -q --no-verify --allow-empty -m "docs(securite): vérification SLSA corrigée, piège du dossier déplacé (#31)"
+    run "$CHECK" commits
+    [ "$status" -eq 0 ]
+    git commit -q --no-verify --allow-empty -m "docs: $(printf 'a%.0s' {1..70})"
+    run "$CHECK" commits
+    [ "$status" -ne 0 ]
+}

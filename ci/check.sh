@@ -93,8 +93,8 @@ check_commits() {
         elif ! [[ "$subject" =~ $CC_PATTERN ]]; then
             ci_error "${sha:0:7} « $subject » : format attendu <type>(<scope>): <description>."
             bad=1
-        elif [ "${#subject}" -gt 72 ]; then
-            ci_error "${sha:0:7} « $subject » : première ligne > 72 caractères."
+        elif authored_length "$subject" && [ "$REPLY" -gt 72 ]; then
+            ci_error "${sha:0:7} « $subject » : première ligne > 72 caractères (hors suffixe « (#NN) » de GitHub)."
             bad=1
         fi
     done < <(git rev-list --no-merges "$BASE..HEAD")
