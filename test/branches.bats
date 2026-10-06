@@ -24,6 +24,14 @@ setup() { setup_repo; initial_commit; }
     done
 }
 
+@test "branches des bots acceptees par defaut (release-please, Dependabot, Renovate)" {
+    source "$HOOKS/lib/common.sh"
+    for ok in release-please--branches--main release-please--branches--main--components--app \
+        dependabot/npm_and_yarn/vitest-5.0.3 renovate/lock-file-maintenance; do
+        branch_name_valid "$ok" || { echo "devrait être valide : $ok"; return 1; }
+    done
+}
+
 @test "repogarde.allowedBranches remplace les exceptions" {
     source "$HOOKS/lib/common.sh"
     git config repogarde.allowedBranches "main"

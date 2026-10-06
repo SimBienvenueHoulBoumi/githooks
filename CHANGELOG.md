@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.2.2...v2.3.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* **hooks:** push direct refusé sur les branches protégées ([#50](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/50)) ([e5c8dc6](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/e5c8dc60448b0a76e64008f06c80315740c1ddcd))
+
 ## [2.2.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.2.1...v2.2.2) (2026-10-06)
 
 

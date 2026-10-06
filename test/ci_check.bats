@@ -17,7 +17,8 @@ setup() {
     export REPOGARDE_BASE="$BASE_SHA" REPOGARDE_BRANCH=feat/x
     # isole des variables CI de l'environnement d'exécution
     unset GITHUB_ACTIONS GITHUB_BASE_REF GITHUB_HEAD_REF GITHUB_REF_NAME CI_COMMIT_BRANCH \
-        CI_MERGE_REQUEST_SOURCE_BRANCH_NAME CI_MERGE_REQUEST_DIFF_BASE_SHA
+        CI_MERGE_REQUEST_SOURCE_BRANCH_NAME CI_MERGE_REQUEST_DIFF_BASE_SHA \
+        CI_MERGE_REQUEST_TARGET_BRANCH_NAME REPOGARDE_TARGET
 }
 
 @test "ci : commits conformes" {
@@ -190,6 +191,38 @@ PROTEGER="$BATS_TEST_DIRNAME/../bin/proteger"
 
 # Faux gh : branches existantes = $GH_BRANCHES ; journalise les appels
 fake_gh_repo() {
+@test "ci : flux develop, cibles de PR autorisees" {
+    git config repogarde.integrationBranch develop
+    git config repogarde.allowedBranches "main develop release/* release-please--* dependabot/*"
+    for paire in feat/x:develop develop:main release/1.2.0:main release/1.2.0:develop \
+        hotfix/crash:main dependabot/maven/x:develop release-please--branches--main:main; do
+        REPOGARDE_BRANCH="${paire%%:*}" REPOGARDE_TARGET="${paire#*:}" run "$CHECK" branch
+        [ "$status" -eq 0 ] || { echo "devrait passer : $paire"; echo "$output"; return 1; }
+    done
+}
+
+@test "ci : flux develop, mauvaise cible refusee avec la correction" {
+    git config repogarde.integrationBranch develop
+    REPOGARDE_TARGET=main run "$CHECK" branch
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"cible attendue develop"* ]]
+    [[ "$output" == *"gh pr edit --base develop"* ]]
+    REPOGARDE_BRANCH=develop REPOGARDE_TARGET=release/1.0.0 run "$CHECK" branch
+    [ "$status" -ne 0 ]
+}
+
+@test "ci : sans integrationBranch, toute cible acceptee" {
+    REPOGARDE_TARGET=develop run "$CHECK" branch
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Cible"* ]]
+}
+
+# --- ci/fix-pr.sh (entrée fix-pr de l'action) : gh simulé ----------------------
+
+FIX="$BATS_TEST_DIRNAME/../ci/fix-pr.sh"
+
+# Faux gh : journalise ses arguments ; « pr list » renvoie $GH_DUP (doublon)
+fake_gh() {
     mkdir -p "$BATS_TEST_TMPDIR/bin"
     cat >"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
 #!/usr/bin/env bash
@@ -236,4 +269,98 @@ GH
     GH_BRANCHES="" run "$PROTEGER" --dry-run
     [ "$status" -ne 0 ]
     [[ "$output" == *"Aucune des branches"* ]]
+[ "$1 $2" = "pr list" ] && echo "${GH_DUP:-}"
+exit 0
+GH
+    chmod +x "$BATS_TEST_TMPDIR/bin/gh"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH" GH_LOG="$BATS_TEST_TMPDIR/gh.log"
+    export GITHUB_ENV="$BATS_TEST_TMPDIR/github_env" PR=7
+    : >"$GH_LOG"
+    : >"$GITHUB_ENV"
+}
+
+# main et develop sur le remote, branche feat/x avec un commit
+flux_develop() {
+    git config repogarde.integrationBranch develop
+    git push -q origin HEAD:main HEAD:develop
+    git fetch -q origin
+    git commit -q --allow-empty -m "feat(panier): ajoute le panier"
+    export HEAD=feat/x HEAD_SHA="$(git rev-parse HEAD)"
+}
+
+@test "fix-pr : PR vers main recible vers develop, titre conforme garde" {
+    fake_gh
+    flux_develop
+    BASE=main TITLE="feat: panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "pr edit 7 --base develop" "$GH_LOG"
+    ! grep -q -- "--title" "$GH_LOG"
+    grep -q "^REPOGARDE_FIXED_TARGET=develop$" "$GITHUB_ENV"
+    grep -q "^REPOGARDE_FIXED_BASE=$BASE_SHA$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : doublon ferme au lieu d'etre recible" {
+    fake_gh
+    flux_develop
+    GH_DUP=3 BASE=main TITLE="feat: panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "pr close 7 --comment Doublon de #3" "$GH_LOG"
+    ! grep -q -- "--base" "$GH_LOG"
+    grep -q "^REPOGARDE_PR_CLOSED=true$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : titre non conforme remplace par le commit unique" {
+    fake_gh
+    flux_develop
+    BASE=develop TITLE="Feat/x" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "pr edit 7 --title feat(panier): ajoute le panier" "$GH_LOG"
+    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : plusieurs commits -> celui au plus fort impact de version" {
+    fake_gh
+    flux_develop
+    git commit -q --allow-empty -m "test: panier"
+    git commit -q --allow-empty -m "fix: arrondi"
+    export HEAD_SHA="$(git rev-parse HEAD)"
+    BASE=develop TITLE="Ajout du panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : pied BREAKING CHANGE -> ! ajoute au titre" {
+    fake_gh
+    flux_develop
+    git commit -q --allow-empty -m "fix: format" -m "BREAKING CHANGE: nouveau format"
+    export HEAD_SHA="$(git rev-parse HEAD)"
+    BASE=develop TITLE="wip" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier)!: ajoute le panier$" "$GITHUB_ENV"
+}
+
+@test "fix-pr : aucun commit conforme -> titre deduit de la branche" {
+    fake_gh
+    git config repogarde.integrationBranch develop
+    git push -q origin HEAD:main HEAD:develop
+    git fetch -q origin
+    git commit -q --no-verify --allow-empty -m "wip"
+    export HEAD=feat/ajout-du-panier HEAD_SHA="$(git rev-parse HEAD)"
+    BASE=develop TITLE="Ajout du panier" run "$FIX"
+    [ "$status" -eq 0 ]
+    grep -q "^REPOGARDE_FIXED_TITLE=feat: ajout du panier$" "$GITHUB_ENV"
+}
+
+@test "titres deduits des branches" {
+    source "$BATS_TEST_DIRNAME/../hooks/lib/common.sh"
+    git config repogarde.integrationBranch develop
+    cfg_reset
+    for paire in "hotfix/crash-login:fix: crash login" "release/1.2.0:chore(release): 1.2.0" \
+        "develop:chore(release): livrer develop sur main" "wip:chore: wip" \
+        "feature/a_b:feat: a b"; do
+        suggest_pr_title_r "${paire%%:*}"
+        [ "$REPLY" = "${paire#*:}" ] || { echo "${paire%%:*} -> « $REPLY »"; return 1; }
+    done
+    suggest_pr_title_r "feat/$(printf 'mot-%.0s' {1..30})fin"
+    header_valid "$REPLY" || { echo "trop long : $REPLY"; return 1; }
 }
