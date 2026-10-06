@@ -5,6 +5,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Lancé par le workflow de release sur sa PR (analyse de chaque commit de main)
+  workflow_dispatch:
   schedule:
     - cron: "41 5 * * 1"
 
