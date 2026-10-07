@@ -55,6 +55,20 @@ Deux prérequis :
 
 Les vérifications exigées par la protection de `main` restent obligatoires : sans CI verte, rien n'est mergé.
 
+## Merger la PR de release : laisser faire le bot
+
+La PR de release est mergée **par le workflow lui-même**, dès que la CI est verte, et la release est publiée dans le même run. La merger à la main fonctionne aussi, sauf dans un cas : si un fichier de `.github/workflows/` change sur `main` avant que la release soit publiée, GitHub refuse au jeton des Actions de créer le tag (il faudrait la permission `workflow`, que ce jeton n'a jamais) : « Resource not accessible by integration ».
+
+Le workflow le détecte et affiche la cause et les commandes exactes ; en résumé, avec un compte qui a la permission `workflow` :
+
+```bash
+gh auth refresh -h github.com -s workflow
+gh release create vX.Y.Z --target <commit de merge de la PR> --title vX.Y.Z --notes-file notes.md
+gh pr edit <n° de la PR> --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+```
+
+puis relancer le workflow `release`.
+
 ## Fichier de version
 
 Le type de projet est détecté d'après les fichiers à la racine :
