@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.13.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.12.0...v2.13.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **npm:** paquet npm pour installer repogarde sur la machine ([#96](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/96)) ([ecd84c2](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/ecd84c2e38f16e6722571b4af7aee0aac2eff778))
+
+
+### Corrections
+
+* **release:** PR de release mergée à la main : arrêt propre ([#97](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/97)) ([db48881](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/db48881f409aa45450520c9e924de3338de6ae4b))
+
 ## [2.12.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.3...v2.12.0) (2026-10-07)
 
 

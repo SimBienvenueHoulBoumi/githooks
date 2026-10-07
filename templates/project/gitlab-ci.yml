@@ -4,10 +4,10 @@
 include:
   # repogarde hébergé sur votre GitLab (recommandé : accès interne, pas de dépendance externe)
   - project: outils/repogarde
-    ref: v2.12.0 # x-release-please-version
+    ref: v2.13.0 # x-release-please-version
     file: templates/gitlab/repogarde.gitlab-ci.yml
   # ou depuis GitHub (dépôt public) :
-  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repogarde/v2.12.0/templates/gitlab/repogarde.gitlab-ci.yml # x-release-please-version
+  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repogarde/v2.13.0/templates/gitlab/repogarde.gitlab-ci.yml # x-release-please-version
 
 stages: [test]
 

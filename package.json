@@ -1,6 +1,6 @@
 {
   "name": "@simbienvenuehoulboumi/repogarde",
-  "version": "2.12.0",
+  "version": "2.13.0",
   "description": "Hooks git et CI multi-langages : messages de commit, nommage des branches, secrets, formatage, tests ciblés, code mort, releases.",
   "keywords": [
     "git-hooks",
