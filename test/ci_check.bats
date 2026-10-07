@@ -689,3 +689,13 @@ T
     [[ "$output" == *"rien à vérifier"* ]]
     [[ "$output" != *"Aucun nouveau code mort"* ]]
 }
+
+@test "bot-release : aide, et sur GitLab annonce du jeton d'acces de projet" {
+    run "$BATS_TEST_DIRNAME/../bin/bot-release" --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"GitHub App"* ]]
+    git config repogarde.forge gitlab
+    run "$BATS_TEST_DIRNAME/../bin/bot-release"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REPOGARDE_RELEASE_TOKEN"* ]]
+}

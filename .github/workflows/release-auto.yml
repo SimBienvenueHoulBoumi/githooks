@@ -81,6 +81,17 @@ on:
       webhook:
         description: Adresse du webhook entrant du canal de l'équipe (Slack, Teams, Discord…)
         required: false
+      app-id:
+        description: >-
+          Bot de release (optionnel) : identifiant d'une GitHub App installée sur
+          le dépôt (Contents, Pull requests, Workflows, Issues en écriture). Ses
+          jetons d'une heure remplacent le jeton des Actions pour créer la PR de
+          release et la release : aucun blocage si des workflows ont changé.
+          Configuration guidée : repogarde/bin/bot-release.
+        required: false
+      app-key:
+        description: Clé privée (PEM) de cette GitHub App
+        required: false
     outputs:
       release_created:
         value: ${{ jobs.release.outputs.release_created || jobs.tag.outputs.release_created }}
@@ -113,7 +124,22 @@ jobs:
       major: ${{ steps.release.outputs.major || steps.publish.outputs.major }}
       sha: ${{ steps.release.outputs.sha || steps.publish.outputs.sha }}
       waiting_pr: ${{ steps.merge.outputs.waiting_pr }}
+    env:
+      HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
     steps:
+      # Identité de release : bot GitHub App si configuré (jeton d'une heure),
+      # sinon jeton des Actions
+      - name: Bot de release
+        id: bot
+        if: env.HAS_APP == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-key }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+          permission-issues: write
       # Tout est lu par l'API : pas de checkout, aucun code du projet exécuté
       - name: Configuration
         id: config
@@ -168,6 +194,7 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
+          token: ${{ steps.bot.outputs.token || github.token }}
           release-type: ${{ steps.config.outputs.type }}
           release-as: ${{ steps.config.outputs.release_as }}
           config-file: ${{ inputs.config-file }}
@@ -307,6 +334,7 @@ jobs:
         if: steps.merge.outputs.merged == 'true'
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
+          token: ${{ steps.bot.outputs.token || github.token }}
           release-type: ${{ steps.config.outputs.type }}
           release-as: ${{ steps.config.outputs.release_as }}
           config-file: ${{ inputs.config-file }}
@@ -345,7 +373,8 @@ jobs:
             gh pr view $num -R $GH_REPO --json body -q .body > notes.md   # notes de version
             gh release create v$version -R $GH_REPO --target $sha --title v$version --notes-file notes.md
             gh pr edit $num -R $GH_REPO --remove-label "autorelease: pending" --add-label "autorelease: tagged"
-          puis relancer ce workflow. Pour l'éviter : laisser le bot merger la PR de release (il publie aussitôt).
+          puis relancer ce workflow. Pour l'éviter : laisser le bot merger la PR de release (il publie aussitôt),
+          ou configurer un bot de release (GitHub App, jamais bloqué) : repogarde/bin/bot-release
           EOF
 
   # Mode tag : flux develop → main
@@ -361,7 +390,22 @@ jobs:
       version: ${{ steps.publier.outputs.version }}
       major: ${{ steps.publier.outputs.major }}
       sha: ${{ steps.publier.outputs.sha }}
+    env:
+      HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
     steps:
+      # Identité de release : bot GitHub App si configuré (jeton d'une heure),
+      # sinon jeton des Actions
+      - name: Bot de release
+        id: bot
+        if: env.HAS_APP == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-key }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+          permission-issues: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # tags et historique : calcul de version
@@ -376,7 +420,7 @@ jobs:
       - name: PR de livraison
         if: github.ref_name == inputs.integration-branch
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
           INTEGRATION: ${{ inputs.integration-branch }}
           MAIN: ${{ inputs.main-branch }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
@@ -408,7 +452,7 @@ jobs:
         id: publier
         if: github.ref_name == inputs.main-branch
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
         run: |
           version="$(bash .repogarde-ci/ci/version.sh next HEAD)"

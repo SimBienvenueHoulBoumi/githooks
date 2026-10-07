@@ -33,8 +33,11 @@ jobs:
     #   release-type: maven          # sinon détecté (pom.xml, package.json, pyproject.toml…)
     #   workflows: repogarde.yml     # sinon les workflows pull_request + workflow_dispatch
     #   merge-auto: false            # PR de release mergée par un humain
-    # Canal de l'équipe (optionnel) : gh secret set REPOGARDE_WEBHOOK
+    # Optionnel : bot de release (GitHub App, jamais bloqué : repogarde/bin/bot-release)
+    # et canal de l'équipe (gh secret set REPOGARDE_WEBHOOK)
     # secrets:
+    #   app-id: ${{ secrets.REPOGARDE_APP_ID }}
+    #   app-key: ${{ secrets.REPOGARDE_APP_KEY }}
     #   webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
 
   # Publication propre au projet, après une release (exemple). L'environnement
