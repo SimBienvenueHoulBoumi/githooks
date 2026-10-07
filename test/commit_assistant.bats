@@ -96,6 +96,28 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     (unset GITHUB_ACTIONS; source "$HOOKS/lib/common.sh"; [ "$FORGE" = gitlab ])
 }
 
+@test "assistant : sur main, branche proposee aussitot ; oui/non invalide redemande" {
+    git switch -q main
+    git add a.txt
+    run answer 3 exemple "" "suppression d'une ligne" n "corrige le helm ignore" "" "" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"protégée"* ]]
+    [[ "$output" == *"Réponds o (oui) ou n (non)"* ]]
+    [ "$(git symbolic-ref --short HEAD)" = docs/exemple ]
+    [ "$(subject)" = "docs(exemple): corrige le helm ignore" ]
+    [ "$(git rev-parse main)" != "$(git rev-parse HEAD)" ]
+}
+
+@test "assistant : commit refuse par un hook -> message conserve" {
+    mkdir -p .repogarde
+    printf '#!/bin/sh\nexit 1\n' >.repogarde/pre-commit
+    chmod +x .repogarde/pre-commit
+    run answer "" "" "" "ajoute le panier" "" "" ""
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"ton message est conservé"* ]]
+    grep -qx "feat(panier): ajoute le panier" "$(git rev-parse --git-dir)/repogarde-message"
+}
+
 @test "assistant : en-tete trop long -> nouvelle saisie" {
     long="$(printf 'a%.0s' {1..80})"
     run answer "" "" "" "$long" "description courte" "" "" ""

@@ -44,6 +44,13 @@ _msg_en() {
         cc.preview) _M="Message" ;;
         cc.confirm) _M="Commit? [Y/n]: " ;;
         cc.aborted) _M="Cancelled: nothing was committed." ;;
+        cc.yn_invalid) _M="Answer y (yes) or n (no)." ;;
+        cc.topic_default) _M="change" ;;
+        cc.protected_hint) _M="You are on \"%s\", which is protected: a commit would be refused there. It will go to a new branch (your changes follow)." ;;
+        cc.new_branch_prompt) _M="New branch (\"n\" to cancel) [%s]: " ;;
+        cc.branch_invalid) _M="\"%s\": expected <type>/<topic> in lowercase, and a branch that does not exist yet." ;;
+        cc.branch_created) _M="Branch %s created, your changes are on it." ;;
+        cc.kept) _M="Commit refused: your message is kept. Once fixed: git commit -F %s" ;;
         cc.created) _M="Commit created." ;;
         cc.next_branch) _M="Next changes: on a branch, e.g. %s, then a %s." ;;
         cc.topic) _M="topic" ;;
