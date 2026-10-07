@@ -35,3 +35,37 @@ node_test() {
         *) "$pm" test ;;
     esac
 }
+
+# Code mort : TypeScript (variables, paramètres, imports inutilisés, code
+# inaccessible : prouvé) ; knip s'il est installé dans le projet (fichiers,
+# exports, dépendances non référencés : candidats)
+node_deadcode() {
+    local ran=""
+    if [ -f tsconfig.json ] && [ -x node_modules/.bin/tsc ]; then
+        ran=1
+        node_modules/.bin/tsc --noEmit -p . --noUnusedLocals --noUnusedParameters \
+            --allowUnreachableCode false --pretty false 2>/dev/null |
+            sed -nE 's/^(.+)\(([0-9]+),[0-9]+\): error (TS6133|TS6138|TS6192|TS6196|TS6198|TS7027): (.*)$/prouve\t\1\t\2\t\4/p'
+    fi
+    if [ -x node_modules/.bin/knip ] && has node; then
+        ran=1
+        _tr dc.knip_file
+        local m_file="$_T"
+        _tr dc.knip_export
+        local m_export="$_T"
+        _tr dc.knip_dep
+        local m_dep="$_T"
+        node_modules/.bin/knip --reporter json --no-progress 2>/dev/null |
+            M_FILE="$m_file" M_EXPORT="$m_export" M_DEP="$m_dep" node -e '
+                let r; try { r = JSON.parse(require("fs").readFileSync(0, "utf8")); } catch { process.exit(0); }
+                const out = (f, l, m) => console.log(["candidat", f, l, m].join("\t"));
+                for (const f of r.files || []) out(f, 0, process.env.M_FILE);
+                for (const i of r.issues || []) {
+                    for (const k of ["exports", "types", "nsExports", "nsTypes"])
+                        for (const e of i[k] || []) out(i.file, e.line || 0, process.env.M_EXPORT + " " + e.name);
+                    for (const k of ["dependencies", "devDependencies"])
+                        for (const d of i[k] || []) out(i.file, 0, process.env.M_DEP + " " + d.name);
+                }'
+    fi
+    [ -n "$ran" ] || deadcode_tool_missing "JavaScript / TypeScript" "typescript / knip"
+}

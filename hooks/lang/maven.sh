@@ -22,3 +22,6 @@ maven_test() { step "Maven : $(maven_cmd) verify"; "$(maven_cmd)" -q verify; }
 spotless_files_regex() {
     sed -e 's/[][\.*^$()+?{}|]/\\&/g' -e 's#/#[\\\\/]#g' -e 's#^#.*[\\\\/]#' | paste -sd, -
 }
+
+# Code mort prouvé (PMD) : voir hooks/lib/deadcode.sh
+maven_deadcode() { java_deadcode; }

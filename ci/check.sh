@@ -2,7 +2,7 @@
 # Vérifications CI : mêmes règles que les hooks, mais non contournables.
 # Fonctionne sur GitHub Actions, GitLab CI ou tout autre CI (variables REPOGARDE_*).
 #
-#   ci/check.sh [commits] [branch] [secrets] [format] [tests]   (défaut : tout)
+#   ci/check.sh [commits] [branch] [secrets] [format] [tests] [deadcode]   (défaut : tout)
 #
 # Variables (toutes optionnelles, détectées automatiquement sur GitHub/GitLab) :
 #   REPOGARDE_CHECKS   liste des vérifications (si aucun argument)
@@ -25,7 +25,8 @@ cd "$(git rev-parse --show-toplevel)"
 
 # --- Affichage -----------------------------------------------------------------
 
-section() { echo; echo "━━ $* ━━"; }
+section() { echo; echo "${UI_B}━━ $* ━━${UI_N}"; }
+section_t() { _tr "$@"; section "$_T"; }
 
 # Erreur annotée (visible dans l'onglet "Files changed" sur GitHub)
 ci_error_t() { _tr "$@"; ci_error "$_T"; }
@@ -91,7 +92,7 @@ BOTS='^[0-9]*\+?(dependabot|renovate)\[bot\]@'
 is_bot_branch() { [[ "$1" == dependabot/* || "$1" == renovate/* ]]; }
 
 check_commits() {
-    section "Messages de commit (Conventional Commits)"
+    section_t ci.section.commits
     local sha subject bad=0 count=0 bot=""
     is_bot_branch "$(detect_branch)" && bot=1
     if [ -z "$BASE" ]; then info_t ci.check.2; return 0; fi
@@ -137,7 +138,7 @@ check_commits() {
 }
 
 check_branch() {
-    section "Nom de branche"
+    section_t ci.section.branch
     local branch
     branch="$(detect_branch)"
     if [ -z "$branch" ]; then info_t ci.check.13; return 0; fi
@@ -163,7 +164,7 @@ check_branch() {
 }
 
 check_secrets() {
-    section "Secrets (gitleaks)"
+    section_t ci.section.secrets
     if ! has gitleaks; then
         ci_error_t ci.check.19
         return 1
@@ -176,7 +177,7 @@ check_secrets() {
 }
 
 check_format() {
-    section "Formatage"
+    section_t ci.section.format
     if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
         ci_error_t ci.check.20
         return 1
@@ -198,14 +199,20 @@ check_format() {
     ok_t ci.check.23
 }
 
+check_deadcode() {
+    section_t dc.section
+    if [ -z "$BASE" ]; then info_t dc.no_base; return 0; fi
+    changed_files | without_excluded | deadcode_projects "$BASE"
+}
+
 check_tests() {
-    section "Tests des projets touchés"
+    section_t ci.section.tests
     changed_files | without_excluded | test_projects
 }
 
 # --- Exécution ---------------------------------------------------------------------
 
-CHECKS="${*:-${REPOGARDE_CHECKS:-commits branch secrets format tests}}"
+CHECKS="${*:-${REPOGARDE_CHECKS:-commits branch secrets format tests deadcode}}"
 REPOGARDE_WARN_FILE="$(mktemp)"
 export REPOGARDE_WARN_FILE
 trap 'rm -f "$REPOGARDE_WARN_FILE"' EXIT
@@ -236,7 +243,7 @@ for check in $CHECKS; do
 done
 
 if [ "${REPOGARDE_STRICT:-false}" = true ] && [ -s "$REPOGARDE_WARN_FILE" ]; then
-    section "Mode strict"
+    section_t ci.section.strict
     while IFS= read -r w; do ci_error "$w"; done <"$REPOGARDE_WARN_FILE"
     failed="$failed strict"
 fi

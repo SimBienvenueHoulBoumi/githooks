@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Détection de code mort : seul le NOUVEAU code mort compte (lignes ajoutées ou
+# modifiées depuis la base), pour que la dette ne grossisse plus sans noyer un
+# projet existant sous son historique.
+#
+# Chaque plugin de langage peut fournir <plugin>_deadcode, lancé à la racine du
+# projet, qui écrit une ligne par élément :
+#   niveau<TAB>fichier<TAB>ligne<TAB>message
+#   niveau : prouve   (inaccessible, inutilisé dans sa portée : sûr à 100 %)
+#            candidat (non référencé dans le projet : appel dynamique possible)
+#   ligne  : 0 si l'élément concerne tout le fichier (fichier, dépendance)
+#
+# Réglages : deadcode = block (défaut : le prouvé bloque, les candidats avertissent)
+#            | warn (rien ne bloque) | strict (tout bloque)
+#            deadcodeIgnore = chemins ignorés (motifs, comme exclude)
+
+# Code mort introduit depuis $1 (base) dans les fichiers lus sur stdin.
+# Retour : 1 si un élément bloque selon le réglage deadcode.
+deadcode_projects() {
+    local base="$1" changed added found dir p plugins niveau f l msg path proven=0 cand=0 mode ignore pat
+    changed="$(mktemp)"
+    added="$(mktemp)"
+    found="$(mktemp)"
+    cat >"$changed"
+
+    # Lignes ajoutées ou modifiées (fichier:ligne), du commit de base à
+    # l'arbre de travail (en CI, identique au commit vérifié)
+    git diff -U0 --no-color --no-ext-diff "$base" -- 2>/dev/null | awk '
+        /^\+\+\+ / { f = substr($0, 5); sub(/^b\//, "", f); next }
+        /^@@/ {
+            split($3, a, ","); s = substr(a[1], 2); n = (a[2] == "" ? 1 : a[2])
+            for (i = 0; i < n; i++) print f ":" (s + i)
+        }' >"$added"
+    # Fichiers pas encore suivis (analyse locale) : toutes leurs lignes sont nouvelles
+    { git ls-files --others --exclude-standard 2>/dev/null | grep -xFf "$changed" || true; } |
+        while IFS= read -r f; do
+            awk -v f="$f" '{ print f ":" NR }' "$f"
+        done >>"$added"
+
+    cfg_r deadcodeIgnore ""
+    ignore="$REPLY"
+    while IFS= read -r dir; do
+        plugins=""
+        active_plugins_init
+        for p in $ACTIVE_PLUGINS; do
+            has_marker "$dir" "$p" && declare -F "${p}_deadcode" >/dev/null && plugins="$plugins $p"
+        done
+        for p in $plugins; do
+            (cd "$dir" && "${p}_deadcode") </dev/null |
+                while IFS=$'\t' read -r niveau f l msg; do
+                    [ -n "$f" ] || continue
+                    f="${f#"$PWD/$dir/"}"
+                    f="${f#./}"
+                    if [ "$dir" = . ]; then path="$f"; else path="$dir/$f"; fi
+                    if [ "${l:-0}" = 0 ]; then
+                        grep -qxF "$path" "$changed" || continue
+                    else
+                        grep -qxF "$path:$l" "$added" || continue
+                    fi
+                    set -f
+                    for pat in $ignore; do
+                        # shellcheck disable=SC2254
+                        case "$path" in $pat) set +f; continue 2 ;; esac
+                    done
+                    set +f
+                    printf '%s\t%s\t%s\n' "$niveau" "$path${l:+:$l}" "$msg"
+                done >>"$found"
+        done
+    done < <(projects_for_files <"$changed")
+
+    while IFS=$'\t' read -r niveau path msg; do
+        path="${path%:0}"
+        if [ "$niveau" = prouve ]; then
+            proven=$((proven + 1))
+            if declare -F ci_error_t >/dev/null; then ci_error_t dc.proven "$path" "$msg"
+            else err_t dc.proven "$path" "$msg"
+            fi
+        else
+            cand=$((cand + 1))
+            attention_t dc.candidate "$path" "$msg"
+        fi
+    done <"$found"
+    rm -f "$changed" "$added" "$found"
+
+    if [ "$proven" = 0 ] && [ "$cand" = 0 ]; then
+        ok_t dc.none
+        return 0
+    fi
+    [ "$cand" = 0 ] || info_t dc.summary_candidates "$cand"
+    cfg_r deadcode block
+    mode="$REPLY"
+    case "$mode" in
+        warn) return 0 ;;
+        strict)
+            err_t dc.summary_strict "$((proven + cand))"
+            return 1
+            ;;
+        *)
+            [ "$proven" = 0 ] && return 0
+            err_t dc.summary_proven "$proven"
+            return 1
+            ;;
+    esac
+}
+
+# Outil d'analyse absent : signalé, sans faire échouer le mode strict
+# (la détection de code mort reste une aide, pas un prérequis du projet)
+deadcode_tool_missing() { attention_t dc.tool_missing "$1" "$2"; }
+
+# Java (Maven, Gradle) : règles PMD dont le résultat est prouvé — import,
+# champ, méthode ou variable privés jamais utilisés dans leur portée
+JAVA_DEADCODE_RULES="category/java/bestpractices.xml/UnusedPrivateMethod,category/java/bestpractices.xml/UnusedPrivateField,category/java/bestpractices.xml/UnusedLocalVariable,category/java/bestpractices.xml/UnusedFormalParameter,category/java/codestyle.xml/UnnecessaryImport"
+java_deadcode() {
+    has pmd || { deadcode_tool_missing Java pmd; return 0; }
+    [ -d src ] || return 0
+    # « src/a/A.java:3:<TAB>Règle:<TAB>message »
+    # code de sortie 4 = violations trouvées : attendu
+    { pmd check --no-progress --no-cache -d src -f text -R "$JAVA_DEADCODE_RULES" 2>/dev/null || true; } |
+        awk -F'\t' 'NF >= 3 { n = split($1, a, ":"); print "prouve\t" a[1] "\t" a[2] "\t" $3 }'
+}

@@ -56,7 +56,7 @@ git config repogarde.skip "node"                  # disables a language
 | Category            | Values                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------------------------ |
 | Hooks               | `pre-commit`, `prepare-commit-msg`, `commit-msg`, `pre-push`, `post-checkout`, `post-merge`      |
-| Steps               | `branch-name`, `protect-branch`, `secrets`, `format`, `tests`, `prune-branches`                  |
+| Steps               | `branch-name`, `protect-branch`, `secrets`, `format`, `tests`, `deadcode`, `prune-branches`                  |
 | Languages and tools | `maven`, `gradle`, `node`, `python`, `go`, `helm`, `docker`… (file name in `hooks/lang/`)        |
 | Everything          | `true`                                                                                           |
 

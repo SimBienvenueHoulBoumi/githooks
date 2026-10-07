@@ -10,8 +10,8 @@ author: SimBienvenueHoulBoumi
 
 inputs:
   checks:
-    description: Vérifications à lancer (commits branch secrets format tests)
-    default: commits branch secrets format tests
+    description: Vérifications à lancer (commits branch secrets format tests deadcode)
+    default: commits branch secrets format tests deadcode
   strict:
     description: "true : un outil de formatage/test manquant fait échouer"
     default: "false"
@@ -65,6 +65,14 @@ runs:
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         FORCE_COLOR: "1" # charte visuelle dans les logs
       run: bash "$GITHUB_ACTION_PATH/ci/fix-pr.sh"
+
+    # Code mort Java : PMD (empreinte figée), seulement pour un projet Maven ou Gradle
+    - name: Installer PMD
+      if: contains(inputs.checks, 'deadcode') && hashFiles('**/pom.xml', '**/build.gradle', '**/build.gradle.kts') != ''
+      shell: bash
+      env:
+        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
+      run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" pmd
 
     - name: Vérifications repogarde
       if: env.REPOGARDE_PR_CLOSED != 'true'

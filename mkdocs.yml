@@ -48,6 +48,7 @@ nav:
   - CI (GitHub, GitLab): ci.md
   - Versions et releases: releases.md
   - Validation humaine: validation.md
+  - Code mort: code-mort.md
   - En organisation: industrialisation.md
   - Migration depuis githooks: migration.md
   - Désinstallation: desinstallation.md
@@ -83,6 +84,7 @@ plugins:
             CI (GitHub, GitLab): CI (GitHub, GitLab)
             Versions et releases: Versions and releases
             Validation humaine: Human approval
+            Code mort: Dead code
             En organisation: In an organisation
             Migration depuis githooks: Migrating from githooks
             Désinstallation: Uninstalling
