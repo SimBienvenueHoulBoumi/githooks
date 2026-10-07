@@ -239,106 +239,108 @@ jobs:
           fi
           [ -n "$pr" ] || { echo "Aucune PR de release en attente"; exit 0; }
           branch="$(gh pr view "$pr" --json headRefName -q .headRefName)"
-          # La branche de base peut avancer pendant la CI (PR « BEHIND », merge
-          # refusé) : la PR est alors mise à jour et la CI relancée
-          for tentative in 1 2 3; do
-            # Commit lu sur la branche ; la PR peut l'afficher avec un léger
-            # retard : on attend qu'elle suive (sinon --match-head-commit échoue)
-            sha="$(gh api "repos/$GH_REPO/commits/$branch" --jq .sha)"
+          # Commit lu sur la branche ; la PR peut l'afficher avec un léger
+          # retard : on attend qu'elle suive (sinon --match-head-commit échoue)
+          sha="$(gh api "repos/$GH_REPO/commits/$branch" --jq .sha)"
+          for _ in $(seq 1 30); do
+            [ "$(gh pr view "$pr" --json headRefOid -q .headRefOid)" = "$sha" ] && break
+            sleep 5
+          done
+          echo "PR #$pr ($branch @ ${sha:0:7}) : CI"
+          runs=""
+          for wf in $WORKFLOWS; do
+            reessayer gh workflow run "$wf" --ref "$branch"
+          done
+          for wf in $WORKFLOWS; do
+            run_id=""
             for _ in $(seq 1 30); do
-              [ "$(gh pr view "$pr" --json headRefOid -q .headRefOid)" = "$sha" ] && break
+              run_id="$(gh run list --workflow "$wf" --branch "$branch" --event workflow_dispatch \
+                --commit "$sha" --limit 1 --json databaseId -q '.[0].databaseId')"
+              [ -n "$run_id" ] && break
               sleep 5
             done
-            echo "PR #$pr ($branch @ ${sha:0:7}) : CI (tentative $tentative)"
-            runs=""
-            for wf in $WORKFLOWS; do
-              reessayer gh workflow run "$wf" --ref "$branch"
-            done
-            for wf in $WORKFLOWS; do
-              run_id=""
-              for _ in $(seq 1 30); do
-                run_id="$(gh run list --workflow "$wf" --branch "$branch" --event workflow_dispatch \
-                  --commit "$sha" --limit 1 --json databaseId -q '.[0].databaseId')"
-                [ -n "$run_id" ] && break
-                sleep 5
+            [ -n "$run_id" ] || { echo "✖ Run de $wf introuvable"; exit 1; }
+            runs="$runs $run_id"
+          done
+          for id in $runs; do
+            if ! gh run watch "$id" --exit-status --interval 30 >/dev/null; then
+              # CI interrompue par un merge manuel (branche de release supprimée)
+              [ "$(gh pr view "$pr" --json state -q .state)" != MERGED ] ||
+                { echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0; }
+              echo "✖ CI en échec : $(gh run view "$id" --json url -q .url)"
+              exit 1
+            fi
+          done
+          # Vérifications exigées par la protection de la branche : résultat
+          # réel de chacune (cherché dans les runs lancés), reporté en statut
+          gh api "repos/$GH_REPO/rules/branches/$GITHUB_REF_NAME" \
+            --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context' |
+            while IFS= read -r ctx; do
+              conclusion="" url=""
+              for id in $runs; do
+                conclusion="$(gh run view "$id" --json jobs \
+                  -q ".jobs[] | select(.name==\"$ctx\") | .conclusion")"
+                [ -n "$conclusion" ] && { url="$(gh run view "$id" --json url -q .url)"; break; }
               done
-              [ -n "$run_id" ] || { echo "✖ Run de $wf introuvable"; exit 1; }
-              runs="$runs $run_id"
-            done
-            for id in $runs; do
-              if ! gh run watch "$id" --exit-status --interval 30 >/dev/null; then
-                # CI interrompue par un merge manuel (branche de release supprimée)
-                [ "$(gh pr view "$pr" --json state -q .state)" != MERGED ] ||
-                  { echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0; }
-                echo "✖ CI en échec : $(gh run view "$id" --json url -q .url)"
+              if [ "$conclusion" != success ]; then
+                echo "✖ $ctx : ${conclusion:-absent des workflows lancés (entrée « workflows »)}"
                 exit 1
               fi
+              gh api "repos/$GH_REPO/statuses/$sha" -f state=success -f context="$ctx" \
+                -f target_url="$url" -f description="CI de la PR de release" >/dev/null
+              echo "✔ $ctx"
             done
-            # Vérifications exigées par la protection de la branche : résultat
-            # réel de chacune (cherché dans les runs lancés), reporté en statut
-            gh api "repos/$GH_REPO/rules/branches/$GITHUB_REF_NAME" \
-              --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context' |
-              while IFS= read -r ctx; do
-                conclusion="" url=""
-                for id in $runs; do
-                  conclusion="$(gh run view "$id" --json jobs \
-                    -q ".jobs[] | select(.name==\"$ctx\") | .conclusion")"
-                  [ -n "$conclusion" ] && { url="$(gh run view "$id" --json url -q .url)"; break; }
-                done
-                if [ "$conclusion" != success ]; then
-                  echo "✖ $ctx : ${conclusion:-absent des workflows lancés (entrée « workflows »)}"
-                  exit 1
-                fi
-                gh api "repos/$GH_REPO/statuses/$sha" -f state=success -f context="$ctx" \
-                  -f target_url="$url" -f description="CI de la PR de release" >/dev/null
-                echo "✔ $ctx"
-              done
-            # D'autres vérifications peuvent aussi tourner sur la PR (workflows
-            # pull_request) : on attend que GitHub la déclare mergeable (toutes
-            # les vérifications terminées et vertes) ; sinon, pas de merge.
-            for _ in $(seq 1 90); do
-              # Mergée (ou fermée) par une personne entre-temps : son merge
-              # relance ce workflow, qui publie la release ; rien d'autre à faire
-              case "$(gh pr view "$pr" --json state -q .state)" in
-                MERGED) echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0 ;;
-                CLOSED) echo "PR #$pr fermée sans merge : pas de release"; exit 0 ;;
-              esac
-              state="$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)"
-              case "$state" in
-                CLEAN | BEHIND) break ;;
-                BLOCKED | UNKNOWN | UNSTABLE)
-                  # Relecture humaine exigée : la PR attend son approbation
-                  case "$(gh pr view "$pr" --json reviewDecision -q .reviewDecision)" in
-                    REVIEW_REQUIRED | CHANGES_REQUESTED)
-                      echo "::notice::PR #$pr validée par la CI, en attente d'approbation humaine : son merge publiera la release."
-                      echo "waiting_pr=$pr" >>"$GITHUB_OUTPUT"
-                      exit 0
-                      ;;
-                  esac
-                  approuver_runs
-                  sleep 30
-                  ;;
-                *) echo "✖ PR #$pr non mergeable : $state"; exit 1 ;;
-              esac
-            done
-            if [ "$state" = BEHIND ]; then
-              echo "↻ $GITHUB_REF_NAME a avancé pendant la CI : mise à jour de la PR #$pr"
-              reessayer gh pr update-branch "$pr"
-              sleep 10
-              continue
-            fi
-            [ "$state" = CLEAN ] || { echo "✖ PR #$pr toujours $state après 45 min"; exit 1; }
-            if [ "$MERGE_AUTO" != true ]; then
-              echo "::notice::PR #$pr validée par la CI, à merger par un humain (merge-auto: false) : son merge publiera la release."
-              echo "waiting_pr=$pr" >>"$GITHUB_OUTPUT"
-              exit 0
-            fi
-            reessayer gh pr merge "$pr" --squash --match-head-commit "$sha"
-            echo "merged=true" >>"$GITHUB_OUTPUT"
-            exit 0
+          # D'autres vérifications peuvent aussi tourner sur la PR (workflows
+          # pull_request) : on attend que GitHub la déclare mergeable (toutes
+          # les vérifications terminées et vertes) ; sinon, pas de merge.
+          for _ in $(seq 1 90); do
+            # Mergée (ou fermée) par une personne entre-temps : son merge
+            # relance ce workflow, qui publie la release ; rien d'autre à faire
+            case "$(gh pr view "$pr" --json state -q .state)" in
+              MERGED) echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0 ;;
+              CLOSED) echo "PR #$pr fermée sans merge : pas de release"; exit 0 ;;
+            esac
+            state="$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)"
+            case "$state" in
+              CLEAN | BEHIND) break ;;
+              BLOCKED | UNKNOWN | UNSTABLE)
+                # Relecture humaine exigée : la PR attend son approbation
+                case "$(gh pr view "$pr" --json reviewDecision -q .reviewDecision)" in
+                  REVIEW_REQUIRED | CHANGES_REQUESTED)
+                    echo "::notice::PR #$pr validée par la CI, en attente d'approbation humaine : son merge publiera la release."
+                    echo "waiting_pr=$pr" >>"$GITHUB_OUTPUT"
+                    exit 0
+                    ;;
+                esac
+                approuver_runs
+                sleep 30
+                ;;
+              *) echo "✖ PR #$pr non mergeable : $state"; exit 1 ;;
+            esac
           done
-          echo "✖ PR #$pr toujours en retard après 3 tentatives"
-          exit 1
+          # La branche a avancé pendant la CI : version et changelog sont à
+          # recalculer (un simple « update branch » publierait les nouveaux
+          # commits sous l'ancienne version). Le run déclenché par ce push
+          # régénère la PR ; s'il n'y en a pas (push du jeton des Actions), on
+          # le lance.
+          if [ "$state" = BEHIND ]; then
+            wf="${GITHUB_WORKFLOW_REF#*/.github/workflows/}"
+            wf="${wf%%@*}"
+            suivant="$(gh run list --workflow "$wf" --branch "$GITHUB_REF_NAME" --limit 20 --json databaseId,status \
+              -q "[.[] | select(.databaseId != $GITHUB_RUN_ID and .status != \"completed\")] | length")"
+            [ "${suivant:-0}" != 0 ] || reessayer gh workflow run "$wf" --ref "$GITHUB_REF_NAME"
+            echo "::notice::$GITHUB_REF_NAME a avancé pendant la CI : la PR #$pr est recalculée par le run suivant."
+            exit 0
+          fi
+          [ "$state" = CLEAN ] || { echo "✖ PR #$pr toujours $state après 45 min"; exit 1; }
+          if [ "$MERGE_AUTO" != true ]; then
+            echo "::notice::PR #$pr validée par la CI, à merger par un humain (merge-auto: false) : son merge publiera la release."
+            echo "waiting_pr=$pr" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          reessayer gh pr merge "$pr" --squash --match-head-commit "$sha"
+          echo "merged=true" >>"$GITHUB_OUTPUT"
+          exit 0
 
       # Le merge fait par GITHUB_TOKEN ne relance pas le workflow : on publie ici
       - id: publish
