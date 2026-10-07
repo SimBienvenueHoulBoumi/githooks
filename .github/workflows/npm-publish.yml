@@ -25,9 +25,11 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: Tag de la release (vX.Y.Z), sortie tag_name de release-auto
+        description: >-
+          Tag de la release (vX.Y.Z), sortie tag_name de release-auto. Vide :
+          dernier tag vX.Y.Z (rattrapage d'une release pas encore publiée sur npm).
         type: string
-        required: true
+        default: ""
       directory:
         description: Dossier du paquet (package.json)
         type: string
@@ -69,13 +71,22 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.tag }}
+          fetch-depth: 0 # tags, pour trouver la dernière release
           persist-credentials: false
+      - name: Release à publier
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$TAG" ]; then
+            TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*')"
+            git checkout -q "$TAG"
+          fi
+          echo "TAG=$TAG" >>"$GITHUB_ENV"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ inputs.node-version }}
       - name: Publier
         env:
-          TAG: ${{ inputs.tag }}
           DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
         run: |

@@ -175,7 +175,7 @@ Then, in `.github/workflows/release.yml`:
 ```yaml
   npm:
     needs: release
-    if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+    if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
     uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
     permissions: { contents: read, id-token: write }
     with:
@@ -186,7 +186,7 @@ Then, in `.github/workflows/release.yml`:
       npm-token: ${{ secrets.NPM_TOKEN }}   # first publication only
 ```
 
-The package is published at the tag version (tag mode included, without a version file). An already published version is skipped: re-running the workflow breaks nothing.
+Running the `release` workflow manually (Run workflow) publishes the latest release if it is missing from npm. The package is published at the tag version (tag mode included, without a version file). An already published version is skipped: re-running the workflow breaks nothing.
 
 ## Inputs and outputs
 
