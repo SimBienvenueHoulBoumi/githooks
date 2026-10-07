@@ -53,6 +53,19 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: gh workflow run docs.yml --ref main
 
+  # Paquet npm (installation sur la machine : npm install -g), publié sans
+  # jeton (publication de confiance). Activé par la variable REPOGARDE_NPM une
+  # fois la mise en place faite : bin/npm-publication
+  npm:
+    needs: release
+    if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+    uses: ./.github/workflows/npm-publish.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      tag: ${{ needs.release.outputs.tag_name }}
+
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repogarde@v1`
   tag-major:
     needs: release

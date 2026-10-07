@@ -293,6 +293,22 @@ _msg_fr() {
         bot.hint_workflow) _M="Dans release.yml : secrets: { app-id: \${{ secrets.REPOGARDE_APP_ID }}, app-key: \${{ secrets.REPOGARDE_APP_KEY }} }" ;;
         bot.ask_delete) _M="Supprimer la copie locale de la clé (%s), désormais inutile ? [o/N] " ;;
         bot.deleted) _M="Clé locale supprimée." ;;
+        # Paquet npm
+        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g @simbienvenuehoulboumi/repogarde, puis repogarde install --global." ;;
+        npm.no_npm) _M="npm requis : https://nodejs.org" ;;
+        npm.no_package) _M="Aucun package.json à la racine du dépôt." ;;
+        npm.step_login) _M="1/3 Compte npm" ;;
+        npm.not_logged) _M="Non connecté à npm : lance npm login (dans ce terminal), puis relance cette commande." ;;
+        npm.logged) _M="Connecté à npm : %s" ;;
+        npm.step_first) _M="2/3 Première publication" ;;
+        npm.exists) _M="%s existe déjà sur npm." ;;
+        npm.no_tag) _M="Aucun tag vX.Y.Z : la première release doit exister avant la publication." ;;
+        npm.ask_first) _M="Publier %s@%s depuis ce poste (une seule fois, la CI prend le relais) ? [o/N] " ;;
+        npm.published) _M="%s@%s publié." ;;
+        npm.step_trust) _M="3/3 Éditeur de confiance (Settings → Trusted Publisher)" ;;
+        npm.hint_trust) _M="Choisir GitHub Actions et renseigner :" ;;
+        npm.hint_tokens) _M="Conseillé ensuite, même page : « Require two-factor authentication and disallow tokens »." ;;
+        npm.done) _M="Publication npm automatique activée pour %s (variable REPOGARDE_NPM)." ;;
         *) _M="" ;;
     esac
 }

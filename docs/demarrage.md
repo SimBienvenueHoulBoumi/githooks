@@ -30,6 +30,21 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
 
     Un dépôt qui contient un `lefthook.yml` utilise sa propre configuration (version figée), si lefthook est installé.
 
+    **Avec npm** (Node installé) : même résultat, en commande globale de la machine. Rien n'est ajouté aux projets ni à leur `package.json`.
+
+    ```bash
+    npm install -g @simbienvenuehoulboumi/repogarde
+    repogarde install --global           # demande la langue, installe git cc
+    repogarde code-mort                  # toutes les commandes : repogarde --help
+    ```
+
+    | Action | Commande |
+    |---|---|
+    | Mettre à jour | `npm update -g @simbienvenuehoulboumi/repogarde` (les hooks suivent) |
+    | Désinstaller | `repogarde uninstall --global`, puis `npm uninstall -g @simbienvenuehoulboumi/repogarde` |
+
+    `npx` est refusé pour l'installation globale : son dossier temporaire peut être effacé à tout moment. Avec nvm, chaque version de Node a ses propres paquets globaux : relancer `repogarde install --global` après un changement de version.
+
 === "Un projet d'équipe"
 
     1. Installer [lefthook](https://lefthook.dev) sur le poste :

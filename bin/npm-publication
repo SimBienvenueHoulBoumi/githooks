@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Met en place la publication npm automatique d'un dépôt, sans jeton : à
+# chaque release, le workflow npm-publish.yml publie le paquet. npm vérifie
+# que la publication vient bien de ce dépôt et de release.yml (publication de
+# confiance, OIDC) et joint la provenance au paquet.
+#
+#   bin/npm-publication [--repo propriétaire/nom] [--workflow release.yml]
+#                       [--environnement NOM]
+#
+# 1. compte npm (npm login, fait par toi) ;
+# 2. première publication, depuis le dernier tag (npm n'accepte la
+#    publication de confiance que sur un paquet existant) ;
+# 3. page du paquet sur npm : ajout de l'éditeur de confiance (valeurs affichées) ;
+# 4. variable REPOGARDE_NPM=true du dépôt : le job npm de release.yml s'active.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../hooks/lib/common.sh
+source "$ROOT/hooks/lib/common.sh"
+
+REPO=""
+WORKFLOW="release.yml"
+ENVIRONMENT=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
+        --workflow) shift; WORKFLOW="${1:?--workflow attend un fichier}" ;;
+        --environnement | --environment) shift; ENVIRONMENT="${1:?--environnement attend un nom}" ;;
+        -h | --help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) err_t install.unknown_arg "$1"; exit 1 ;;
+    esac
+    shift
+done
+
+command -v gh >/dev/null || { err_t bot.no_gh; exit 1; }
+command -v npm >/dev/null || { err_t npm.no_npm; exit 1; }
+cd "$GIT_TOPLEVEL"
+[ -f package.json ] || { err_t npm.no_package; exit 1; }
+[ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+name="$(sed -n 's/^  "name": *"\([^"]*\)".*/\1/p' package.json | head -1)"
+
+ouvrir() {
+    echo "  → $1"
+    if command -v open >/dev/null; then open "$1"
+    elif command -v xdg-open >/dev/null; then xdg-open "$1" >/dev/null 2>&1
+    elif command -v cmd.exe >/dev/null; then cmd.exe /c start "" "$1"
+    fi
+}
+attendre() { t bot.press_enter; read -r -p "  $REPLY" _; }
+
+brand "npm · $name · $REPO"
+
+# 1. Compte npm : la connexion reste entre toi et npm
+step_t npm.step_login
+if ! user="$(npm whoami 2>/dev/null)"; then
+    err_t npm.not_logged
+    exit 1
+fi
+ok_t npm.logged "$user"
+
+# 2. Première publication (une seule fois), depuis le dernier tag
+step_t npm.step_first
+if [ -n "$(npm view "$name" name 2>/dev/null || true)" ]; then
+    ok_t npm.exists "$name"
+else
+    tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+    [ -n "$tag" ] || { err_t npm.no_tag; exit 1; }
+    t npm.ask_first "$name" "${tag#v}"
+    read -r -p "  $REPLY" rep
+    case "$rep" in o | O | oui | y | Y | yes) ;; *) exit 1 ;; esac
+    dir="$(mktemp -d)"
+    trap 'rm -rf "$dir"' EXIT
+    git archive "$tag" | tar -x -C "$dir"
+    (cd "$dir" && npm pkg set "version=${tag#v}" && npm publish --access public)
+    ok_t npm.published "$name" "${tag#v}"
+fi
+
+# 3. Éditeur de confiance (formulaire npm : rien à copier de secret)
+step_t npm.step_trust
+ouvrir "https://www.npmjs.com/package/$name/access"
+dim_t npm.hint_trust
+echo "    Publisher        : GitHub Actions"
+echo "    Organization/user: ${REPO%%/*}"
+echo "    Repository       : ${REPO##*/}"
+echo "    Workflow filename: $WORKFLOW"
+echo "    Environment name : ${ENVIRONMENT:-—}"
+dim_t npm.hint_tokens
+attendre
+
+# 4. Activation du job npm de release.yml
+gh variable set REPOGARDE_NPM --repo "$REPO" --body true
+ok_t npm.done "$REPO"

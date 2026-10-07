@@ -1,0 +1,34 @@
+{
+  "name": "@simbienvenuehoulboumi/repogarde",
+  "version": "2.12.0",
+  "description": "Hooks git et CI multi-langages : messages de commit, nommage des branches, secrets, formatage, tests ciblés, code mort, releases.",
+  "keywords": [
+    "git-hooks",
+    "conventional-commits",
+    "commit",
+    "lint",
+    "ci",
+    "release"
+  ],
+  "homepage": "https://simbienvenuehoulboumi.github.io/repogarde/",
+  "bugs": "https://github.com/SimBienvenueHoulBoumi/repogarde/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimBienvenueHoulBoumi/repogarde.git"
+  },
+  "license": "MIT",
+  "bin": {
+    "repogarde": "bin/repogarde"
+  },
+  "files": [
+    "bin/",
+    "ci/",
+    "hooks/",
+    "templates/",
+    "install.sh",
+    "lefthook-remote.yml"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
