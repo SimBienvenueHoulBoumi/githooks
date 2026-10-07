@@ -155,7 +155,10 @@ La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications p
 
 Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbie/repogarde`).
 
-Mise en place guidée, une fois, depuis le dépôt du projet : compte npm, première publication (npm n'accepte la publication de confiance que sur un paquet existant), formulaire de l'éditeur de confiance avec les valeurs à saisir, puis activation (variable `REPOGARDE_NPM`) :
+Mise en place guidée depuis le dépôt du projet, en deux passages. Tout est publié par la pipeline, la première version comprise :
+
+1. **Paquet pas encore sur npm** : npm n'accepte la publication de confiance que sur un paquet existant. Tu crées un jeton npm temporaire, que tu colles en saisie masquée (secret `NPM_TOKEN`). La variable `REPOGARDE_NPM` active le job, et la prochaine release publie le paquet avec ce jeton.
+2. **Une fois le paquet publié** : relancer la commande. Elle ouvre le formulaire de l'éditeur de confiance avec les valeurs à saisir, puis retire le secret `NPM_TOKEN`. Les releases suivantes publient sans jeton.
 
 ```bash
 ~/repogarde/bin/npm-publication      # ou : repogarde npm-publication
@@ -173,6 +176,8 @@ Puis, dans `.github/workflows/release.yml` :
       tag: ${{ needs.release.outputs.tag_name }}
       # environment: production     # approbation avant publication (validation humaine)
       # directory: packages/ui      # paquet hors de la racine
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}   # première publication seulement
 ```
 
 Le paquet est publié à la version du tag (y compris en mode tag, sans fichier de version). Une version déjà publiée est ignorée : relancer le run ne casse rien.

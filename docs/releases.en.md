@@ -155,7 +155,10 @@ The project's CI must run on pushes to `develop`: its checks apply to the head c
 
 A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbie/repogarde`).
 
-Guided setup, once, from the project repository: npm account, first publication (npm only accepts trusted publishing on an existing package), trusted publisher form with the values to enter, then activation (`REPOGARDE_NPM` variable):
+Guided setup from the project repository, in two runs. Everything is published by the pipeline, the first version included:
+
+1. **Package not on npm yet**: npm only accepts trusted publishing on an existing package. You create a temporary npm token and paste it as hidden input (`NPM_TOKEN` secret). The `REPOGARDE_NPM` variable enables the job, and the next release publishes the package with this token.
+2. **Once the package is published**: run the command again. It opens the trusted publisher form with the values to enter, then removes the `NPM_TOKEN` secret. The following releases publish without a token.
 
 ```bash
 ~/repogarde/bin/npm-publication      # or: repogarde npm-publication
@@ -173,6 +176,8 @@ Then, in `.github/workflows/release.yml`:
       tag: ${{ needs.release.outputs.tag_name }}
       # environment: production     # approval before publishing (human validation)
       # directory: packages/ui      # package outside the root
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}   # first publication only
 ```
 
 The package is published at the tag version (tag mode included, without a version file). An already published version is skipped: re-running the workflow breaks nothing.

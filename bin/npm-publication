@@ -7,11 +7,12 @@
 #   bin/npm-publication [--repo propriétaire/nom] [--workflow release.yml]
 #                       [--environnement NOM]
 #
-# 1. compte npm (npm login, fait par toi) ;
-# 2. première publication, depuis le dernier tag (npm n'accepte la
-#    publication de confiance que sur un paquet existant) ;
-# 3. page du paquet sur npm : ajout de l'éditeur de confiance (valeurs affichées) ;
-# 4. variable REPOGARDE_NPM=true du dépôt : le job npm de release.yml s'active.
+# À lancer deux fois, tout passe par la pipeline :
+# 1. paquet pas encore sur npm (la publication de confiance n'est possible que
+#    sur un paquet existant) : jeton npm temporaire en secret NPM_TOKEN et
+#    variable REPOGARDE_NPM=true ; la prochaine release publie le paquet ;
+# 2. ensuite : éditeur de confiance sur npm (valeurs affichées), puis le
+#    secret NPM_TOKEN est retiré. Les releases publient alors sans jeton.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -50,32 +51,29 @@ attendre() { t bot.press_enter; read -r -p "  $REPLY" _; }
 
 brand "npm · $name · $REPO"
 
-# 1. Compte npm : la connexion reste entre toi et npm
-step_t npm.step_login
-if ! user="$(npm whoami 2>/dev/null)"; then
-    err_t npm.not_logged
-    exit 1
-fi
-ok_t npm.logged "$user"
-
-# 2. Première publication (une seule fois), depuis le dernier tag
-step_t npm.step_first
-if [ -n "$(npm view "$name" name 2>/dev/null || true)" ]; then
-    ok_t npm.exists "$name"
-else
-    tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
-    [ -n "$tag" ] || { err_t npm.no_tag; exit 1; }
-    t npm.ask_first "$name" "${tag#v}"
-    read -r -p "  $REPLY" rep
-    case "$rep" in o | O | oui | y | Y | yes) ;; *) exit 1 ;; esac
-    dir="$(mktemp -d)"
-    trap 'rm -rf "$dir"' EXIT
-    git archive "$tag" | tar -x -C "$dir"
-    (cd "$dir" && npm pkg set "version=${tag#v}" && npm publish --access public)
-    ok_t npm.published "$name" "${tag#v}"
+# Paquet absent de npm : la publication de confiance ne peut pas encore être
+# configurée. La pipeline fait quand même la première publication, avec un
+# jeton npm temporaire saisi par toi (secret NPM_TOKEN, jamais affiché).
+if [ -z "$(npm view "$name" name 2>/dev/null || true)" ]; then
+    step_t npm.step_token
+    user="$(npm whoami 2>/dev/null || true)"
+    if [ -n "$user" ]; then
+        ouvrir "https://www.npmjs.com/settings/$user/tokens/granular-access-tokens/new"
+    else
+        ouvrir "https://www.npmjs.com/"
+    fi
+    dim_t npm.hint_token
+    attendre
+    t npm.ask_token
+    echo "  $REPLY"
+    gh secret set NPM_TOKEN --repo "$REPO"
+    gh variable set REPOGARDE_NPM --repo "$REPO" --body true
+    ok_t npm.token_done "$name"
+    dim_t npm.hint_rerun
+    exit 0
 fi
 
-# 3. Éditeur de confiance (formulaire npm : rien à copier de secret)
+# Paquet publié : publication de confiance (formulaire npm, rien de secret)
 step_t npm.step_trust
 ouvrir "https://www.npmjs.com/package/$name/access"
 dim_t npm.hint_trust
@@ -86,7 +84,12 @@ echo "    Workflow filename: $WORKFLOW"
 echo "    Environment name : ${ENVIRONMENT:-—}"
 dim_t npm.hint_tokens
 attendre
-
-# 4. Activation du job npm de release.yml
 gh variable set REPOGARDE_NPM --repo "$REPO" --body true
+
+# Jeton de la première publication devenu inutile : retiré du dépôt
+if gh secret list --repo "$REPO" | grep -q '^NPM_TOKEN'; then
+    gh secret delete NPM_TOKEN --repo "$REPO"
+    ok_t npm.token_removed
+    dim_t npm.hint_revoke
+fi
 ok_t npm.done "$REPO"
