@@ -151,6 +151,32 @@ jobs:
 
 La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications portent sur le commit de tête, et valent donc pour la PR de livraison.
 
+## Publier sur npm
+
+Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbienvenuehoulboumi/repogarde`).
+
+Mise en place guidée, une fois, depuis le dépôt du projet : compte npm, première publication (npm n'accepte la publication de confiance que sur un paquet existant), formulaire de l'éditeur de confiance avec les valeurs à saisir, puis activation (variable `REPOGARDE_NPM`) :
+
+```bash
+~/repogarde/bin/npm-publication      # ou : repogarde npm-publication
+```
+
+Puis, dans `.github/workflows/release.yml` :
+
+```yaml
+  npm:
+    needs: release
+    if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v2
+    permissions: { contents: read, id-token: write }
+    with:
+      tag: ${{ needs.release.outputs.tag_name }}
+      # environment: production     # approbation avant publication (validation humaine)
+      # directory: packages/ui      # paquet hors de la racine
+```
+
+Le paquet est publié à la version du tag (y compris en mode tag, sans fichier de version). Une version déjà publiée est ignorée : relancer le run ne casse rien.
+
 ## Entrées et sorties
 
 | Entrée | Défaut | Rôle |

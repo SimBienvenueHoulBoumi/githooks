@@ -44,6 +44,15 @@ git push -u origin feat/panier       # tests des projets touchés avant l'envoi
 
 Mettre à jour : `git -C ~/repogarde pull` · Désinstaller : `~/repogarde/install.sh --uninstall --global`.
 
+Avec npm (Node installé), en commande globale de la machine, sans clone ni ajout aux `package.json` des projets :
+
+```bash
+npm install -g @simbienvenuehoulboumi/repogarde
+repogarde install --global           # mêmes hooks, git cc ; repogarde code-mort, repogarde proteger…
+```
+
+Mettre à jour : `npm update -g @simbienvenuehoulboumi/repogarde` · Désinstaller : `repogarde uninstall --global`, puis `npm uninstall -g @simbienvenuehoulboumi/repogarde`.
+
 ### 2. Dans un projet d'équipe (version figée, CI qui fait foi)
 
 Ajouter au projet les modèles de [`templates/project/`](templates/project) :

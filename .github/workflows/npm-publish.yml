@@ -1,0 +1,105 @@
+# Publication npm d'une release, réutilisable par tout projet (yarn, pnpm et
+# bun installent depuis le même registre) :
+#
+#   jobs:
+#     release:
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+#       …
+#     npm:
+#       needs: release
+#       if: needs.release.outputs.release_created == 'true'
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v2
+#       permissions: { contents: read, id-token: write }
+#       with:
+#         tag: ${{ needs.release.outputs.tag_name }}
+#
+# Sans jeton : publication de confiance npm (OIDC). Le registre vérifie que la
+# publication vient de ce dépôt et de ce workflow (release.yml), et joint la
+# provenance au paquet. Mise en place guidée : repogarde npm-publication.
+# Le paquet est publié à la version du tag (package.json mis à jour au besoin,
+# utile en mode tag sans fichier de version) ; une version déjà publiée est
+# ignorée, un run relancé ne fait donc jamais échouer la release.
+name: npm-publish
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Tag de la release (vX.Y.Z), sortie tag_name de release-auto
+        type: string
+        required: true
+      directory:
+        description: Dossier du paquet (package.json)
+        type: string
+        default: .
+      environment:
+        description: >-
+          Environnement GitHub de la publication (ex. production : approbation
+          d'une personne désignée avant de publier). Vide : aucun.
+        type: string
+        default: ""
+      dist-tag:
+        description: Étiquette npm (latest ; next pour une préversion)
+        type: string
+        default: latest
+      node-version:
+        type: string
+        default: "24"
+    secrets:
+      npm-token:
+        description: >-
+          Jeton npm (automation), seulement sans publication de confiance :
+          déconseillé, un jeton long terme peut fuir.
+        required: false
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # publication de confiance et provenance
+    defaults:
+      run:
+        working-directory: ${{ inputs.directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ inputs.node-version }}
+      - name: Publier
+        env:
+          TAG: ${{ inputs.tag }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}
+        run: |
+          reessayer() { local i; for i in 1 2 3; do "$@" && return 0; sleep $((i * 10)); done; return 1; }
+          # Publication de confiance : npm 11.5.1 au minimum
+          if ! node -e 'const [a,b,c]=process.argv[1].split(".").map(Number);process.exit(a>11||(a==11&&(b>5||(b==5&&c>=1)))?0:1)' "$(npm --version)"; then
+            reessayer npm install -g --no-audit --no-fund npm@11
+          fi
+          version="${TAG#v}"
+          name="$(node -p 'require("./package.json").name')"
+          if [ "$(node -p 'require("./package.json").version')" != "$version" ]; then
+            npm pkg set "version=$version"
+          fi
+          if [ "$(npm view "$name@$version" version 2>/dev/null || true)" = "$version" ]; then
+            echo "$name@$version déjà publié : rien à faire"
+            exit 0
+          fi
+          # Jeton (secret npm-token) : .npmrc dédié ; sinon OIDC
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" >"$RUNNER_TEMP/.npmrc"
+            export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc"
+          fi
+          reessayer npm publish --provenance --access public --tag "$DIST_TAG"
+          {
+            echo "### 📦 $name@$version"
+            echo "https://www.npmjs.com/package/$name/v/$version"
+          } >>"$GITHUB_STEP_SUMMARY"

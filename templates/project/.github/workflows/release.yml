@@ -40,6 +40,15 @@ jobs:
     #   app-key: ${{ secrets.REPOGARDE_APP_KEY }}
     #   webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
 
+  # Paquet npm à chaque release, sans jeton (mise en place : repogarde/bin/npm-publication) :
+  # npm:
+  #   needs: release
+  #   if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+  #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v2 # x-release-please-major
+  #   permissions: { contents: read, id-token: write }
+  #   with:
+  #     tag: ${{ needs.release.outputs.tag_name }}
+
   # Publication propre au projet, après une release (exemple). L'environnement
   # « production » (bin/proteger --environnement production) fait attendre
   # l'approbation d'une personne désignée avant de publier :
