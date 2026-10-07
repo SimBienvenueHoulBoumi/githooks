@@ -8,6 +8,7 @@
 #   REPOGARDE_CHECKS   liste des vérifications (si aucun argument)
 #   REPOGARDE_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
 #   REPOGARDE_BRANCH   nom de branche à vérifier
+#   REPOGARDE_TARGET   branche cible de la PR / MR (flux integrationBranch)
 #   REPOGARDE_STRICT   "true" : un outil de formatage/test manquant fait échouer
 #   REPOGARDE_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
 #   REPOGARDE_BIN      dossier des outils installés (gitleaks), ajouté au PATH
@@ -67,6 +68,11 @@ detect_branch() {
     echo "${REPOGARDE_BRANCH:-${GITHUB_HEAD_REF:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}}}}"
 }
 
+# Branche cible de la PR / MR (vide hors PR)
+detect_target() {
+    echo "${REPOGARDE_TARGET:-${GITHUB_BASE_REF:-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}}}"
+}
+
 # Fichiers ajoutés/modifiés depuis la base (tous les fichiers suivis sans base)
 changed_files() {
     if [ -n "$BASE" ]; then
@@ -78,9 +84,15 @@ changed_files() {
 
 # --- Vérifications ---------------------------------------------------------------
 
+# Bots de mise à jour des dépendances : leurs titres (« bump <paquet> from X
+# to Y ») dépassent souvent 72 caractères ; seul leur format est exigé.
+BOTS='^[0-9]*\+?(dependabot|renovate)\[bot\]@'
+is_bot_branch() { [[ "$1" == dependabot/* || "$1" == renovate/* ]]; }
+
 check_commits() {
     section "Messages de commit (Conventional Commits)"
-    local sha subject bad=0 count=0
+    local sha subject bad=0 count=0 bot=""
+    is_bot_branch "$(detect_branch)" && bot=1
     if [ -z "$BASE" ]; then echo "ℹ Pas de base : vérification ignorée."; return 0; fi
     while IFS= read -r sha; do
         subject="$(git log -1 --format=%s "$sha")"
@@ -93,6 +105,8 @@ check_commits() {
         elif ! [[ "$subject" =~ $CC_PATTERN ]]; then
             ci_error "${sha:0:7} « $subject » : format attendu <type>(<scope>): <description>."
             bad=1
+        elif [[ "$(git log -1 --format=%ae "$sha")" =~ $BOTS ]]; then
+            continue
         elif authored_length "$subject" && [ "$REPLY" -gt 72 ]; then
             ci_error "${sha:0:7} « $subject » : première ligne > 72 caractères (hors suffixe « (#NN) » de GitHub)."
             bad=1
@@ -104,7 +118,7 @@ check_commits() {
         if ! [[ "$title" =~ $CC_PATTERN ]]; then
             ci_error "Titre de la PR « $title » : format attendu <type>(<scope>): <description> (il devient le message du commit en squash)."
             bad=1
-        elif [ "${#title}" -gt 72 ]; then
+        elif [ -z "$bot" ] && authored_length "$title" && [ "$REPLY" -gt 72 ]; then
             ci_error "Titre de la PR « $title » : plus de 72 caractères."
             bad=1
         else
@@ -114,7 +128,8 @@ check_commits() {
     if [ "$bad" = 1 ]; then
         echo "Types :"
         types_help 2>&1
-        echo "Corriger : git rebase -i $BASE (reword), puis git push --force-with-lease"
+        echo "Corriger : en merge squash, seul le titre de la PR devient le message final : le corriger suffit."
+        echo "Sinon (historique conservé) : git rebase -i $BASE (reword), puis git push --force-with-lease"
         return 1
     fi
     echo "✔ $count commit(s) conforme(s)."
@@ -125,12 +140,24 @@ check_branch() {
     local branch
     branch="$(detect_branch)"
     if [ -z "$branch" ]; then echo "ℹ Pas de branche (tag ou HEAD détachée) : ignoré."; return 0; fi
-    if branch_name_valid "$branch"; then
-        echo "✔ « $branch » conforme."
+    if ! branch_name_valid "$branch"; then
+        ci_error "Branche « $branch » non conforme : <type>/<sujet>, ex. $(suggest_branch_name "$branch")."
+        branch_help "$branch" 2>&1
+        return 1
+    fi
+    echo "✔ « $branch » conforme."
+    # Flux avec branche d'intégration : la PR vise-t-elle la bonne branche ?
+    local target allowed
+    target="$(detect_target)"
+    pr_targets_r "$branch"
+    allowed="$REPLY"
+    [ -n "$target" ] && [ -n "$allowed" ] || return 0
+    if [[ " $allowed " == *" $target "* ]]; then
+        echo "✔ Cible « $target » conforme au flux."
         return 0
     fi
-    ci_error "Branche « $branch » non conforme : <type>/<sujet>, ex. $(suggest_branch_name "$branch")."
-    branch_help "$branch" 2>&1
+    ci_error "PR de « $branch » vers « $target » : cible attendue ${allowed// / ou } (réglage integrationBranch)."
+    echo "  Corriger : modifier la branche de base de la PR (Edit, à côté du titre), ou gh pr edit --base ${allowed%% *}"
     return 1
 }
 

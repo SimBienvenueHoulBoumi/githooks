@@ -134,7 +134,8 @@ authored_length() {
 # Nommage des branches : <type>/<sujet>
 BRANCH_ALIASES="feature|bugfix|hotfix"
 BRANCH_PATTERN="^($CC_TYPES|$BRANCH_ALIASES)/[a-z0-9._-]+(/[a-z0-9._-]+)*$"
-DEFAULT_ALLOWED_BRANCHES="main master develop release/*"
+# Branches des bots (release-please, Dependabot, Renovate) : nommées par eux
+DEFAULT_ALLOWED_BRANCHES="main master develop release/* release-please--* dependabot/* renovate/*"
 
 # Liste des types avec leur rôle (affichée dans les messages d'aide)
 types_help() {
@@ -166,6 +167,64 @@ branch_name_valid() {
     done
     set +f
     [[ "$branch" =~ $BRANCH_PATTERN ]]
+}
+
+# Flux avec branche d'intégration (réglage integrationBranch, ex. develop) :
+# REPLY = branches cibles autorisées pour une PR depuis la branche $1, vide si
+# aucun flux n'est configuré (PR libres, en pratique vers main).
+#   travail (feat/…, fix/…, bots) → intégration
+#   intégration, PR de release-please → principale (mainBranch, défaut main)
+#   release/…, hotfix/…           → principale ou intégration
+pr_targets_r() {
+    local integration
+    cfg_r integrationBranch ""
+    integration="$REPLY"
+    [ -n "$integration" ] || return 0
+    cfg_r mainBranch main
+    case "$1" in
+        "$integration" | release-please--*) ;;
+        release/* | hotfix/*) REPLY="$REPLY $integration" ;;
+        *) REPLY="$integration" ;;
+    esac
+}
+
+# Vrai si $1 est un en-tête conforme (format et 72 caractères)
+header_valid() {
+    [[ "$1" =~ $CC_PATTERN ]] || return 1
+    authored_length "$1"
+    [ "$REPLY" -le 72 ]
+}
+
+# REPLY = titre de PR conforme déduit de la branche $1 :
+#   feat/ajout-panier → « feat: ajout panier », hotfix/crash → « fix: crash »,
+#   release/1.2.0 → « chore(release): 1.2.0 », develop → livraison sur main
+suggest_pr_title_r() {
+    local branch="$1" type rest
+    cfg_r integrationBranch ""
+    if [ -n "$REPLY" ] && [ "$branch" = "$REPLY" ]; then
+        local integration="$REPLY"
+        cfg_r mainBranch main
+        REPLY="chore(release): livrer $integration sur $REPLY"
+        return 0
+    fi
+    type="${branch%%/*}"
+    rest="${branch#*/}"
+    [ "$rest" != "$branch" ] || { type=chore; rest="$branch"; }
+    case "$type" in
+        feature) type=feat ;;
+        bugfix | hotfix) type=fix ;;
+        release) REPLY="chore(release): $rest"; return 0 ;;
+    esac
+    [[ "$type" =~ ^($CC_TYPES)$ ]] || type=chore
+    rest="${rest//[\/_-]/ }"
+    REPLY="$type: $rest"
+    # 72 caractères au plus (coupe sur un mot)
+    authored_length "$REPLY"
+    while [ "$REPLY" -gt 72 ]; do
+        if [[ "$rest" == *" "* ]]; then rest="${rest% *}"; else rest="${rest%?}"; fi
+        authored_length "$type: $rest"
+    done
+    REPLY="$type: $rest"
 }
 
 # Propose un nom valide à partir d'un nom invalide (Feat/Mon Truc → feat/mon-truc)
