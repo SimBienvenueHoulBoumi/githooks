@@ -36,7 +36,7 @@ Settings versioned in `.repogarde.conf`, applied by `bin/proteger` (can be re-ru
     requiredReviews = 1              # approvals per PR
     codeOwnerReview = true           # CODEOWNERS review on their files
     environment = production         # deployments subject to approval
-    environmentReviewers = alice bob # default: the current gh user
+    environmentReviewers = alice @acme/release  # accounts or teams; default: the current gh user
 ```
 
 ```text title=".github/CODEOWNERS"
@@ -66,6 +66,38 @@ The environment only accepts deployments from protected branches and `v*` tags: 
 GitHub does not allow approving your own PR. With `requiredReviews = 1` and a single developer, every merge would go through the **administrator bypass**, which remains allowed but is explicit and recorded in the PR history. For a solo project, the recommended settings are:
 - `requiredReviews = 0`: CI is the authority on form;
 - `environment = production` with yourself as approver: each publication requires a deliberate click.
+
+## Who gets notified
+
+Recipients are designated by **GitHub account or team**, never by email address: a public repository would expose the addresses, and Git history would keep them forever. GitHub then notifies each person according to their preferences (email, mobile, web).
+
+| Who | Where | Example |
+|---|---|---|
+| Reviewers, per code area | `.github/CODEOWNERS` | `/.github/  @acme/platform` |
+| Release approvers | `environmentReviewers` | `alice @acme/release` |
+| Team channel (optional) | `REPOGARDE_WEBHOOK` secret | Slack, Teams, Discord, Mattermost… |
+
+A team (`@organisation/team`) is managed in GitHub: people joining or leaving change no file.
+
+### Team channel
+
+The release workflow can post to a channel: release published, release PR waiting for approval, failure. The incoming webhook address is a **secret**, never stored in the repository:
+
+```bash
+gh secret set REPOGARDE_WEBHOOK      # address pasted with masked input
+```
+
+```yaml
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    secrets:
+      webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
+    with:
+      notify: release attente echec   # default: all three
+```
+
+The format follows the platform recognised from the address (Slack, Discord, Microsoft Teams; otherwise `{"text"}` for Mattermost, Rocket.Chat…) and the message uses the project's language. A failed delivery is reported but never interrupts a release.
 
 ## Traceability and emergency stop
 

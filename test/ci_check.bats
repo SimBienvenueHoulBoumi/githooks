@@ -332,6 +332,8 @@ case "$*" in
     "api user --jq .login") echo moi ;;
     "api repos/moi/projet --jq .owner.type") echo "${GH_OWNER_TYPE:-User}" ;;
     "api users/"*) case "$2" in users/moi) echo 101 ;; users/alice) echo 102 ;; *) exit 1 ;; esac ;;
+    "api orgs/acme/teams/release --jq .id") echo 900 ;;
+    "api orgs/"*) exit 1 ;;
     # branche renommée : GitHub redirige master vers main
     "api repos/moi/projet/branches/master"*) echo main ;;
     "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] && echo "${2##*/}" ;;
@@ -419,6 +421,11 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     python3 -c 'import json,sys; e=json.loads(sys.argv[1])[-1]; \
         assert [r["id"] for r in e["reviewers"]]==[101,102] and e["prevent_self_review"] is True' "$(rulesets_json "$output")"
     GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production --approbateurs inconnu
+    [ "$status" -ne 0 ]
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production --approbateurs "@acme/release moi"
+    python3 -c 'import json,sys; e=json.loads(sys.argv[1])[-1]; \
+        assert e["reviewers"]==[{"type":"Team","id":900},{"type":"User","id":101}]' "$(rulesets_json "$output")"
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production --approbateurs "@acme/inconnue"
     [ "$status" -ne 0 ]
 }
 
@@ -621,4 +628,42 @@ python_dead_code() {
     run "$CHECK" deadcode
     [ "$status" -ne 0 ]
     [[ "$output" == *"src/a/A.java:3 : Unused import x (code mort prouvé)"* ]]
+}
+
+# --- ci/notifier.sh (canal de l'équipe) : curl simulé ---------------------------
+
+NOTIFIER="$BATS_TEST_DIRNAME/../ci/notifier.sh"
+
+fake_curl() {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cat >"$BATS_TEST_TMPDIR/bin/curl" <<'T'
+#!/usr/bin/env bash
+while [ $# -gt 0 ]; do [ "$1" = -d ] && { shift; printf '%s' "$1" >"$CURL_BODY"; }; shift; done
+exit "${CURL_EXIT:-0}"
+T
+    chmod +x "$BATS_TEST_TMPDIR/bin/curl"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH" CURL_BODY="$BATS_TEST_TMPDIR/body.json"
+}
+
+@test "notification : format adapte a Slack, Discord, Teams ; texte echappe" {
+    require python3
+    fake_curl
+    REPOGARDE_WEBHOOK=https://hooks.slack.com/services/x run "$NOTIFIER" ci.notify.released 'acme/app' 'v1.2.0' 'https://x/"y"'
+    [ "$status" -eq 0 ]
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert d["text"]=="🚀 acme/app v1.2.0 publiée : https://x/\"y\""' "$CURL_BODY"
+    REPOGARDE_WEBHOOK=https://discord.com/api/webhooks/x run "$NOTIFIER" ci.notify.failure acme/app https://run
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert d["content"].startswith("❌ acme/app")' "$CURL_BODY"
+    REPOGARDE_WEBHOOK=https://prod-01.westeurope.logic.azure.com/workflows/x run "$NOTIFIER" ci.notify.waiting acme/app 12 https://pr
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert "#12" in d["attachments"][0]["content"]["body"][0]["text"]' "$CURL_BODY"
+}
+
+@test "notification : sans adresse rien n'est envoye ; un echec d'envoi ne casse rien" {
+    fake_curl
+    rm -f "$CURL_BODY"
+    REPOGARDE_WEBHOOK= run "$NOTIFIER" ci.notify.released a v1 u
+    [ "$status" -eq 0 ]
+    [ ! -e "$CURL_BODY" ]
+    CURL_EXIT=22 REPOGARDE_WEBHOOK=https://hooks.slack.com/x run "$NOTIFIER" ci.notify.released a v1 u
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"release non affectée"* ]]
 }

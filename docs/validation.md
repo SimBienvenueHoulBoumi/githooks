@@ -36,7 +36,7 @@ Réglages versionnés dans `.repogarde.conf`, appliqués par `bin/proteger` (rel
     requiredReviews = 1              # approbations par PR
     codeOwnerReview = true           # revue des CODEOWNERS sur leurs fichiers
     environment = production         # déploiements soumis à approbation
-    environmentReviewers = alice bob # défaut : l'utilisateur gh courant
+    environmentReviewers = alice @acme/release  # comptes ou équipes ; défaut : l'utilisateur gh courant
 ```
 
 ```text title=".github/CODEOWNERS"
@@ -66,6 +66,38 @@ L'environnement n'accepte de déploiement que depuis les branches protégées et
 GitHub interdit d'approuver sa propre PR. Avec `requiredReviews = 1` et un seul développeur, chaque merge passerait par le **contournement d'administrateur**, qui reste permis mais est explicite et tracé dans l'historique de la PR. Pour un projet solo, le réglage conseillé :
 - `requiredReviews = 0` : la CI fait foi sur la forme ;
 - `environment = production` avec soi-même comme approbateur : chaque publication demande un clic délibéré.
+
+## Qui est prévenu
+
+Les destinataires se désignent par **compte ou équipe GitHub**, jamais par adresse mail : un dépôt public exposerait les adresses, et l'historique Git les garderait pour toujours. GitHub prévient ensuite chacun selon ses préférences (mail, mobile, web).
+
+| Qui | Où | Exemple |
+|---|---|---|
+| Relecteurs, par zone du code | `.github/CODEOWNERS` | `/.github/  @acme/plateforme` |
+| Approbateurs des publications | `environmentReviewers` | `alice @acme/release` |
+| Canal de l'équipe (optionnel) | secret `REPOGARDE_WEBHOOK` | Slack, Teams, Discord, Mattermost… |
+
+Une équipe (`@organisation/equipe`) se gère dans GitHub : arrivées et départs ne touchent aucun fichier.
+
+### Canal de l'équipe
+
+Le workflow de release peut écrire dans un canal : release publiée, PR de release en attente d'approbation, échec. L'adresse du webhook entrant est un **secret**, jamais dans le dépôt :
+
+```bash
+gh secret set REPOGARDE_WEBHOOK      # adresse collée en saisie masquée
+```
+
+```yaml
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    secrets:
+      webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
+    with:
+      notify: release attente echec   # défaut : les trois
+```
+
+Le format suit la plateforme reconnue d'après l'adresse (Slack, Discord, Microsoft Teams ; sinon `{"text"}` pour Mattermost, Rocket.Chat…) et le message la langue du projet. Un envoi impossible est signalé sans jamais interrompre une release.
 
 ## Traçabilité et arrêt d'urgence
 

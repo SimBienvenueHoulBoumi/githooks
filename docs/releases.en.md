@@ -119,6 +119,7 @@ The project's CI must run on pushes to `develop`: its checks apply to the head c
 | `workflows` | detection | workflows run on the release PR; by default those that respond to `pull_request` and `workflow_dispatch` |
 | `initial-version` | `0.1.0` | version of the first release (no existing tag) |
 | `merge-auto` | `true` | `false`: the release PR is prepared and validated by CI, a human merges it; a review required by the protection is always honored |
+| `notify` | `release attente echec` | events posted to the team channel (`webhook` secret): see [Human approval](validation.md#team-channel) |
 | `mode` | `pr` | `tag`: develop → main flow, with no release PR and no version file |
 | `integration-branch`, `main-branch` | `develop`, `main` | branches for tag mode |
 | `config-file`, `manifest-file` | `release-please-config.json`, `.release-please-manifest.json` | release-please configuration |

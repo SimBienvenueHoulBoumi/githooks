@@ -33,6 +33,9 @@ jobs:
     #   release-type: maven          # sinon détecté (pom.xml, package.json, pyproject.toml…)
     #   workflows: repogarde.yml     # sinon les workflows pull_request + workflow_dispatch
     #   merge-auto: false            # PR de release mergée par un humain
+    # Canal de l'équipe (optionnel) : gh secret set REPOGARDE_WEBHOOK
+    # secrets:
+    #   webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
 
   # Publication propre au projet, après une release (exemple). L'environnement
   # « production » (bin/proteger --environnement production) fait attendre
