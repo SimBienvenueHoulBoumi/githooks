@@ -46,7 +46,9 @@ cd "$GIT_TOPLEVEL"
 [ -f package.json ] || { err_t npm.no_package; exit 1; }
 [ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 name="$(node -p 'require("./package.json").name')"
-TOKEN_NAME="repogarde-ci-${REPO##*/}"
+# Préfixe des jetons temporaires : nom unique à chaque création (npm refuse
+# les doublons, y compris celui d'une tentative interrompue) ; tous révoqués à la fin
+TOKEN_PREFIX="repogarde-ci-${REPO##*/}"
 
 brand "npm · $name · $REPO"
 
@@ -71,8 +73,9 @@ if ! publie; then
         echo
         otp="" sortie=""
         for essai in 1 2 3 4; do
-            if sortie="$(npm_config_password="$mdp" npm_config_otp="$otp" npm token create --json \
-                --name "$TOKEN_NAME" --expires 7 "${portee[@]}" \
+            # Sortie texte, pas --json : npm y masque le jeton (« npm_*** »)
+            if sortie="$(npm_config_password="$mdp" npm_config_otp="$otp" npm token create \
+                --name "$TOKEN_PREFIX-$(date +%Y%m%d%H%M%S)" --expires 7 "${portee[@]}" \
                 --packages-and-scopes-permission read-write --bypass-2fa </dev/null 2>&1)"; then
                 break
             fi
@@ -128,12 +131,14 @@ if gh secret list --repo "$REPO" | grep -q '^NPM_TOKEN'; then
     gh secret delete NPM_TOKEN --repo "$REPO"
     ok_t npm.token_removed
 fi
-# Jeton temporaire révoqué sur npm (retrouvé par son nom)
-{ npm token list --json 2>/dev/null || true; } |
-    TOKEN_NAME="$TOKEN_NAME" node -e '
+# Jetons temporaires révoqués sur npm (retrouvés par leur préfixe). npm peut
+# demander un code 2FA : la commande garde le terminal (questions visibles)
+ids="$({ npm token list --json 2>/dev/null || true; } |
+    TOKEN_PREFIX="$TOKEN_PREFIX" node -e '
         let l = []; try { l = JSON.parse(require("fs").readFileSync(0, "utf8")); } catch {}
-        for (const t of [].concat(l)) if (t && t.name === process.env.TOKEN_NAME) console.log(t.id || t.key);' |
-    while IFS= read -r id; do
-        npm token revoke "$id" >/dev/null && ok_t npm.token_revoked
-    done
+        const p = process.env.TOKEN_PREFIX;
+        for (const t of [].concat(l)) if (t && typeof t.name === "string" && (t.name === p || t.name.startsWith(p + "-"))) console.log(t.id || t.key);')"
+for id in $ids; do
+    npm token revoke "$id" && ok_t npm.token_revoked
+done
 ok_t npm.done "$name"
