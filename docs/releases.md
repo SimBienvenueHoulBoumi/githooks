@@ -155,10 +155,16 @@ La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications p
 
 Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbie/repogarde`).
 
-Mise en place guidée depuis le dépôt du projet, en deux passages. Tout est publié par la pipeline, la première version comprise :
+Mise en place en une commande, depuis le dépôt du projet. Tout est publié par la pipeline, la première version comprise :
 
-1. **Paquet pas encore sur npm** : npm n'accepte la publication de confiance que sur un paquet existant. Tu crées un jeton npm temporaire, que tu colles en saisie masquée (secret `NPM_TOKEN`). La variable `REPOGARDE_NPM` active le job, et la prochaine release publie le paquet avec ce jeton.
-2. **Une fois le paquet publié** : relancer la commande. Elle ouvre le formulaire de l'éditeur de confiance avec les valeurs à saisir, puis retire le secret `NPM_TOKEN`. Les releases suivantes publient sans jeton.
+1. **Connexion à npm** : `npm login` si besoin.
+2. **Paquet pas encore sur npm** (npm n'accepte la publication de confiance que sur un paquet existant) :
+   - un jeton npm temporaire est créé, valable 7 jours et limité au scope du paquet ;
+   - il va directement dans le secret `NPM_TOKEN`, sans jamais s'afficher ; le mot de passe et le code 2FA sont demandés en saisie masquée ;
+   - la variable `REPOGARDE_NPM` active le job, puis la commande attend que la prochaine release publie le paquet.
+3. **Publication de confiance** : configurée avec `npm trust github`, sans formulaire. Le secret est ensuite supprimé et le jeton révoqué. Les releases suivantes publient sans jeton.
+
+Interrompue (Ctrl+C), la commande reprend où elle en était quand on la relance.
 
 ```bash
 ~/repogarde/bin/npm-publication      # ou : repogarde npm-publication

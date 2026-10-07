@@ -155,10 +155,16 @@ The project's CI must run on pushes to `develop`: its checks apply to the head c
 
 A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbie/repogarde`).
 
-Guided setup from the project repository, in two runs. Everything is published by the pipeline, the first version included:
+One-command setup, from the project repository. Everything is published by the pipeline, the first version included:
 
-1. **Package not on npm yet**: npm only accepts trusted publishing on an existing package. You create a temporary npm token and paste it as hidden input (`NPM_TOKEN` secret). The `REPOGARDE_NPM` variable enables the job, and the next release publishes the package with this token.
-2. **Once the package is published**: run the command again. It opens the trusted publisher form with the values to enter, then removes the `NPM_TOKEN` secret. The following releases publish without a token.
+1. **npm login**, if needed.
+2. **Package not on npm yet** (npm only accepts trusted publishing on an existing package):
+   - a temporary npm token is created, valid for 7 days and limited to the package scope;
+   - it goes straight into the `NPM_TOKEN` secret and is never displayed; the password and 2FA code are asked as hidden input;
+   - the `REPOGARDE_NPM` variable enables the job, then the command waits for the next release to publish the package.
+3. **Trusted publishing**: configured with `npm trust github`, no form to fill in. The secret is then deleted and the token revoked. The following releases publish without a token.
+
+If interrupted (Ctrl+C), the command resumes where it left off when run again.
 
 ```bash
 ~/repogarde/bin/npm-publication      # or: repogarde npm-publication

@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Met en place la publication npm automatique d'un dépôt, sans jeton : à
-# chaque release, le workflow npm-publish.yml publie le paquet. npm vérifie
-# que la publication vient bien de ce dépôt et de release.yml (publication de
-# confiance, OIDC) et joint la provenance au paquet.
+# Publication npm automatique d'un dépôt, mise en place en une commande :
+# chaque release publie le paquet (workflow npm-publish.yml), sans jeton : npm
+# vérifie que la publication vient de ce dépôt et de release.yml (publication
+# de confiance, OIDC) et joint la provenance au paquet.
 #
 #   bin/npm-publication [--repo propriétaire/nom] [--workflow release.yml]
 #                       [--environnement NOM]
 #
-# À lancer deux fois, tout passe par la pipeline :
-# 1. paquet pas encore sur npm (la publication de confiance n'est possible que
-#    sur un paquet existant) : jeton npm temporaire en secret NPM_TOKEN et
-#    variable REPOGARDE_NPM=true ; la prochaine release publie le paquet ;
-# 2. ensuite : éditeur de confiance sur npm (valeurs affichées), puis le
-#    secret NPM_TOKEN est retiré. Les releases publient alors sans jeton.
+# 1. connexion npm (npm login si besoin) ;
+# 2. paquet absent de npm (la publication de confiance exige un paquet
+#    existant) : jeton npm temporaire (7 jours, limité au scope du paquet)
+#    créé et rangé directement en secret NPM_TOKEN, sans être affiché ;
+#    variable REPOGARDE_NPM=true ; attente de la publication par la pipeline ;
+# 3. publication de confiance (npm trust github), puis jeton révoqué et
+#    secret supprimé. Interrompue, la commande reprend où elle en était.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -27,7 +28,7 @@ while [ $# -gt 0 ]; do
         --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
         --workflow) shift; WORKFLOW="${1:?--workflow attend un fichier}" ;;
         --environnement | --environment) shift; ENVIRONMENT="${1:?--environnement attend un nom}" ;;
-        -h | --help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h | --help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) err_t install.unknown_arg "$1"; exit 1 ;;
     esac
     shift
@@ -35,61 +36,96 @@ done
 
 command -v gh >/dev/null || { err_t bot.no_gh; exit 1; }
 command -v npm >/dev/null || { err_t npm.no_npm; exit 1; }
+# npm trust : npm 11.15 au minimum
+if ! node -e 'const [a,b]=process.argv[1].split(".").map(Number);process.exit(a>11||(a==11&&b>=15)?0:1)' "$(npm --version)"; then
+    err_t npm.old_npm "$(npm --version)"
+    exit 1
+fi
 cd "$GIT_TOPLEVEL"
 [ -f package.json ] || { err_t npm.no_package; exit 1; }
 [ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
-name="$(sed -n 's/^  "name": *"\([^"]*\)".*/\1/p' package.json | head -1)"
-
-ouvrir() {
-    echo "  → $1"
-    if command -v open >/dev/null; then open "$1"
-    elif command -v xdg-open >/dev/null; then xdg-open "$1" >/dev/null 2>&1
-    elif command -v cmd.exe >/dev/null; then cmd.exe /c start "" "$1"
-    fi
-}
-attendre() { t bot.press_enter; read -r -p "  $REPLY" _; }
+name="$(node -p 'require("./package.json").name')"
+TOKEN_NAME="repogarde-ci-${REPO##*/}"
 
 brand "npm · $name · $REPO"
 
-# Paquet absent de npm : la publication de confiance ne peut pas encore être
-# configurée. La pipeline fait quand même la première publication, avec un
-# jeton npm temporaire saisi par toi (secret NPM_TOKEN, jamais affiché).
-if [ -z "$(npm view "$name" name 2>/dev/null || true)" ]; then
+# 1. Connexion npm : entre toi et npm (navigateur ou mot de passe)
+step_t npm.step_login
+npm whoami >/dev/null 2>&1 || npm login
+ok_t npm.logged "$(npm whoami)"
+
+publie() { [ -n "$(npm view "$name" name 2>/dev/null || true)" ]; }
+
+# 2. Première publication, faite par la pipeline avec un jeton temporaire
+if ! publie; then
     step_t npm.step_token
-    user="$(npm whoami 2>/dev/null || true)"
-    if [ -n "$user" ]; then
-        ouvrir "https://www.npmjs.com/settings/$user/tokens/granular-access-tokens/new"
+    if gh secret list --repo "$REPO" | grep -q '^NPM_TOKEN'; then
+        ok_t npm.token_exists
     else
-        ouvrir "https://www.npmjs.com/"
+        # npm écrit ses questions et le jeton au même endroit : les questions
+        # sont posées ici (saisie masquée) et le jeton va droit au secret
+        if [[ "$name" == @*/* ]]; then portee=(--scopes "${name%%/*}"); else portee=(--packages-all); fi
+        t npm.ask_password
+        read -r -s -p "  $REPLY" mdp
+        echo
+        otp="" sortie=""
+        for essai in 1 2 3 4; do
+            if sortie="$(npm_config_password="$mdp" npm_config_otp="$otp" npm token create --json \
+                --name "$TOKEN_NAME" --expires 7 "${portee[@]}" \
+                --packages-and-scopes-permission read-write --bypass-2fa </dev/null 2>&1)"; then
+                break
+            fi
+            # Code à usage unique (application ou e-mail) demandé : on le pose
+            if [ "$essai" -lt 4 ] && grep -qiE 'otp|one-time|two-factor' <<<"$sortie"; then
+                t npm.ask_otp
+                read -r -p "  $REPLY" otp
+                continue
+            fi
+            sed -E 's/npm_[A-Za-z0-9]+/npm_***/g' <<<"$sortie" >&2
+            mdp=""
+            err_t npm.token_failed
+            exit 1
+        done
+        mdp=""
+        jeton="$(grep -oE 'npm_[A-Za-z0-9]+' <<<"$sortie" | head -1 || true)"
+        sortie=""
+        [ -n "$jeton" ] || { err_t npm.token_failed; exit 1; }
+        printf '%s' "$jeton" | gh secret set NPM_TOKEN --repo "$REPO"
+        jeton=""
+        ok_t npm.token_stored
     fi
-    dim_t npm.hint_token
-    attendre
-    t npm.ask_token
-    echo "  $REPLY"
-    gh secret set NPM_TOKEN --repo "$REPO"
     gh variable set REPOGARDE_NPM --repo "$REPO" --body true
-    ok_t npm.token_done "$name"
-    dim_t npm.hint_rerun
-    exit 0
+
+    # Attente de la prochaine release (merge d'une PR) : jusqu'à 3 h
+    info_t npm.waiting "$name"
+    for i in $(seq 1 360); do
+        publie && break
+        [ $((i % 10)) -ne 0 ] || dim_t npm.still_waiting "$((i / 2))"
+        sleep 30
+    done
+    publie || { attention_t npm.not_yet; exit 0; }
+    ok_t npm.first_published "$name" "$(npm view "$name" version)"
 fi
 
-# Paquet publié : publication de confiance (formulaire npm, rien de secret)
+# 3. Publication de confiance, puis plus aucun jeton
 step_t npm.step_trust
-ouvrir "https://www.npmjs.com/package/$name/access"
-dim_t npm.hint_trust
-echo "    Publisher        : GitHub Actions"
-echo "    Organization/user: ${REPO%%/*}"
-echo "    Repository       : ${REPO##*/}"
-echo "    Workflow filename: $WORKFLOW"
-echo "    Environment name : ${ENVIRONMENT:-—}"
-dim_t npm.hint_tokens
-attendre
+if npm trust list "$name" --json 2>/dev/null | grep -q '"id"'; then
+    ok_t npm.trust_exists
+else
+    npm trust github "$name" --file "$WORKFLOW" --repo "$REPO" ${ENVIRONMENT:+--env "$ENVIRONMENT"} --allow-publish --yes
+    ok_t npm.trust_set "$REPO" "$WORKFLOW"
+fi
 gh variable set REPOGARDE_NPM --repo "$REPO" --body true
-
-# Jeton de la première publication devenu inutile : retiré du dépôt
 if gh secret list --repo "$REPO" | grep -q '^NPM_TOKEN'; then
     gh secret delete NPM_TOKEN --repo "$REPO"
     ok_t npm.token_removed
-    dim_t npm.hint_revoke
 fi
-ok_t npm.done "$REPO"
+# Jeton temporaire révoqué sur npm (retrouvé par son nom)
+{ npm token list --json 2>/dev/null || true; } |
+    TOKEN_NAME="$TOKEN_NAME" node -e '
+        let l = []; try { l = JSON.parse(require("fs").readFileSync(0, "utf8")); } catch {}
+        for (const t of [].concat(l)) if (t && t.name === process.env.TOKEN_NAME) console.log(t.id || t.key);' |
+    while IFS= read -r id; do
+        npm token revoke "$id" >/dev/null && ok_t npm.token_revoked
+    done
+ok_t npm.done "$name"
