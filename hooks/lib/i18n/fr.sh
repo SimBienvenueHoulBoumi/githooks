@@ -94,7 +94,7 @@ _msg_fr() {
         hook.common.5) _M="Hook local du projet : %s" ;;
         hook.lang.1) _M="Formatage personnalisé : %s" ;;
         hook.lang.2) _M="%s : %s fichier(s)" ;;
-        hook.lang.3) _M="Échec du formatage %s (erreur de syntaxe ?)." ;;
+        hook.lang.3) _M="Échec du formatage %s : erreur de syntaxe, ou outil / dépendance indisponible (voir le log ci-dessus)." ;;
         hook.lang.4) _M="Tests personnalisés : %s" ;;
         hook.lang.5) _M="Tests %s" ;;
         hook.lang.6) _M="Échec des tests %s : push refusé." ;;
@@ -189,7 +189,7 @@ _msg_fr() {
         ci.check.18) _M="  Corriger : modifier la branche de base de la PR (Edit, à côté du titre), ou gh pr edit --base %s" ;;
         ci.check.19) _M="gitleaks absent : lancer ci/install-gitleaks.sh avant ce script." ;;
         ci.check.20) _M="Dossier de travail modifié avant la vérification : impossible de contrôler le formatage." ;;
-        ci.check.21) _M="Un formateur a échoué (erreur de syntaxe ?) : voir le log ci-dessus." ;;
+        ci.check.21) _M="Un formateur a échoué (erreur de syntaxe, ou outil / dépendance indisponible) : voir le log ci-dessus." ;;
         ci.check.22) _M="Corriger : installer les hooks (lefthook install) ou lancer le formateur, puis commiter." ;;
         ci.check.23) _M="Fichiers modifiés correctement formatés." ;;
         ci.check.24) _M="repogarde CI — base : %s — vérifications : %s" ;;
