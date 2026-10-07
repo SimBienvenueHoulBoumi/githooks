@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install ruff pytest
-      - uses: SimBienvenueHoulBoumi/repogarde@v2 # x-release-please-major
+      - uses: SimBienvenueHoulBoumi/repogarde@v3 # x-release-please-major
         with:
           strict: true
 ```
@@ -55,7 +55,7 @@ jobs:
 ```yaml title=".gitlab-ci.yml"
 include:
   - project: outils/repogarde                # repogarde hébergé sur votre GitLab
-    ref: v2.13.0 # x-release-please-version
+    ref: v3.0.0 # x-release-please-version
     file: templates/gitlab/repogarde.gitlab-ci.yml
 
 repogarde:
