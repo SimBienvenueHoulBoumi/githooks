@@ -30,7 +30,6 @@ theme:
         icon: material/weather-sunny
         name: Mode clair
   features:
-    - navigation.instant
     - navigation.sections
     - navigation.top
     - navigation.footer
@@ -56,6 +55,41 @@ nav:
   - Sécurité: securite.md
   - Contribuer: contribuer.md
   - Changelog: changelog.md
+
+# Site bilingue : page.md (français, par défaut) et page.en.md (anglais) ;
+# une page sans traduction s'affiche en français dans la version anglaise
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: fr
+          default: true
+          name: Français
+          build: true
+        - locale: en
+          name: English
+          build: true
+          site_description: Multi-language git hooks and CI — commit messages, branch naming, secrets, formatting, targeted tests, releases.
+          nav_translations:
+            Accueil: Home
+            Démarrage rapide: Quick start
+            Hooks et règles: Hooks and rules
+            Technologies: Technologies
+            Configuration: Configuration
+            CI (GitHub, GitLab): CI (GitHub, GitLab)
+            Versions et releases: Versions and releases
+            Validation humaine: Human approval
+            En organisation: In an organisation
+            Migration depuis githooks: Migrating from githooks
+            Désinstallation: Uninstalling
+            Limites: Limitations
+            Sécurité: Security
+            Contribuer: Contributing
+            Changelog: Changelog
 
 markdown_extensions:
   - admonition
