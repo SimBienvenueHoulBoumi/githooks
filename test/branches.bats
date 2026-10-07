@@ -35,7 +35,7 @@ setup() { setup_repo; initial_commit; }
 @test "repogarde.allowedBranches remplace les exceptions" {
     source "$HOOKS/lib/common.sh"
     git config repogarde.allowedBranches "main"
-    cfg_reset
+    cfg_load
     ! branch_name_valid develop
     branch_name_valid main
 }

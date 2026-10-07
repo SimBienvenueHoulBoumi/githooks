@@ -47,10 +47,12 @@ load_engine() {
 
 @test "detection : extension -> plugins candidats" {
     load_engine
-    [[ " $(plugins_for_file src/A.java) " == *" maven "* ]]
-    [[ " $(plugins_for_file src/A.java) " == *" gradle "* ]]
-    [ "$(plugins_for_file deploy.sh | tr -d ' ')" = shell ]
-    [ -z "$(plugins_for_file image.png | tr -d ' ')" ]
+    [[ " $(plugins_for_file_r src/A.java; echo "$REPLY") " == *" maven "* ]]
+    [[ " $(plugins_for_file_r src/A.java; echo "$REPLY") " == *" gradle "* ]]
+    plugins_for_file_r deploy.sh
+    [ "$(echo "$REPLY" | tr -d ' ')" = shell ]
+    plugins_for_file_r image.png
+    [ -z "$(echo "$REPLY" | tr -d ' ')" ]
 }
 
 # --- Formatage -----------------------------------------------------------------
@@ -169,7 +171,7 @@ load_engine() {
     load_engine
     [ "$(cfg allowedBranches)" = main ]
     git config repogarde.allowedBranches "main develop"
-    cfg_reset
+    cfg_load
     [ "$(cfg allowedBranches)" = "main develop" ]
 }
 
@@ -312,7 +314,7 @@ load_engine() {
     [ "$(nearest_project infra/vars.tf terraform)" = "terraform infra" ]
     [ "$(nearest_project ansible/site.yml "ansible node")" = "ansible ansible" ]
     [ "$(nearest_project img/vars.pkrvars.hcl packer)" = "packer img" ]
-    [[ " $(plugins_for_file Dockerfile.prod) " == *" docker "* ]]
+    [[ " $(plugins_for_file_r Dockerfile.prod; echo "$REPLY") " == *" docker "* ]]
     has_marker . actions
 }
 

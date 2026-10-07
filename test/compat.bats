@@ -19,10 +19,10 @@ setup() { setup_repo; initial_commit; git switch -q -c feat/x; }
     source "$HOOKS/lib/common.sh"
     git config hooks.allowedBranches "ancienne"
     git config repogarde.allowedBranches "nouvelle"
-    cfg_reset
+    cfg_load
     [ "$(cfg allowedBranches)" = nouvelle ]
     git config --unset repogarde.allowedBranches
-    cfg_reset
+    cfg_load
     [ "$(cfg allowedBranches)" = ancienne ]
 }
 

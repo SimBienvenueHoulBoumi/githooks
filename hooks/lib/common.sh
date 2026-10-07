@@ -83,9 +83,6 @@ cfg_load() {
     CFG_LOADED=1
 }
 
-# À appeler si la config change dans le même processus (tests)
-cfg_reset() { cfg_load; }
-
 # REPLY = dernière valeur de repogarde.<$1> dans $2 (sortie de --get-regexp, où git
 # met les noms en minuscules : comparaison insensible à la casse). Échec si absente.
 cfg_lookup() {
