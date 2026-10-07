@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.7.0...v2.8.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **i18n:** messages des hooks traduits (fr, en) ([#70](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/70)) ([48bab0f](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/48bab0fd2ab0508c06493dcd7818b81543c732a5))
+
 ## [2.7.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.6.2...v2.7.0) (2026-10-07)
 
 
