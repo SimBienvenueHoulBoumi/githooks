@@ -76,6 +76,41 @@ Le type de projet est détecté d'après les fichiers à la racine :
 !!! note "Maven"
     Après chaque release, release-please propose de repasser en `-SNAPSHOT` (PR mergée automatiquement de la même façon). Pour s'en passer : `"skip-snapshot": true` dans `release-please-config.json`.
 
+## Flux develop → main (mode tag)
+
+Pour un projet à deux branches longues ([flux `integrationBranch`](configuration.md#flux-avec-branche-dintegration-develop)), la version n'est écrite dans aucun fichier : elle est calculée depuis les commits et portée par le tag (un build Maven la reçoit par exemple en `-Drevision`).
+
+```yaml title=".github/workflows/release.yml"
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    permissions: { contents: write, pull-requests: write }
+    with:
+      mode: tag
+
+  publier:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ needs.release.outputs.tag_name }}" }
+      - run: ./mvnw -B verify -Drevision="${{ needs.release.outputs.version }}"
+      - run: gh release upload "${{ needs.release.outputs.tag_name }}" target/*.jar
+        env: { GH_TOKEN: "${{ github.token }}" }
+```
+
+1. À chaque merge sur `develop`, la **PR de livraison** `develop` → `main` est créée ou mise à jour : titre `chore(release): vX.Y.Z`, notes groupées (incompatibles, fonctionnalités, corrections, maintenance) ;
+2. la merger (décision humaine, **merge commit** de préférence : les notes gardent le détail des commits) publie : tag `vX.Y.Z` et release GitHub sur `main` ;
+3. un `hotfix/…` mergé sur `main` publie un correctif de la même façon.
+
+La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications portent sur le commit de tête, et valent donc pour la PR de livraison.
+
 ## Entrées et sorties
 
 | Entrée | Défaut | Rôle |
@@ -83,6 +118,8 @@ Le type de projet est détecté d'après les fichiers à la racine :
 | `release-type` | détection | type release-please (`maven`, `node`, `python`, `simple`…) |
 | `workflows` | détection | workflows lancés sur la PR de release ; par défaut ceux qui réagissent à `pull_request` et à `workflow_dispatch` |
 | `initial-version` | `0.1.0` | version de la première release (aucun tag existant) |
+| `mode` | `pr` | `tag` : flux develop → main, sans PR de release ni fichier de version |
+| `integration-branch`, `main-branch` | `develop`, `main` | branches du mode tag |
 | `config-file`, `manifest-file` | `release-please-config.json`, `.release-please-manifest.json` | configuration release-please |
 
 !!! warning "Workflows qui déploient"
