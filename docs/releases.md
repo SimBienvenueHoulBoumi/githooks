@@ -119,6 +119,7 @@ La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications p
 | `workflows` | détection | workflows lancés sur la PR de release ; par défaut ceux qui réagissent à `pull_request` et à `workflow_dispatch` |
 | `initial-version` | `0.1.0` | version de la première release (aucun tag existant) |
 | `merge-auto` | `true` | `false` : la PR de release est préparée et validée par la CI, un humain la merge ; une relecture exigée par la protection est toujours respectée |
+| `notify` | `release attente echec` | événements envoyés au canal de l'équipe (secret `webhook`) : voir [Validation humaine](validation.md#canal-de-lequipe) |
 | `mode` | `pr` | `tag` : flux develop → main, sans PR de release ni fichier de version |
 | `integration-branch`, `main-branch` | `develop`, `main` | branches du mode tag |
 | `config-file`, `manifest-file` | `release-please-config.json`, `.release-please-manifest.json` | configuration release-please |

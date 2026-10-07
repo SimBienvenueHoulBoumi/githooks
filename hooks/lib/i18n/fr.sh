@@ -229,6 +229,7 @@ _msg_fr() {
         ci.proteger.tags_org) _M="réservés aux workflows" ;;
         ci.proteger.tags_user) _M="ni déplacés ni supprimés (compte personnel : création libre)" ;;
         ci.proteger.tags_none) _M="non protégés (--sans-tags)" ;;
+        ci.proteger.unknown_team) _M="Équipe inconnue ou inaccessible : %s (format @organisation/equipe)" ;;
         ci.proteger.unknown_user) _M="Utilisateur inconnu : %s" ;;
         ci.version.usage) _M="Usage : ci/version.sh next|notes [ref]" ;;
         ci.version.breaking) _M="Changements incompatibles" ;;
@@ -257,6 +258,12 @@ _msg_fr() {
         ci.section.format) _M="Formatage" ;;
         ci.section.tests) _M="Tests des projets touchés" ;;
         ci.section.strict) _M="Mode strict" ;;
+        # Notifications
+        ci.notify.sent) _M="Message envoyé au canal de l'équipe." ;;
+        ci.notify.failed) _M="Envoi au canal de l'équipe impossible (adresse REPOGARDE_WEBHOOK ?) : release non affectée." ;;
+        ci.notify.released) _M="🚀 %s %s publiée : %s" ;;
+        ci.notify.waiting) _M="⏳ %s : la PR de release #%s attend une approbation : %s" ;;
+        ci.notify.failure) _M="❌ %s : échec du workflow de release : %s" ;;
         *) _M="" ;;
     esac
 }

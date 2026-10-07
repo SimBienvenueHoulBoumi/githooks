@@ -194,9 +194,20 @@ env_json=""
 if [ -n "$ENVIRONMENT" ]; then
     [ -n "$APPROVERS" ] || APPROVERS="$(gh api user --jq .login)"
     reviewers=""
+    # Personnes (login) ou équipes (@organisation/equipe : membres gérés dans GitHub)
     for login in $APPROVERS; do
-        id="$(gh api "users/$login" --jq .id)" || { err_t ci.proteger.unknown_user "$login"; exit 1; }
-        reviewers="$reviewers {\"type\": \"User\", \"id\": $id},"
+        case "$login" in
+            */*)
+                team="${login#@}"
+                id="$(gh api "orgs/${team%%/*}/teams/${team#*/}" --jq .id)" ||
+                    { err_t ci.proteger.unknown_team "$login"; exit 1; }
+                reviewers="$reviewers {\"type\": \"Team\", \"id\": $id},"
+                ;;
+            *)
+                id="$(gh api "users/${login#@}" --jq .id)" || { err_t ci.proteger.unknown_user "$login"; exit 1; }
+                reviewers="$reviewers {\"type\": \"User\", \"id\": $id},"
+                ;;
+        esac
     done
     # Seul approbateur = soi-même (projet solo) : l'auto-approbation reste permise
     self_review=true

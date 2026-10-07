@@ -229,6 +229,7 @@ _msg_en() {
         ci.proteger.tags_org) _M="reserved for workflows" ;;
         ci.proteger.tags_user) _M="neither moved nor deleted (personal account: creation allowed)" ;;
         ci.proteger.tags_none) _M="not protected (--sans-tags)" ;;
+        ci.proteger.unknown_team) _M="Unknown or inaccessible team: %s (format @organisation/team)" ;;
         ci.proteger.unknown_user) _M="Unknown user: %s" ;;
         ci.version.usage) _M="Usage: ci/version.sh next|notes [ref]" ;;
         ci.version.breaking) _M="Breaking changes" ;;
@@ -257,6 +258,12 @@ _msg_en() {
         ci.section.format) _M="Formatting" ;;
         ci.section.tests) _M="Tests of the affected projects" ;;
         ci.section.strict) _M="Strict mode" ;;
+        # Notifications
+        ci.notify.sent) _M="Message sent to the team channel." ;;
+        ci.notify.failed) _M="Could not send to the team channel (REPOGARDE_WEBHOOK address?): release not affected." ;;
+        ci.notify.released) _M="🚀 %s %s released: %s" ;;
+        ci.notify.waiting) _M="⏳ %s: release PR #%s is waiting for approval: %s" ;;
+        ci.notify.failure) _M="❌ %s: release workflow failed: %s" ;;
         *) _M="" ;;
     esac
 }
