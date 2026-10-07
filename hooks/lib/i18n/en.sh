@@ -96,7 +96,7 @@ _msg_en() {
         hook.common.5) _M="Project local hook: %s" ;;
         hook.lang.1) _M="Custom formatting: %s" ;;
         hook.lang.2) _M="%s: %s file(s)" ;;
-        hook.lang.3) _M="%s formatting failed (syntax error?)." ;;
+        hook.lang.3) _M="%s formatting failed: syntax error, or tool / dependency unavailable (see the log above)." ;;
         hook.lang.4) _M="Custom tests: %s" ;;
         hook.lang.5) _M="Tests %s" ;;
         hook.lang.6) _M="%s tests failed: push refused." ;;
@@ -189,7 +189,7 @@ _msg_en() {
         ci.check.18) _M="  Fix: change the PR base branch (Edit, next to the title), or gh pr edit --base %s" ;;
         ci.check.19) _M="gitleaks not installed: run ci/install-gitleaks.sh before this script." ;;
         ci.check.20) _M="Working tree modified before the check: formatting cannot be verified." ;;
-        ci.check.21) _M="A formatter failed (syntax error?): see the log above." ;;
+        ci.check.21) _M="A formatter failed (syntax error, or tool / dependency unavailable): see the log above." ;;
         ci.check.22) _M="Fix: install the hooks (lefthook install) or run the formatter, then commit." ;;
         ci.check.23) _M="Changed files are correctly formatted." ;;
         ci.check.24) _M="repogarde CI — base: %s — checks: %s" ;;
