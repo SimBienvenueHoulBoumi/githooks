@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.10.0...v2.11.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **notify:** équipes approbatrices et canal d'équipe ([#78](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/78)) ([d5a2907](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/d5a29073c8bfa6f298de9d1d551200f5c48424ff))
+
 ## [2.10.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.9.0...v2.10.0) (2026-10-07)
 
 

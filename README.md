@@ -29,7 +29,7 @@
 # lefthook.yml — hooks du projet (version figée)
 remotes:
   - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v2.10.0 # x-release-please-version
+    ref: v2.11.0 # x-release-please-version
     configs: [lefthook-remote.yml]
 ```
 
