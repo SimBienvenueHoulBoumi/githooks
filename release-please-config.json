@@ -28,9 +28,6 @@
         "templates/project/gitlab-ci.yml",
         "templates/project/.github/workflows/repogarde.yml",
         "templates/project/.github/workflows/release.yml",
-        ".github/workflows/release-auto.yml",
-        ".github/workflows/nettoyage-branches.yml",
-        ".github/workflows/npm-publish.yml",
         { "type": "json", "path": "package.json", "jsonpath": "$.version" }
       ]
     }
