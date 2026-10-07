@@ -61,7 +61,7 @@ if [ -n "$base_sha" ]; then
     done
     # Pied BREAKING CHANGE : le titre doit porter le « ! » pour survivre au squash
     if [ -n "$new" ] && [[ ! "$new" =~ ^[a-z]+(\([a-z0-9._-]+\))?!: ]] &&
-        git log --no-merges --format=%b "$base_sha..$HEAD_SHA" | grep -qE '^BREAKING[ -]CHANGE: '; then
+        grep -qE '^BREAKING[ -]CHANGE: ' <<<"$(git log --no-merges --format=%b "$base_sha..$HEAD_SHA")"; then
         new="$(sed -E 's/^([a-z]+(\([a-z0-9._-]+\))?): /\1!: /' <<<"$new")"
     fi
 fi

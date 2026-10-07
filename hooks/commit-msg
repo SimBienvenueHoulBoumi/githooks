@@ -10,7 +10,7 @@ run_local_hook "$@"
 
 MSG_FILE="$1"
 # Première ligne non commentée
-SUBJECT="$(grep -v '^#' "$MSG_FILE" | head -n1)"
+SUBJECT="$(grep -v '^#' "$MSG_FILE" | sed -n 1p)"
 
 # Commits générés par git : on laisse passer
 if [[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]]; then

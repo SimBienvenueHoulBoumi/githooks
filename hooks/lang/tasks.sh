@@ -10,7 +10,7 @@ tasks_test() {
         if has just && just --show test >/dev/null 2>&1; then step_t lang.tasks.2; just test; return; fi
     fi
     if compgen -G "Taskfile.y*ml" >/dev/null; then
-        if has task && task --list-all 2>/dev/null | grep -q '^\* test:'; then step_t lang.tasks.3; task test; return; fi
+        if has task && grep -q '^\* test:' <<<"$(task --list-all 2>/dev/null)"; then step_t lang.tasks.3; task test; return; fi
     fi
     info_t lang.tasks.4
 }

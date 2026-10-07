@@ -45,7 +45,7 @@ case "$commande" in
     bot-release) exec bash "$ROOT/bin/bot-release" "$@" ;;
     npm-publication | npm-publish) exec bash "$ROOT/bin/npm-publication" "$@" ;;
     -v | --version | version)
-        sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$ROOT/package.json" | head -1
+        sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$ROOT/package.json" | sed -n 1p
         ;;
     "" | -h | --help | help) aide ;;
     *)

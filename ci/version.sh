@@ -16,7 +16,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/common.sh"
 cmd="${1:-next}"
 ref="${2:-HEAD}"
 scope='(\([a-z0-9._-]+\))?'
-last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)"
+last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | sed -n 1p)"
 range="${last:+$last..}$ref"
 
 next() {
@@ -30,7 +30,7 @@ next() {
         return
     fi
     if grep -qE "^[a-z]+$scope!: " <<<"$subjects" ||
-        git log --no-merges --format=%b "$range" | grep -qE '^BREAKING[ -]CHANGE: '; then
+        grep -qE '^BREAKING[ -]CHANGE: ' <<<"$(git log --no-merges --format=%b "$range")"; then
         bump="major"
     elif grep -qE "^feat$scope: " <<<"$subjects"; then
         bump="minor"

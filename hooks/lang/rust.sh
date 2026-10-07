@@ -5,7 +5,7 @@ register rust "Cargo.toml" '\.rs$' standalone outermost
 rust_format() {
     has rustfmt || { tool_missing "Rust : rustfmt absent, formatage ignoré."; return 0; }
     local edition
-    edition="$(grep -hsE '^[[:space:]]*edition[[:space:]]*=' Cargo.toml ./*/Cargo.toml | grep -oE '20[0-9]{2}' | head -n1)"
+    edition="$(grep -hsE '^[[:space:]]*edition[[:space:]]*=' Cargo.toml ./*/Cargo.toml | grep -oE '20[0-9]{2}' | sed -n 1p)"
     step_t lang.rust.1
     rustfmt --edition "${edition:-2021}" "$@"
 }

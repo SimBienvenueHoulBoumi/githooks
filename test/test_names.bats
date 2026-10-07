@@ -55,3 +55,11 @@ sys.exit(1 if (marked ^ listed) or workflows else 0)
 PY
     [ "$status" -eq 0 ] || { echo "$output"; return 1; }
 }
+
+@test "scripts : aucun tube vers grep -q ou head (SIGPIPE + pipefail = echec aleatoire)" {
+    cd "$BATS_TEST_DIRNAME/.."
+    # grep -q et head s'arrêtent avant la fin : la commande qui écrit reçoit
+    # SIGPIPE et, avec pipefail, la condition échoue au hasard du timing
+    run git grep -nE '\| *(grep -[a-zA-Z]*q|head)\b' -- ci hooks bin install.sh
+    [ -z "$output" ] || { echo "$output"; return 1; }
+}
