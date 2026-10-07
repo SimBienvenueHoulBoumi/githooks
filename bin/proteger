@@ -44,13 +44,13 @@ while [ $# -gt 0 ]; do
         --sans-tags) NO_TAGS=1 ;;
         --dry-run) DRY_RUN=1 ;;
         -h | --help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-        *) echo "Argument inconnu : $1" >&2; exit 1 ;;
+        *) err_t install.unknown_arg "$1"; exit 1 ;;
     esac
     shift
 done
 [ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
-[[ "$REVIEWS" =~ ^[0-9]$ ]] || { err "--relecteurs : nombre de 0 à 9 attendu." >&2; exit 1; }
-[[ "$CODEOWNERS" =~ ^(true|false)$ ]] || { err "codeOwnerReview : true ou false." >&2; exit 1; }
+[[ "$REVIEWS" =~ ^[0-9]$ ]] || { err_t ci.proteger.reviews_invalid; exit 1; }
+[[ "$CODEOWNERS" =~ ^(true|false)$ ]] || { err_t ci.proteger.codeowners_invalid; exit 1; }
 # Avec relecture : le dernier à pousser ne peut pas approuver son propre push
 last_push=false
 [ "$REVIEWS" = 0 ] || last_push=true
@@ -66,7 +66,7 @@ for b in $protected; do
     # Nom renvoyé comparé : GitHub redirige une branche renommée (master → main)
     [ "$(gh api "repos/$REPO/branches/$b" --jq .name 2>/dev/null)" = "$b" ] && existing="$existing $b"
 done
-[ -n "$existing" ] || { err "Aucune des branches « $protected » n'existe sur $REPO." >&2; exit 1; }
+[ -n "$existing" ] || { err_t ci.proteger.no_branch "$protected" "$REPO"; exit 1; }
 
 # Vérifications séparées par des virgules : un nom de job peut contenir des
 # espaces (« tests (ubuntu-latest) »)
@@ -153,7 +153,8 @@ if [ -n "$integration" ]; then
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)
     delete_on_merge=false
-    methods="main : merge commit ; $integration : squash ou merge commit"
+    t ci.proteger.methods_flow "$integration"
+    methods="$REPLY"
 else
     rulesets+=("$(branch_ruleset repogarde "$existing" '"squash"')")
     merge_commit=false
@@ -164,23 +165,26 @@ owner_type="$(gh api "repos/$REPO" --jq .owner.type)"
 if [ -z "$NO_TAGS" ]; then
     rulesets+=("$(tags_ruleset "$owner_type")")
     if [ "$owner_type" = Organization ]; then
-        tags_msg="réservés aux workflows"
+        t ci.proteger.tags_org
+        tags_msg="$REPLY"
     else
-        tags_msg="ni déplacés ni supprimés (compte personnel : création libre)"
+        t ci.proteger.tags_user
+        tags_msg="$REPLY"
     fi
 else
-    tags_msg="non protégés (--sans-tags)"
+    t ci.proteger.tags_none
+    tags_msg="$REPLY"
 fi
 
-echo "Dépôt : $REPO"
-echo "  branches protégées :$existing"
-echo "  vérifications exigées : $CHECKS"
-echo "  merges : $methods ; suppression auto des branches : $delete_on_merge"
-echo "  tags v* : $tags_msg"
-[ -z "$integration" ] || echo "  branche par défaut : $integration"
-echo "  approbations exigées : $REVIEWS ; revue des CODEOWNERS : $CODEOWNERS"
+echo_t ci.proteger.1 "$REPO"
+echo_t ci.proteger.2 "$existing"
+echo_t ci.proteger.3 "$CHECKS"
+echo_t ci.proteger.4 "$methods" "$delete_on_merge"
+echo_t ci.proteger.5 "$tags_msg"
+[ -z "$integration" ] || echo_t ci.proteger.6 "$integration"
+echo_t ci.proteger.7 "$REVIEWS" "$CODEOWNERS"
 if [ "$REVIEWS" != 0 ] || [ "$CODEOWNERS" = true ]; then
-    echo "  (les admins gardent un contournement explicite, tracé dans l'historique de la PR)"
+    echo_t ci.proteger.8
 fi
 
 # Environnement de déploiement : chaque job « environment: NOM » attend
@@ -191,7 +195,7 @@ if [ -n "$ENVIRONMENT" ]; then
     [ -n "$APPROVERS" ] || APPROVERS="$(gh api user --jq .login)"
     reviewers=""
     for login in $APPROVERS; do
-        id="$(gh api "users/$login" --jq .id)" || { err "Utilisateur inconnu : $login" >&2; exit 1; }
+        id="$(gh api "users/$login" --jq .id)" || { err_t ci.proteger.unknown_user "$login"; exit 1; }
         reviewers="$reviewers {\"type\": \"User\", \"id\": $id},"
     done
     # Seul approbateur = soi-même (projet solo) : l'auto-approbation reste permise
@@ -199,7 +203,7 @@ if [ -n "$ENVIRONMENT" ]; then
     [ "$(wc -w <<<"$APPROVERS")" -gt 1 ] || self_review=false
     env_json="{\"reviewers\": [${reviewers%,}], \"prevent_self_review\": $self_review,
   \"deployment_branch_policy\": {\"protected_branches\": false, \"custom_branch_policies\": true}}"
-    echo "  environnement « $ENVIRONMENT » : approbation de $APPROVERS ; branches protégées et tags v*"
+    echo_t ci.proteger.9 "$ENVIRONMENT" "$APPROVERS"
 fi
 if [ -n "$DRY_RUN" ]; then
     printf '%s\n' "${rulesets[@]}"
@@ -220,10 +224,10 @@ for ruleset in "${rulesets[@]}"; do
     id="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name == \"$name\") | .id")"
     if [ -n "$id" ]; then
         gh api -X PUT "repos/$REPO/rulesets/$id" --input - <<<"$ruleset" >/dev/null
-        ok "Ruleset « $name » mis à jour."
+        ok_t ci.proteger.10 "$name"
     else
         gh api -X POST "repos/$REPO/rulesets" --input - <<<"$ruleset" >/dev/null
-        ok "Ruleset « $name » créé."
+        ok_t ci.proteger.11 "$name"
     fi
 done
 if [ -n "$env_json" ]; then
@@ -235,6 +239,6 @@ if [ -n "$env_json" ]; then
         gh api -X POST "repos/$REPO/environments/$ENVIRONMENT/deployment-branch-policies" --silent \
             -f type="${policy%%:*}" -f name="${policy#*:}"
     done
-    ok "Environnement « $ENVIRONMENT » configuré."
+    ok_t ci.proteger.12 "$ENVIRONMENT"
 fi
-ok "Réglages appliqués."
+ok_t ci.proteger.13

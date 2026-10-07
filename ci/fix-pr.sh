@@ -17,6 +17,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 out() { echo "$1=${2//$'\n'/ }" >>"${GITHUB_ENV:-/dev/null}"; } # une ligne : pas d'injection
 notice() { echo "::notice title=repogarde::$*"; }
+notice_t() { _tr "$@"; notice "$_T"; }
 
 # 1. Cible
 target="$BASE"
@@ -28,19 +29,19 @@ if [ -n "$allowed" ] && [[ " $allowed " != *" $BASE "* ]]; then
     if [ -n "$dup" ]; then
         gh pr close "$PR" --comment "Doublon de #$dup : ouverte vers \`$BASE\` au lieu de \`$target\`, fermée automatiquement (repogarde)."
         out REPOGARDE_PR_CLOSED true
-        notice "PR #$PR fermée : doublon de #$dup (cible $target)"
+        notice_t ci.fix_pr.1 "$PR" "$dup" "$target"
         exit 0
     fi
     gh pr edit "$PR" --base "$target" >/dev/null
     git fetch -q origin "$target"
     out REPOGARDE_FIXED_TARGET "$target"
     out REPOGARDE_FIXED_BASE "$(git merge-base "$HEAD_SHA" "origin/$target")"
-    notice "PR #$PR reciblée : $BASE → $target (flux $(cfg integrationBranch))"
+    notice_t ci.fix_pr.2 "$PR" "$BASE" "$target" "$(cfg integrationBranch)"
 fi
 
 # 2. Titre
 if header_valid "$TITLE"; then
-    ok "Titre conforme : $TITLE"
+    ok_t ci.fix_pr.3 "$TITLE"
     exit 0
 fi
 git fetch -q origin "$target" 2>/dev/null || true
@@ -70,4 +71,4 @@ if [ -z "$new" ]; then
 fi
 gh pr edit "$PR" --title "$new" >/dev/null
 out REPOGARDE_FIXED_TITLE "$new"
-notice "Titre « $TITLE » remplacé par « $new »"
+notice_t ci.fix_pr.4 "$TITLE" "$new"

@@ -516,3 +516,22 @@ c() { git commit -q --no-verify --allow-empty -m "$1"; }
     [[ "$output" == *"### Maintenance"*"- docs: guide"* ]]
     [[ "$output" == *"_Depuis v1.0.0._"* ]]
 }
+
+@test "langue en CI : anglais par defaut, langue du projet si reglee" {
+    git commit -q --no-verify --allow-empty -m "wip"
+    REPOGARDE_LANG= CI=true GIT_CONFIG_GLOBAL=/dev/null run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"expected format <type>(<scope>)"* ]]
+    printf '[repogarde]\n\tlang = fr\n' >.repogarde.conf
+    REPOGARDE_LANG= CI=true GIT_CONFIG_GLOBAL=/dev/null run "$CHECK" commits
+    [[ "$output" == *"format attendu <type>(<scope>)"* ]]
+}
+
+@test "version : titres des notes dans la langue du projet" {
+    git tag v1.0.0
+    c "feat: panier"
+    c "fix: arrondi"
+    REPOGARDE_LANG=en run "$VERSION" notes
+    [[ "$output" == *"### Features"*"### Bug fixes"* ]]
+    [[ "$output" == *"_Since v1.0.0._"* ]]
+}
