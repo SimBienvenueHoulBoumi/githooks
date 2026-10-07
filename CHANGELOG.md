@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.1...v3.1.2) (2026-10-07)
+
+
+### Corrections
+
+* **npm:** nom de jeton unique, jetons temporaires tous révoqués ([#109](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/109)) ([274f834](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/274f83425020e781d331fc7ab169a613e2cc7d92))
+
 ## [3.1.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.0...v3.1.1) (2026-10-07)
 
 
