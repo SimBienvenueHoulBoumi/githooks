@@ -46,7 +46,9 @@ deadcode_projects() {
             has_marker "$dir" "$p" && declare -F "${p}_deadcode" >/dev/null && plugins="$plugins $p"
         done
         for p in $plugins; do
-            (cd "$dir" && "${p}_deadcode") </dev/null |
+            # Un outil d'analyse renvoie souvent un code d'erreur quand il trouve
+            # quelque chose : seule sa sortie compte
+            { (cd "$dir" && "${p}_deadcode") </dev/null || true; } |
                 while IFS=$'\t' read -r niveau f l msg; do
                     [ -n "$f" ] || continue
                     f="${f#"$PWD/$dir/"}"
