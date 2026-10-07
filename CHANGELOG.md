@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.0.0...v3.1.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **npm:** publication npm automatisée, paquet @simbie/repogarde ([#105](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/105)) ([ebc59c6](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/ebc59c6f093dbceb87bd4adbef06f8851802ba46))
+
 ## [3.0.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.13.0...v3.0.0) (2026-10-07)
 
 
