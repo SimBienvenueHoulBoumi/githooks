@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.6.1...v2.6.2) (2026-10-07)
+
+
+### Corrections
+
+* **proteger:** tags protégés aussi sur un compte personnel ([#65](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/65)) ([4cd1d32](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/4cd1d327dd77dc86cad6a96743efe2db848e0152))
+
 ## [2.6.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.6.0...v2.6.1) (2026-10-07)
 
 
