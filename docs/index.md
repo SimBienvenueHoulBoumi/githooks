@@ -25,7 +25,8 @@ flowchart LR
 - **Secrets** — détection par [gitleaks](https://github.com/gitleaks/gitleaks) avant le commit et en CI.
 - **Formatage** — seul le contenu stagé est formaté, avec l'outil du projet (prettier, ruff, gofmt, Spotless…) ; le travail en cours est préservé.
 - **Tests** — au push, seuls les projets touchés sont testés, sur le commit poussé.
-- **Releases** — version calculée depuis les commits, changelog, tag et archive signée, sans intervention.
+- **Code mort** — seul le code mort *nouveau* est signalé : prouvé (bloquant) ou candidat (à vérifier) ; [définition](code-mort.md).
+- **Releases** — version calculée depuis les commits, changelog, tag et release, sans jeton ni intervention ; [réutilisable par vos projets](releases.md), avec [validation humaine](validation.md) au besoin.
 
 </div>
 

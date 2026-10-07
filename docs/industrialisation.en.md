@@ -159,11 +159,12 @@ Manually: *Settings → Rules → Rulesets* (or *Branches → Branch protection 
 
 | Check | Fails if |
 |---|---|
-| `commits` | a message is not Conventional Commits, exceeds 72 characters, or is an unsquashed `fixup!`/`squash!` |
-| `branch` | the branch name does not follow `<type>/<subject>` (exceptions aside) |
+| `commits` | a message or the PR title is not Conventional Commits, exceeds 72 characters (format only for dependency bots), or is an unsquashed `fixup!`/`squash!` |
+| `branch` | the branch name does not follow `<type>/<subject>` (exceptions aside); in a [`develop` flow](configuration.md#integration-branch-flow-develop), the PR targets the wrong branch (retargeted automatically with `fix-pr`) |
 | `secrets` | gitleaks finds a secret in the branch's commits |
 | `format` | a modified file is not formatted (the formatter runs, nothing is committed) |
 | `tests` | the tests of an affected project fail (monorepo: only modified projects) |
+| `deadcode` | **proven** dead code is introduced (unreachable, unused in its scope); candidates only warn ([Dead code](code-mort.md)) |
 
 Errors appear as annotations on GitHub and in the job log on GitLab, with the command to fix them.
 
