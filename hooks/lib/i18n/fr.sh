@@ -97,7 +97,6 @@ _msg_fr() {
         hook.post_merge.2) _M="🧹 Branche locale supprimée (mergée en squash et supprimée sur le serveur) : %s" ;;
         hook.post_merge.3) _M="%s : supprimée sur le serveur mais des modifications manquent ici, conservée." ;;
         hook.post_merge.4) _M="  Pour la supprimer quand même : git branch -D %s" ;;
-        hook.common.1) _M="%s : ancien nom (githooks), à remplacer par %s." ;;
         hook.common.3) _M="%s désactivé (git config repogarde.skip)." ;;
         hook.common.4) _M="Projet lefthook (%s) mais lefthook absent : règles repogarde par défaut. Installe lefthook." ;;
         hook.common.5) _M="Hook local du projet : %s" ;;
@@ -196,7 +195,7 @@ _msg_fr() {
         ci.check.16) _M="Cible « %s » conforme au flux." ;;
         ci.check.17) _M="PR de « %s » vers « %s » : cible attendue %s (réglage integrationBranch)." ;;
         ci.check.18) _M="  Corriger : modifier la branche de base de la PR (Edit, à côté du titre), ou gh pr edit --base %s" ;;
-        ci.check.19) _M="gitleaks absent : lancer ci/install-gitleaks.sh avant ce script." ;;
+        ci.check.19) _M="gitleaks absent : lancer ci/install-tool.sh gitleaks avant ce script." ;;
         ci.check.20) _M="Dossier de travail modifié avant la vérification : impossible de contrôler le formatage." ;;
         ci.check.21) _M="Un formateur a échoué (erreur de syntaxe, ou outil / dépendance indisponible) : voir le log ci-dessus." ;;
         ci.check.22) _M="Corriger : installer les hooks (lefthook install) ou lancer le formateur, puis commiter." ;;

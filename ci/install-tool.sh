@@ -11,7 +11,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/ui.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/i18n.sh"
 
 TOOL="${1:?usage : install-tool.sh gitleaks|actionlint|pmd [version]}"
-BIN="${REPOGARDE_BIN:-${GITHOOKS_BIN:-$HOME/.local/bin}}" # GITHOOKS_BIN : ancien nom
+BIN="${REPOGARDE_BIN:-$HOME/.local/bin}"
 
 if command -v "$TOOL" >/dev/null 2>&1; then
     info_t ci.install_tool.1 "$TOOL" "$(command -v "$TOOL")"

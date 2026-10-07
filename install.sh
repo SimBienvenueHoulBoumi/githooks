@@ -81,16 +81,16 @@ if [ "$SCOPE" = --local ] && ! git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 # Vrai si le chemin $1 désigne des hooks repogarde : ce dossier, ou un ancien
-# emplacement disparu (dossier déplacé, ancien nom githooks).
+# emplacement disparu (dossier déplacé).
 is_repogarde_hooks() {
     local path="$1"
     [ -n "$path" ] || return 1
     if [ -d "$path" ]; then
         [ "$(cd "$path" && pwd -P)" = "$HOOKS" ] && return 0
-        [ -f "$path/lib/common.sh" ] && grep -Eqs 'repogarde|githooks' "$path/lib/common.sh"
+        [ -f "$path/lib/common.sh" ] && grep -qs repogarde "$path/lib/common.sh"
         return
     fi
-    case "$path" in */repogarde/hooks | */githooks/hooks) return 0 ;; esac
+    case "$path" in */repogarde/hooks) return 0 ;; esac
     return 1
 }
 
@@ -138,13 +138,12 @@ uninstall_scope() {
 
 purge() {
     local cache dir repo path
-    for cache in "${XDG_CACHE_HOME:-$HOME/.cache}/repogarde" "${XDG_CACHE_HOME:-$HOME/.cache}/githooks"; do
-        if [ -d "$cache" ]; then
-            rm -rf -- "$cache"
-            t install.cache_removed "$cache"
-            ok "$REPLY"
-        fi
-    done
+    cache="${XDG_CACHE_HOME:-$HOME/.cache}/repogarde"
+    if [ -d "$cache" ]; then
+        rm -rf -- "$cache"
+        t install.cache_removed "$cache"
+        ok "$REPLY"
+    fi
     if [ -n "$SCAN" ]; then
         t install.scan "$SCAN"
         step "$REPLY"
@@ -159,7 +158,7 @@ purge() {
                     found=1
                 fi
             fi
-            if grep -Eqs 'repogarde|githooks' "$repo/lefthook.yml" "$repo/lefthook.yaml" "$repo/.lefthook.yml"; then
+            if grep -qs repogarde "$repo/lefthook.yml" "$repo/lefthook.yaml" "$repo/.lefthook.yml"; then
                 echo "  $repo (lefthook)  →  cd \"$repo\" && lefthook uninstall"
                 found=1
             fi

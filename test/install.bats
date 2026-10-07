@@ -31,18 +31,18 @@ setup() {
 }
 
 @test "install : --uninstall reconnait un ancien emplacement disparu" {
-    git config core.hooksPath /chemin/qui/n-existe/plus/githooks/hooks
+    git config core.hooksPath /chemin/qui/n-existe/plus/repogarde/hooks
     run "$INSTALL" --uninstall
     [[ "$output" == *"Hooks repogarde retirés"* ]]
 }
 
 @test "install : --uninstall --global --purge supprime les caches" {
     "$INSTALL" --global >/dev/null
-    mkdir -p "$XDG_CACHE_HOME/repogarde/kubeconform" "$XDG_CACHE_HOME/githooks"
+    mkdir -p "$XDG_CACHE_HOME/repogarde/kubeconform"
     run "$INSTALL" --uninstall --global --purge
     [ "$status" -eq 0 ]
     [ -z "$(git config --global --get core.hooksPath || true)" ]
-    [ ! -d "$XDG_CACHE_HOME/repogarde" ] && [ ! -d "$XDG_CACHE_HOME/githooks" ]
+    [ ! -d "$XDG_CACHE_HOME/repogarde" ]
     [[ "$output" == *'rm -rf'* ]]
 }
 
