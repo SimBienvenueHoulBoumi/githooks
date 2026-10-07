@@ -315,10 +315,37 @@ jobs:
 
       - name: Aide
         if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           cat <<'EOF'
           ::notice::Si release-please indique « GitHub Actions is not permitted to create or approve pull requests » :
           Settings → Actions → General → Workflow permissions → cocher « Allow GitHub Actions to create and approve pull requests ».
+          EOF
+          # PR de release mergée mais pas publiée, dont les workflows diffèrent
+          # de la branche actuelle : GitHub exige la permission « workflow »
+          # pour créer son tag, que le jeton des Actions n'a jamais (refus
+          # « Resource not accessible by integration »). Cas d'une PR de release
+          # mergée à la main, suivie d'un changement de workflow avant la release.
+          pr="$(gh pr list --state merged --base "$GITHUB_REF_NAME" --label 'autorelease: pending' \
+            --json number,title,mergeCommit -q '.[0] // empty' 2>/dev/null || true)"
+          [ -n "$pr" ] || exit 0
+          num="$(jq -r .number <<<"$pr")"
+          title="$(jq -r .title <<<"$pr")"
+          sha="$(jq -r .mergeCommit.oid <<<"$pr")"
+          version="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*' <<<"$title" | head -n1)"
+          changed="$(gh api "repos/$GH_REPO/compare/$sha...$GITHUB_SHA" \
+            --jq '[.files[]?.filename | select(startswith(".github/workflows/"))] | join(" ")' 2>/dev/null || true)"
+          [ -n "$changed" ] || exit 0
+          echo "::error title=Release bloquée::La PR de release #$num ($title) est mergée mais son tag ne peut pas être créé par le jeton des Actions : les workflows ont changé depuis ($changed). GitHub exige la permission « workflow »."
+          cat <<EOF
+          Débloquer (une fois, avec un compte qui a la permission « workflow ») :
+            gh auth refresh -h github.com -s workflow
+            gh pr view $num -R $GH_REPO --json body -q .body > notes.md   # notes de version
+            gh release create v$version -R $GH_REPO --target $sha --title v$version --notes-file notes.md
+            gh pr edit $num -R $GH_REPO --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+          puis relancer ce workflow. Pour l'éviter : laisser le bot merger la PR de release (il publie aussitôt).
           EOF
 
   # Mode tag : flux develop → main

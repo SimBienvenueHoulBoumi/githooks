@@ -55,6 +55,20 @@ On every push to `main`:
 
 The checks required by the protection of `main` remain mandatory: without green CI, nothing is merged.
 
+## Merging the release PR: let the bot do it
+
+The release PR is merged **by the workflow itself** as soon as the CI is green, and the release is published in the same run. Merging it by hand works too, except in one case: if a file in `.github/workflows/` changes on `main` before the release is published, GitHub refuses to let the Actions token create the tag (it would need the `workflow` permission, which this token never has): "Resource not accessible by integration".
+
+The workflow detects it and shows the cause and the exact commands; in short, with an account that has the `workflow` permission:
+
+```bash
+gh auth refresh -h github.com -s workflow
+gh release create vX.Y.Z --target <merge commit of the PR> --title vX.Y.Z --notes-file notes.md
+gh pr edit <PR number> --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+```
+
+then run the `release` workflow again.
+
 ## Version file
 
 The project type is detected from the files at the root:
