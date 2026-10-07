@@ -50,7 +50,7 @@ Two prerequisites:
 On every push to `main`:
 
 1. [release-please](https://github.com/googleapis/release-please) opens or updates the "release x.y.z" PR: changelog and version in the project file;
-2. the project's CI is run on this PR; once green, the PR is merged (squash). If `main` moves forward in the meantime, the PR is updated and revalidated;
+2. the project's CI is run on this PR; once green, the PR is merged (squash). If `main` moves in the meantime, the PR is recomputed (version and changelog including the new commits) by the next run, then validated again;
 3. the `vX.Y.Z` tag and the GitHub release are created.
 
 The checks required by the protection of `main` remain mandatory: without green CI, nothing is merged.
