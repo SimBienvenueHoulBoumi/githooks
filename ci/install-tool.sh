@@ -6,12 +6,14 @@
 set -euo pipefail
 # shellcheck source=../hooks/lib/ui.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/ui.sh"
+# shellcheck source=../hooks/lib/i18n.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/i18n.sh"
 
 TOOL="${1:?usage : install-tool.sh gitleaks|actionlint [version]}"
 BIN="${REPOGARDE_BIN:-${GITHOOKS_BIN:-$HOME/.local/bin}}" # GITHOOKS_BIN : ancien nom
 
 if command -v "$TOOL" >/dev/null 2>&1; then
-    info "$TOOL déjà présent : $(command -v "$TOOL")"
+    info_t ci.install_tool.1 "$TOOL" "$(command -v "$TOOL")"
     exit 0
 fi
 
@@ -19,12 +21,12 @@ case "$(uname -s)" in
     Linux) os=linux ext=tar.gz ;;
     Darwin) os=darwin ext=tar.gz ;;
     MINGW* | MSYS* | CYGWIN*) os=windows ext=zip ;;
-    *) err "Système non supporté : $(uname -s)" >&2; exit 1 ;;
+    *) err_t ci.install_tool.os "$(uname -s)"; exit 1 ;;
 esac
 case "$(uname -m)" in
     x86_64 | amd64) arch=amd64 ;;
     arm64 | aarch64) arch=arm64 ;;
-    *) err "Architecture non supportée : $(uname -m)" >&2; exit 1 ;;
+    *) err_t ci.install_tool.arch "$(uname -m)"; exit 1 ;;
 esac
 
 case "$TOOL" in
@@ -43,13 +45,13 @@ case "$TOOL" in
         base="https://github.com/rhysd/actionlint/releases/download/v${version}"
         checksums="actionlint_${version}_checksums.txt"
         ;;
-    *) err "Outil inconnu : $TOOL" >&2; exit 1 ;;
+    *) err_t ci.install_tool.unknown "$TOOL"; exit 1 ;;
 esac
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-step "Téléchargement de $asset"
+step_t ci.install_tool.2 "$asset"
 curl -fsSL -o "$tmp/$asset" "$base/$asset"
 curl -fsSL -o "$tmp/checksums.txt" "$base/$checksums"
 
@@ -60,7 +62,7 @@ else
     actual="$(shasum -a 256 "$tmp/$asset" | cut -d' ' -f1)"
 fi
 if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
-    err "Somme SHA-256 invalide pour $asset" >&2
+    err_t ci.install_tool.3 "$asset" >&2
     exit 1
 fi
 
@@ -72,4 +74,4 @@ else
 fi
 cp "$tmp/out/$TOOL"* "$BIN/"
 chmod +x "$BIN/$TOOL"*
-ok "$TOOL $version installé dans $BIN"
+ok_t ci.install_tool.4 "$TOOL" "$version" "$BIN"

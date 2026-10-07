@@ -28,6 +28,7 @@ cd "$(git rev-parse --show-toplevel)"
 section() { echo; echo "━━ $* ━━"; }
 
 # Erreur annotée (visible dans l'onglet "Files changed" sur GitHub)
+ci_error_t() { _tr "$@"; ci_error "$_T"; }
 ci_error() {
     if [ "${GITHUB_ACTIONS:-}" = true ]; then
         echo "::error title=repogarde::$*"
@@ -93,22 +94,22 @@ check_commits() {
     section "Messages de commit (Conventional Commits)"
     local sha subject bad=0 count=0 bot=""
     is_bot_branch "$(detect_branch)" && bot=1
-    if [ -z "$BASE" ]; then info "Pas de base : vérification ignorée."; return 0; fi
+    if [ -z "$BASE" ]; then info_t ci.check.2; return 0; fi
     while IFS= read -r sha; do
         subject="$(git log -1 --format=%s "$sha")"
         count=$((count + 1))
         if [[ "$subject" =~ ^(fixup|squash|amend)! ]]; then
-            ci_error "${sha:0:7} « $subject » : commit à squasher avant le merge (git rebase -i --autosquash)."
+            ci_error_t ci.check.3 "${sha:0:7}" "$subject"
             bad=1
         elif [[ "$subject" =~ ^(Merge|Revert) ]]; then
             continue
         elif ! [[ "$subject" =~ $CC_PATTERN ]]; then
-            ci_error "${sha:0:7} « $subject » : format attendu <type>(<scope>): <description>."
+            ci_error_t ci.check.4 "${sha:0:7}" "$subject"
             bad=1
         elif [[ "$(git log -1 --format=%ae "$sha")" =~ $BOTS ]]; then
             continue
         elif authored_length "$subject" && [ "$REPLY" -gt 72 ]; then
-            ci_error "${sha:0:7} « $subject » : première ligne > 72 caractères (hors suffixe « (#NN) » de GitHub)."
+            ci_error_t ci.check.5 "${sha:0:7}" "$subject"
             bad=1
         fi
     done < <(git rev-list --no-merges "$BASE..HEAD")
@@ -116,36 +117,36 @@ check_commits() {
     local title="${REPOGARDE_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
     if [ -n "$title" ]; then
         if ! [[ "$title" =~ $CC_PATTERN ]]; then
-            ci_error "Titre de la PR « $title » : format attendu <type>(<scope>): <description> (il devient le message du commit en squash)."
+            ci_error_t ci.check.6 "$title"
             bad=1
         elif [ -z "$bot" ] && authored_length "$title" && [ "$REPLY" -gt 72 ]; then
-            ci_error "Titre de la PR « $title » : plus de 72 caractères."
+            ci_error_t ci.check.7 "$title"
             bad=1
         else
-            ok "Titre de la PR conforme."
+            ok_t ci.check.8
         fi
     fi
     if [ "$bad" = 1 ]; then
-        echo "Types :"
+        echo_t ci.check.9
         types_help 2>&1
-        echo "Corriger : en merge squash, seul le titre de la PR devient le message final : le corriger suffit."
-        echo "Sinon (historique conservé) : git rebase -i $BASE (reword), puis git push --force-with-lease"
+        echo_t ci.check.10
+        echo_t ci.check.11 "$BASE"
         return 1
     fi
-    ok "$count commit(s) conforme(s)."
+    ok_t ci.check.12 "$count"
 }
 
 check_branch() {
     section "Nom de branche"
     local branch
     branch="$(detect_branch)"
-    if [ -z "$branch" ]; then info "Pas de branche (tag ou HEAD détachée) : ignoré."; return 0; fi
+    if [ -z "$branch" ]; then info_t ci.check.13; return 0; fi
     if ! branch_name_valid "$branch"; then
-        ci_error "Branche « $branch » non conforme : <type>/<sujet>, ex. $(suggest_branch_name "$branch")."
+        ci_error_t ci.check.14 "$branch" "$(suggest_branch_name "$branch")."
         branch_help "$branch" 2>&1
         return 1
     fi
-    ok "« $branch » conforme."
+    ok_t ci.check.15 "$branch"
     # Flux avec branche d'intégration : la PR vise-t-elle la bonne branche ?
     local target allowed
     target="$(detect_target)"
@@ -153,18 +154,18 @@ check_branch() {
     allowed="$REPLY"
     [ -n "$target" ] && [ -n "$allowed" ] || return 0
     if [[ " $allowed " == *" $target "* ]]; then
-        ok "Cible « $target » conforme au flux."
+        ok_t ci.check.16 "$target"
         return 0
     fi
-    ci_error "PR de « $branch » vers « $target » : cible attendue ${allowed// / ou } (réglage integrationBranch)."
-    echo "  Corriger : modifier la branche de base de la PR (Edit, à côté du titre), ou gh pr edit --base ${allowed%% *}"
+    ci_error_t ci.check.17 "$branch" "$target" "${allowed// / ou }"
+    echo_t ci.check.18 "${allowed%% *}"
     return 1
 }
 
 check_secrets() {
     section "Secrets (gitleaks)"
     if ! has gitleaks; then
-        ci_error "gitleaks absent : lancer ci/install-gitleaks.sh avant ce script."
+        ci_error_t ci.check.19
         return 1
     fi
     if [ -n "$BASE" ]; then
@@ -177,11 +178,11 @@ check_secrets() {
 check_format() {
     section "Formatage"
     if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-        ci_error "Dossier de travail modifié avant la vérification : impossible de contrôler le formatage."
+        ci_error_t ci.check.20
         return 1
     fi
     if ! changed_files | without_excluded | format_files; then
-        ci_error "Un formateur a échoué (erreur de syntaxe ?) : voir le log ci-dessus."
+        ci_error_t ci.check.21
         git checkout -q -- .
         return 1
     fi
@@ -190,11 +191,11 @@ check_format() {
     if [ -n "$diff" ]; then
         while IFS= read -r f; do ci_error "$f : non formaté."; done <<<"$diff"
         git --no-pager diff --stat
-        echo "Corriger : installer les hooks (lefthook install) ou lancer le formateur, puis commiter."
+        echo_t ci.check.22
         git checkout -q -- .
         return 1
     fi
-    ok "Fichiers modifiés correctement formatés."
+    ok_t ci.check.23
 }
 
 check_tests() {
@@ -215,7 +216,7 @@ if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
 fi
 
 BASE="$(detect_base)"
-echo "repogarde CI — base : ${BASE:-aucune (historique complet)} — vérifications : $CHECKS"
+echo_t ci.check.24 "${BASE:-aucune (historique complet)}" "$CHECKS"
 
 failed=""
 for check in $CHECKS; do
@@ -227,7 +228,7 @@ for check in $CHECKS; do
     esac
     if skipped "$key"; then
         section "$check"
-        info "Désactivé par .repogarde.conf (skip $key)."
+        info_t ci.check.25 "$key"
         continue
     fi
     declare -F "check_$check" >/dev/null || { ci_error "Vérification inconnue : $check"; failed="$failed $check"; continue; }
@@ -242,7 +243,7 @@ fi
 
 echo
 if [ -n "$failed" ]; then
-    err "Échec :$failed"
+    err_t ci.check.26 "$failed"
     exit 1
 fi
-ok "Toutes les vérifications repogarde sont passées."
+ok_t ci.check.27
