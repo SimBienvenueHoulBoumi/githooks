@@ -185,12 +185,6 @@ setup() {
     [ "$REPLY" -eq 13 ]
 }
 
-# --- bin/proteger (protection GitHub d'après .repogarde.conf) : gh simulé --------
-
-PROTEGER="$BATS_TEST_DIRNAME/../bin/proteger"
-
-# Faux gh : branches existantes = $GH_BRANCHES ; journalise les appels
-fake_gh_repo() {
 @test "ci : flux develop, cibles de PR autorisees" {
     git config repogarde.integrationBranch develop
     git config repogarde.allowedBranches "main develop release/* release-please--* dependabot/*"
@@ -227,48 +221,6 @@ fake_gh() {
     cat >"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
 #!/usr/bin/env bash
 echo "$*" >>"$GH_LOG"
-case "$*" in
-    "repo view"*) echo moi/projet ;;
-    "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] ;;
-esac
-GH
-    chmod +x "$BATS_TEST_TMPDIR/bin/gh"
-    export PATH="$BATS_TEST_TMPDIR/bin:$PATH" GH_LOG="$BATS_TEST_TMPDIR/gh.log"
-}
-
-@test "proteger : flux main seul -> squash, branches supprimees au merge" {
-    require python3
-    fake_gh_repo
-    GH_BRANCHES="main" run "$PROTEGER" --dry-run
-    [ "$status" -eq 0 ]
-    json="$(sed -n '/^{/,$p' <<<"$output")"
-    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
-        assert r["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
-        assert r["rules"][2]["parameters"]["allowed_merge_methods"]==["squash"]; \
-        assert r["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repogarde"' "$json"
-    [[ "$output" == *"suppression auto des branches : true"* ]]
-}
-
-@test "proteger : flux develop -> main et develop, merge commit permis" {
-    require python3
-    fake_gh_repo
-    git config repogarde.integrationBranch develop
-    git config repogarde.protectedBranches "main develop"
-    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde ci"
-    [ "$status" -eq 0 ]
-    json="$(sed -n '/^{/,$p' <<<"$output")"
-    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
-        assert r["conditions"]["ref_name"]["include"]==["refs/heads/main","refs/heads/develop"]; \
-        assert r["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
-        assert [c["context"] for c in r["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","ci"]' "$json"
-    [[ "$output" == *"suppression auto des branches : false"* ]]
-}
-
-@test "proteger : aucune branche protegee existante -> erreur" {
-    fake_gh_repo
-    GH_BRANCHES="" run "$PROTEGER" --dry-run
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"Aucune des branches"* ]]
 [ "$1 $2" = "pr list" ] && echo "${GH_DUP:-}"
 exit 0
 GH
@@ -363,4 +315,58 @@ flux_develop() {
     done
     suggest_pr_title_r "feat/$(printf 'mot-%.0s' {1..30})fin"
     header_valid "$REPLY" || { echo "trop long : $REPLY"; return 1; }
+}
+
+# --- bin/proteger (protection GitHub d'après .repogarde.conf) : gh simulé --------
+
+PROTEGER="$BATS_TEST_DIRNAME/../bin/proteger"
+
+# Faux gh : branches existantes = $GH_BRANCHES ; journalise les appels
+fake_gh_repo() {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cat >"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
+#!/usr/bin/env bash
+echo "$*" >>"$GH_LOG"
+case "$*" in
+    "repo view"*) echo moi/projet ;;
+    "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] ;;
+esac
+GH
+    chmod +x "$BATS_TEST_TMPDIR/bin/gh"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH" GH_LOG="$BATS_TEST_TMPDIR/gh.log"
+}
+
+@test "proteger : flux main seul -> squash, branches supprimees au merge" {
+    require python3
+    fake_gh_repo
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run
+    [ "$status" -eq 0 ]
+    json="$(sed -n '/^{/,$p' <<<"$output")"
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
+        assert r["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
+        assert r["rules"][2]["parameters"]["allowed_merge_methods"]==["squash"]; \
+        assert r["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repogarde"' "$json"
+    [[ "$output" == *"suppression auto des branches : true"* ]]
+}
+
+@test "proteger : flux develop -> main et develop, merge commit permis" {
+    require python3
+    fake_gh_repo
+    git config repogarde.integrationBranch develop
+    git config repogarde.protectedBranches "main develop"
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde ci"
+    [ "$status" -eq 0 ]
+    json="$(sed -n '/^{/,$p' <<<"$output")"
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
+        assert r["conditions"]["ref_name"]["include"]==["refs/heads/main","refs/heads/develop"]; \
+        assert r["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
+        assert [c["context"] for c in r["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","ci"]' "$json"
+    [[ "$output" == *"suppression auto des branches : false"* ]]
+}
+
+@test "proteger : aucune branche protegee existante -> erreur" {
+    fake_gh_repo
+    GH_BRANCHES="" run "$PROTEGER" --dry-run
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Aucune des branches"* ]]
 }
