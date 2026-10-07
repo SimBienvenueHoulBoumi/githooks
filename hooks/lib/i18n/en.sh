@@ -65,7 +65,7 @@ _msg_en() {
         install.replaced) _M="core.hooksPath (%s) was '%s', replaced." ;;
         install.enabled) _M="Hooks enabled (%s) → %s" ;;
         install.local_wins) _M="A local core.hooksPath (e.g. husky) still takes precedence in that repository." ;;
-        install.lang_set) _M="Message language: English (change: ./install.sh --global --lang fr)" ;;
+        install.lang_set) _M="Message language: English (change: %s --global --lang fr)" ;;
         install.lang_invalid) _M="--lang: fr or en." ;;
         help.alias.feat) _M="(branch: feature/ accepted)" ;;
         help.alias.fix) _M="(branch: bugfix/, hotfix/ accepted)" ;;
@@ -244,6 +244,7 @@ _msg_en() {
         dc.no_base) _M="No base: dead code analysis skipped." ;;
         dc.proven) _M="%s: %s (proven dead code)" ;;
         dc.candidate) _M="%s: %s (candidate: check for dynamic usage)" ;;
+        dc.nothing) _M="No file in an analysable language among the changes: nothing to check." ;;
         dc.none) _M="No new dead code." ;;
         dc.summary_candidates) _M="%s candidate(s) to check: not blocking (reflection, framework or public API calls are possible)." ;;
         dc.summary_proven) _M="%s proven dead code item(s): remove them, or ignore them (deadcodeIgnore)." ;;
