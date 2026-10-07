@@ -25,6 +25,29 @@
 
 ## Démarrage
 
+### 1. Sur ton poste, en une minute (tous tes dépôts)
+
+```bash
+git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
+~/repogarde/install.sh --global      # demande la langue (fr / en) et installe git cc
+```
+
+C'est tout : dans **n'importe quel dépôt**, les hooks s'appliquent dès le prochain commit.
+
+```bash
+cd mon-projet
+git switch -c feat/panier            # nom de branche vérifié
+git add . && git cc                  # assistant : type, scope, description… puis commit
+git push -u origin feat/panier       # tests des projets touchés avant l'envoi
+~/repogarde/bin/code-mort            # nouveau code mort de ta branche
+```
+
+Mettre à jour : `git -C ~/repogarde pull` · Désinstaller : `~/repogarde/install.sh --uninstall --global`.
+
+### 2. Dans un projet d'équipe (version figée, CI qui fait foi)
+
+Ajouter au projet les modèles de [`templates/project/`](templates/project) :
+
 ```yaml
 # lefthook.yml — hooks du projet (version figée)
 remotes:
@@ -41,7 +64,26 @@ remotes:
   with: { strict: true }
 ```
 
-Modèles complets : [`templates/project/`](templates/project) · Exemple : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Usage personnel (tous les dépôts du poste) : `./install.sh --global`.
+**Chaque personne qui clone ensuite le projet** installe [lefthook](https://lefthook.dev) une fois (`brew install lefthook`, `npm i -g lefthook`, `winget install evilmartians.lefthook`), puis :
+
+```bash
+git clone <url-du-projet> && cd <projet>
+lefthook install                     # hooks du projet, à la version figée dans lefthook.yml
+```
+
+Avec l'installation de la partie 1, ce `lefthook install` est inutile : les hooks globaux délèguent au `lefthook.yml` du projet (lefthook doit être installé ; sinon, ce sont les règles repogarde par défaut qui s'appliquent, sans la version figée du projet). Un projet Maven, Gradle ou npm peut aussi l'installer au premier build ([En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/)). Sans hooks, la CI refait toutes les vérifications.
+
+Exemple complet : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Releases automatiques, protection de `main` : [documentation](https://simbienvenuehoulboumi.github.io/repogarde/releases/).
+
+### 3. Contribuer à repogarde
+
+```bash
+git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git && cd repogarde
+./install.sh                         # repogarde se vérifie lui-même (hooks de ce dépôt)
+bats test/                           # tests (bats-core), aussi lancés au push
+```
+
+Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Dans VS Code** : l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) guide la rédaction des commits, signale une branche mal nommée et des hooks inactifs. En attendant sa publication sur le Marketplace : `.vsix` dans ses [releases](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode/releases), puis `code --install-extension repogarde-X.Y.Z.vsix`.
 

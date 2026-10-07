@@ -1,8 +1,36 @@
 # Quick start
 
-Choose the path that matches your use case.
+Three paths, depending on your use case. The fastest way to try it: **On my machine**.
 
-=== "One project (recommended)"
+=== "On my machine"
+
+    All your repositories, without adding anything to the projects:
+
+    ```bash
+    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
+    ~/repogarde/install.sh --global      # asks for the language (fr / en), installs git cc
+    ```
+
+    Try it right away, in any repository:
+
+    ```bash
+    git switch -c feat/cart              # branch name checked
+    git add . && git cc                  # commit assistant (type, scope, description…)
+    git push -u origin feat/cart         # tests of the affected projects before sending
+    ~/repogarde/bin/code-mort            # new dead code on the branch
+    ```
+
+    | Action | Command |
+    |---|---|
+    | Check | `git config --global core.hooksPath` → `…/repogarde/hooks` |
+    | Update | `git -C ~/repogarde pull` |
+    | Change language | `~/repogarde/install.sh --global --lang fr` |
+    | A single repository | `cd my-project && ~/repogarde/install.sh` |
+    | Uninstall | `~/repogarde/install.sh --uninstall --global` ([full uninstall](desinstallation.md)) |
+
+    A repository that contains a `lefthook.yml` uses its own configuration (pinned version), if lefthook is installed.
+
+=== "A team project"
 
     1. Install [lefthook](https://lefthook.dev) on the developer machine:
 
@@ -18,33 +46,35 @@ Choose the path that matches your use case.
         |---|---|
         | `lefthook.yml` | local hooks, pinned repogarde version |
         | `.github/workflows/repogarde.yml` | GitHub CI (add the `setup-*` steps for the project's tools) |
+        | `.github/workflows/release.yml` | [automatic releases](releases.md) (optional) |
         | `gitlab-ci.yml` | to merge into `.gitlab-ci.yml` |
         | `.repogarde.conf` | shared settings (optional) |
 
     3. Enable the hooks: `lefthook install`.
-    4. Protect `main` and require the `repogarde` check: see [In an organisation](industrialisation.md).
+    4. Protect `main` and require the `repogarde` check: `bin/proteger` (see [In an organisation](industrialisation.md)).
+
+    **Then, everyone who clones the project** installs lefthook once, then:
+
+    ```bash
+    git clone <project-url> && cd <project>
+    lefthook install                     # project hooks, at the version pinned in lefthook.yml
+    ```
+
+    Nothing else: lefthook fetches repogarde at the project's version. With the "On my machine" installation, even this `lefthook install` is unnecessary. A Maven, Gradle or npm project can install it on the first build ([In an organisation](industrialisation.md)). Without hooks, the CI runs every check again.
 
 === "An organisation"
 
     The [In an organisation guide](industrialisation.md) covers hosting repogarde, versions, automatic installation on developer machines (Maven, Gradle, npm) and GitHub / GitLab branch protection.
 
-=== "Personal use"
-
-    All repositories on the machine, without adding anything to the projects:
+=== "Contributing to repogarde"
 
     ```bash
-    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
-    ~/repogarde/install.sh --global
+    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git && cd repogarde
+    ./install.sh                         # repogarde checks itself
+    bats test/                           # tests (bats-core), also run on push
     ```
 
-    | Action | Command |
-    |---|---|
-    | Check | `git config --global core.hooksPath` → `…/repogarde/hooks` |
-    | Update | `git -C ~/repogarde pull` |
-    | A single repository | `cd my-project && ~/repogarde/install.sh` |
-    | Uninstall | `~/repogarde/install.sh --uninstall --global` ([full uninstall](desinstallation.md)) |
-
-    A repository that contains a `lefthook.yml` automatically uses its own configuration (pinned version).
+    See [Contributing](contribuer.md).
 
 ## Prerequisites
 

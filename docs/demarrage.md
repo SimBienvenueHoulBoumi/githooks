@@ -1,8 +1,36 @@
 # Démarrage rapide
 
-Choisir le parcours qui correspond à l'usage.
+Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
 
-=== "Un projet (recommandé)"
+=== "Sur mon poste"
+
+    Tous tes dépôts, sans rien ajouter aux projets :
+
+    ```bash
+    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
+    ~/repogarde/install.sh --global      # demande la langue (fr / en), installe git cc
+    ```
+
+    Essai immédiat, dans n'importe quel dépôt :
+
+    ```bash
+    git switch -c feat/panier            # nom de branche vérifié
+    git add . && git cc                  # assistant de commit (type, scope, description…)
+    git push -u origin feat/panier       # tests des projets touchés avant l'envoi
+    ~/repogarde/bin/code-mort            # nouveau code mort de la branche
+    ```
+
+    | Action | Commande |
+    |---|---|
+    | Vérifier | `git config --global core.hooksPath` → `…/repogarde/hooks` |
+    | Mettre à jour | `git -C ~/repogarde pull` |
+    | Changer de langue | `~/repogarde/install.sh --global --lang en` |
+    | Un seul dépôt | `cd mon-projet && ~/repogarde/install.sh` |
+    | Désinstaller | `~/repogarde/install.sh --uninstall --global` ([désinstallation complète](desinstallation.md)) |
+
+    Un dépôt qui contient un `lefthook.yml` utilise sa propre configuration (version figée), si lefthook est installé.
+
+=== "Un projet d'équipe"
 
     1. Installer [lefthook](https://lefthook.dev) sur le poste :
 
@@ -18,33 +46,35 @@ Choisir le parcours qui correspond à l'usage.
         |---|---|
         | `lefthook.yml` | hooks locaux, version de repogarde figée |
         | `.github/workflows/repogarde.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
+        | `.github/workflows/release.yml` | [releases automatiques](releases.md) (optionnel) |
         | `gitlab-ci.yml` | à fusionner dans `.gitlab-ci.yml` |
         | `.repogarde.conf` | réglages partagés (optionnel) |
 
     3. Activer les hooks : `lefthook install`.
-    4. Protéger `main` et exiger le check `repogarde` : voir [En organisation](industrialisation.md).
+    4. Protéger `main` et exiger le check `repogarde` : `bin/proteger` (voir [En organisation](industrialisation.md)).
+
+    **Ensuite, chaque personne qui clone le projet** installe lefthook une fois, puis :
+
+    ```bash
+    git clone <url-du-projet> && cd <projet>
+    lefthook install                     # hooks du projet, à la version figée dans lefthook.yml
+    ```
+
+    Rien d'autre : repogarde est récupéré par lefthook, à la version du projet. Avec l'installation « Sur mon poste », ce `lefthook install` est même inutile. Un projet Maven, Gradle ou npm peut l'installer au premier build ([En organisation](industrialisation.md)). Sans hooks, la CI refait toutes les vérifications.
 
 === "Une organisation"
 
     Le [guide En organisation](industrialisation.md) couvre l'hébergement de repogarde, les versions, l'installation automatique sur les postes (Maven, Gradle, npm) et la protection des branches GitHub / GitLab.
 
-=== "Usage personnel"
-
-    Tous les dépôts du poste, sans rien ajouter aux projets :
+=== "Contribuer à repogarde"
 
     ```bash
-    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
-    ~/repogarde/install.sh --global
+    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git && cd repogarde
+    ./install.sh                         # repogarde se vérifie lui-même
+    bats test/                           # tests (bats-core), aussi lancés au push
     ```
 
-    | Action | Commande |
-    |---|---|
-    | Vérifier | `git config --global core.hooksPath` → `…/repogarde/hooks` |
-    | Mettre à jour | `git -C ~/repogarde pull` |
-    | Un seul dépôt | `cd mon-projet && ~/repogarde/install.sh` |
-    | Désinstaller | `~/repogarde/install.sh --uninstall --global` ([désinstallation complète](desinstallation.md)) |
-
-    Un dépôt qui contient un `lefthook.yml` utilise automatiquement sa propre configuration (version figée).
+    Voir [Contribuer](contribuer.md).
 
 ## Prérequis
 
