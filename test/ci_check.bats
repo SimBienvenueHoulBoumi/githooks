@@ -535,3 +535,90 @@ c() { git commit -q --no-verify --allow-empty -m "$1"; }
     [[ "$output" == *"### Features"*"### Bug fixes"* ]]
     [[ "$output" == *"_Since v1.0.0._"* ]]
 }
+
+# --- Code mort (ci/check.sh deadcode) : outils simulés ---------------------------
+
+# Faux ruff et vulture : signalent une ligne de chaque fichier Python listé
+fake_python_tools() {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cat >"$BATS_TEST_TMPDIR/bin/ruff" <<'T'
+#!/usr/bin/env bash
+[ "$1" = --version ] && { echo "ruff 0.0"; exit 0; }
+for f in $(git ls-files '*.py'; git ls-files --others --exclude-standard '*.py'); do
+    echo "$f:1:8: F401 [*] \`os\` imported but unused"
+done
+T
+    cat >"$BATS_TEST_TMPDIR/bin/vulture" <<'T'
+#!/usr/bin/env bash
+[ "$1" = --version ] && { echo "vulture 0.0"; exit 0; }
+for f in $(git ls-files '*.py'; git ls-files --others --exclude-standard '*.py'); do
+    echo "$f:2: unused function 'aide' (60% confidence)"
+done
+T
+    chmod +x "$BATS_TEST_TMPDIR/bin/ruff" "$BATS_TEST_TMPDIR/bin/vulture"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+}
+
+# Base : ancien.py (code mort existant) ; branche : nouveau.py
+python_dead_code() {
+    echo "requests" >requirements.txt
+    printf 'import os\ndef ancienne():\n    pass\n' >ancien.py
+    git add -A
+    git commit -q --no-verify -m "chore: base"
+    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    printf 'import os\ndef aide():\n    pass\n' >nouveau.py
+    git add -A
+    git commit -q --no-verify -m "feat: nouveau"
+}
+
+@test "code mort : seul le nouveau code compte, le prouve bloque" {
+    fake_python_tools
+    python_dead_code
+    run "$CHECK" deadcode
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"nouveau.py:1 : \`os\` imported but unused (code mort prouvé)"* ]]
+    [[ "$output" == *"nouveau.py:2 : unused function 'aide' (60 %) (candidat"* ]]
+    [[ "$output" != *"ancien.py"* ]]
+    [[ "$output" == *"1 élément(s) de code mort prouvé"* ]]
+}
+
+@test "code mort : modes warn (rien ne bloque) et strict (candidats compris)" {
+    fake_python_tools
+    python_dead_code
+    git config repogarde.deadcode warn
+    run "$CHECK" deadcode
+    [ "$status" -eq 0 ]
+    git config repogarde.deadcode strict
+    git config repogarde.deadcodeIgnore "nouveau.py"
+    run "$CHECK" deadcode
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Aucun nouveau code mort"* ]]
+}
+
+@test "code mort : outil absent -> signale, sans echec meme en mode strict" {
+    # ruff et vulture « absents » : ils échouent à --version (portable, Windows compris)
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    for t in ruff vulture; do printf '#!/bin/sh\nexit 127\n' >"$BATS_TEST_TMPDIR/bin/$t"; chmod +x "$BATS_TEST_TMPDIR/bin/$t"; done
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+    python_dead_code
+    REPOGARDE_STRICT=true run "$CHECK" deadcode
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ruff / vulture absent"* ]]
+}
+
+@test "code mort : sortie PMD (Java) interpretee" {
+    mkdir -p "$BATS_TEST_TMPDIR/bin" src/a
+    printf '#!/bin/sh\nprintf "src/a/A.java:3:\\tUnnecessaryImport:\\tUnused import x\\n"; exit 4\n' >"$BATS_TEST_TMPDIR/bin/pmd"
+    chmod +x "$BATS_TEST_TMPDIR/bin/pmd"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+    echo "<project/>" >pom.xml
+    git add -A
+    git commit -q --no-verify -m "chore: base"
+    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    printf 'package a;\n\nimport x;\nclass A {}\n' >src/a/A.java
+    git add -A
+    git commit -q --no-verify -m "feat: a"
+    run "$CHECK" deadcode
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"src/a/A.java:3 : Unused import x (code mort prouvé)"* ]]
+}

@@ -56,3 +56,22 @@ python_test() {
     if [ "$rc" -eq 5 ]; then info_t lang.python.6; return 0; fi
     return "$rc"
 }
+
+# Code mort : ruff (imports et variables inutilisés, redéfinitions : prouvé) ;
+# vulture (confiance 100 % : prouvé, en dessous : candidat — les frameworks
+# appellent des fonctions par leur nom)
+python_deadcode() {
+    local ran=""
+    if python_has ruff; then
+        ran=1
+        python_run ruff check --select F401,F811,F841 --output-format concise --quiet --exit-zero . 2>/dev/null |
+            sed -nE 's/^(.+):([0-9]+):[0-9]+: F[0-9]+ (\[\*\] )?(.*)$/prouve\t\1\t\2\t\4/p'
+    fi
+    if python_has vulture; then
+        ran=1
+        python_run vulture . --min-confidence 60 --exclude ".venv,venv,node_modules,build,dist,site-packages" 2>/dev/null |
+            sed -nE -e 's/^(.+):([0-9]+): (.*) \(100% confidence\)$/prouve\t\1\t\2\t\3/p' \
+                -e 's/^(.+):([0-9]+): (.*) \(([0-9]+)% confidence\)$/candidat\t\1\t\2\t\3 (\4 %)/p'
+    fi
+    [ -n "$ran" ] || deadcode_tool_missing Python "ruff / vulture"
+}

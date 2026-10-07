@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Code mort introduit par ta branche, comme en CI : seules les lignes ajoutées ou
+# modifiées depuis la base comptent (commits, modifications en cours, nouveaux fichiers).
+#   bin/code-mort [base]     défaut : point de départ de la branche depuis origin/main
+# Voir docs/code-mort.md : ce qui est prouvé (bloquant) et ce qui est candidat.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../hooks/lib/common.sh
+source "$ROOT/hooks/lib/common.sh"
+# shellcheck source=../hooks/lib/lang.sh
+source "$ROOT/hooks/lib/lang.sh"
+cd "$GIT_TOPLEVEL"
+
+base="${1:-}"
+if [ -z "$base" ]; then
+    default="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)"
+    base="$(git merge-base HEAD "$default" 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)"
+fi
+t dc.section
+printf "\n%s━━ %s ━━%s\n" "$UI_B" "$REPLY" "$UI_N"
+{
+    git diff --name-only --diff-filter=ACMR "$base"
+    git ls-files --others --exclude-standard
+} | sort -u | without_excluded | deadcode_projects "$base"

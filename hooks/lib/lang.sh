@@ -46,6 +46,10 @@ for _plugin in "$(dirname "${BASH_SOURCE[0]}")/../lang/"*.sh; do
     # shellcheck source=/dev/null
     source "$_plugin"
 done
+
+# Détection de code mort (fonctions <plugin>_deadcode des plugins ci-dessus)
+# shellcheck source=deadcode.sh
+source "$(dirname "${BASH_SOURCE[0]}")/deadcode.sh"
 unset _plugin
 
 # --- Détection ---------------------------------------------------------------

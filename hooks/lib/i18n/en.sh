@@ -238,6 +238,25 @@ _msg_en() {
         ci.install_tool.os) _M="Unsupported system: %s" ;;
         ci.install_tool.arch) _M="Unsupported architecture: %s" ;;
         ci.install_tool.unknown) _M="Unknown tool: %s" ;;
+        # Dead code and CI sections
+        dc.section) _M="Dead code (new code only)" ;;
+        dc.no_base) _M="No base: dead code analysis skipped." ;;
+        dc.proven) _M="%s: %s (proven dead code)" ;;
+        dc.candidate) _M="%s: %s (candidate: check for dynamic usage)" ;;
+        dc.none) _M="No new dead code." ;;
+        dc.summary_candidates) _M="%s candidate(s) to check: not blocking (reflection, framework or public API calls are possible)." ;;
+        dc.summary_proven) _M="%s proven dead code item(s): remove them, or ignore them (deadcodeIgnore)." ;;
+        dc.summary_strict) _M="%s dead code item(s) (deadcode = strict mode)." ;;
+        dc.tool_missing) _M="%s: %s not installed, dead code not analysed." ;;
+        dc.knip_file) _M="file never imported" ;;
+        dc.knip_export) _M="export never imported:" ;;
+        dc.knip_dep) _M="dependency never imported:" ;;
+        ci.section.commits) _M="Commit messages (Conventional Commits)" ;;
+        ci.section.branch) _M="Branch name" ;;
+        ci.section.secrets) _M="Secrets (gitleaks)" ;;
+        ci.section.format) _M="Formatting" ;;
+        ci.section.tests) _M="Tests of the affected projects" ;;
+        ci.section.strict) _M="Strict mode" ;;
         *) _M="" ;;
     esac
 }

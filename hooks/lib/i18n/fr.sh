@@ -238,6 +238,25 @@ _msg_fr() {
         ci.install_tool.os) _M="Système non supporté : %s" ;;
         ci.install_tool.arch) _M="Architecture non supportée : %s" ;;
         ci.install_tool.unknown) _M="Outil inconnu : %s" ;;
+        # Code mort et sections de la CI
+        dc.section) _M="Code mort (nouveau code uniquement)" ;;
+        dc.no_base) _M="Pas de base : analyse du code mort ignorée." ;;
+        dc.proven) _M="%s : %s (code mort prouvé)" ;;
+        dc.candidate) _M="%s : %s (candidat : vérifier les usages dynamiques)" ;;
+        dc.none) _M="Aucun nouveau code mort." ;;
+        dc.summary_candidates) _M="%s candidat(s) à vérifier : non bloquant (appel par réflexion, framework, API publique possibles)." ;;
+        dc.summary_proven) _M="%s élément(s) de code mort prouvé : à supprimer, ou à ignorer (deadcodeIgnore)." ;;
+        dc.summary_strict) _M="%s élément(s) de code mort (mode deadcode = strict)." ;;
+        dc.tool_missing) _M="%s : %s absent, code mort non analysé." ;;
+        dc.knip_file) _M="fichier jamais importé" ;;
+        dc.knip_export) _M="export jamais importé :" ;;
+        dc.knip_dep) _M="dépendance jamais importée :" ;;
+        ci.section.commits) _M="Messages de commit (Conventional Commits)" ;;
+        ci.section.branch) _M="Nom de branche" ;;
+        ci.section.secrets) _M="Secrets (gitleaks)" ;;
+        ci.section.format) _M="Formatage" ;;
+        ci.section.tests) _M="Tests des projets touchés" ;;
+        ci.section.strict) _M="Mode strict" ;;
         *) _M="" ;;
     esac
 }

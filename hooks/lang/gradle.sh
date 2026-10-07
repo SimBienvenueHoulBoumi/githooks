@@ -23,3 +23,6 @@ gradle_format() {
 }
 
 gradle_test() { step "Gradle : $(gradle_cmd) check"; "$(gradle_cmd)" -q check; }
+
+# Code mort prouvé (PMD) : voir hooks/lib/deadcode.sh
+gradle_deadcode() { java_deadcode; }
