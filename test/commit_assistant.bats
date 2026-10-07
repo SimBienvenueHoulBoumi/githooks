@@ -118,6 +118,13 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     grep -qx "feat(panier): ajoute le panier" "$(git rev-parse --git-dir)/repogarde-message"
 }
 
+@test "assistant : scope invalide -> version corrigee proposee, Entree l'accepte" {
+    run answer "" "Doc Test" "" "" "ajoute le panier" "" "" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Proposé : doc-test"* ]]
+    [ "$(subject)" = "feat(doc-test): ajoute le panier" ]
+}
+
 @test "assistant : en-tete trop long -> nouvelle saisie" {
     long="$(printf 'a%.0s' {1..80})"
     run answer "" "" "" "$long" "description courte" "" "" ""
