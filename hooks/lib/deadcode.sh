@@ -18,6 +18,7 @@
 # Retour : 1 si un élément bloque selon le réglage deadcode.
 deadcode_projects() {
     local base="$1" changed added found dir p plugins niveau f l msg path proven=0 cand=0 mode ignore pat
+    local ran="" file
     changed="$(mktemp)"
     added="$(mktemp)"
     found="$(mktemp)"
@@ -39,13 +40,23 @@ deadcode_projects() {
 
     cfg_r deadcodeIgnore ""
     ignore="$REPLY"
+    # Projets touchés (fichier marqueur : pom.xml, package.json…), puis
+    # fichiers isolés d'un langage autonome (script Python sans projet…),
+    # analysés depuis la racine
     while IFS= read -r dir; do
         plugins=""
         active_plugins_init
-        for p in $ACTIVE_PLUGINS; do
-            has_marker "$dir" "$p" && declare -F "${p}_deadcode" >/dev/null && plugins="$plugins $p"
-        done
+        if [ "${dir#\*}" != "$dir" ]; then
+            plugins="${dir#\*}"
+            dir=.
+        else
+            for p in $ACTIVE_PLUGINS; do
+                has_marker "$dir" "$p" && declare -F "${p}_deadcode" >/dev/null && plugins="$plugins $p"
+            done
+        fi
         for p in $plugins; do
+            [[ " $ran " == *" $dir:$p "* ]] && continue
+            ran="$ran $dir:$p"
             # Un outil d'analyse renvoie souvent un code d'erreur quand il trouve
             # quelque chose : seule sa sortie compte
             { (cd "$dir" && "${p}_deadcode") </dev/null || true; } |
@@ -68,7 +79,15 @@ deadcode_projects() {
                     printf '%s\t%s\t%s\n' "$niveau" "$path${l:+:$l}" "$msg"
                 done >>"$found"
         done
-    done < <(projects_for_files <"$changed")
+    done < <(
+        projects_for_files <"$changed" || true # aucun projet : pas une erreur
+        while IFS= read -r file; do
+            plugins_for_file_r "$file"
+            for p in $REPLY; do
+                plugin_has_flag "$p" standalone && declare -F "${p}_deadcode" >/dev/null && echo "*$p"
+            done
+        done <"$changed" | sort -u
+    )
 
     while IFS=$'\t' read -r niveau path msg; do
         path="${path%:0}"
@@ -84,6 +103,10 @@ deadcode_projects() {
     done <"$found"
     rm -f "$changed" "$added" "$found"
 
+    if [ -z "$ran" ]; then
+        info_t dc.nothing
+        return 0
+    fi
     if [ "$proven" = 0 ] && [ "$cand" = 0 ]; then
         ok_t dc.none
         return 0
