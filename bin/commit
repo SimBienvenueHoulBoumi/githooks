@@ -42,26 +42,19 @@ ask() {
 }
 
 if [ -z "$DRY_RUN" ] && git diff --cached --quiet; then
-    fail "Rien n'est stagé : ajoute d'abord tes modifications (git add …)."
+    t cc.nothing_staged
+    fail "$REPLY"
     exit 1
 fi
 
 TYPES=(feat fix docs style refactor perf test build ci chore revert)
 # Emojis à la gitmoji : repères visuels du menu, jamais écrits dans le message
 EMOJIS=(✨ 🐛 📝 🎨 ♻️ ⚡ ✅ 📦 👷 🔧 ⏪)
-DESCRIPTIONS=(
-    "nouvelle fonctionnalité"
-    "correction de bug"
-    "documentation uniquement"
-    "formatage, sans changement de logique"
-    "restructuration sans changement de comportement"
-    "amélioration de performance"
-    "ajout ou modification de tests"
-    "build, dépendances"
-    "intégration continue"
-    "maintenance diverse"
-    "annulation d'un commit"
-)
+DESCRIPTIONS=()
+for _type in "${TYPES[@]}"; do
+    t "cc.type.$_type"
+    DESCRIPTIONS+=("$REPLY")
+done
 
 # Valeurs proposées d'après la branche : feat/panier → feat, panier
 branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
@@ -77,16 +70,20 @@ if [[ "$branch" == */* ]]; then
     [ "${#default_scope}" -le 20 ] || default_scope=""
 fi
 
-brand "commit conventionnel" >&2
-printf '%sEntrée = valeur proposée entre [crochets] · Ctrl+C pour abandonner%s\n' "$D" "$N" >&2
+t cc.title
+brand "$REPLY" >&2
+t cc.help
+printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
 
 # 1. Type
-etape 1 "Type de changement"
+t cc.step1
+etape 1 "$REPLY"
 for i in "${!TYPES[@]}"; do
     printf '  %s%2d%s  %s  %s%-9s%s %s%s%s\n' "$D" "$((i + 1))" "$N" "${EMOJIS[$i]}" "$B" "${TYPES[$i]}" "$N" "$D" "${DESCRIPTIONS[$i]}" "$N" >&2
 done
 while :; do
-    ask "Numéro ou nom [$default_type] : "
+    t cc.type_prompt "$default_type"
+    ask "$REPLY"
     answer="${REPLY:-$default_type}"
     if [[ "$answer" =~ ^[0-9]+$ ]] && [ "$answer" -ge 1 ] && [ "$answer" -le "${#TYPES[@]}" ]; then
         type="${TYPES[$((answer - 1))]}"
@@ -95,45 +92,59 @@ while :; do
         type="$answer"
         break
     fi
-    fail "« $answer » : choisis un numéro (1 à ${#TYPES[@]}) ou un nom de la liste."
+    t cc.type_invalid "$answer" "${#TYPES[@]}"
+    fail "$REPLY"
 done
 
 # 2. Scope (optionnel)
-etape 2 "Scope (optionnel)"
-hint "Partie du projet concernée, ex. api, auth, chart ; Entrée pour aucun."
+t cc.step2
+etape 2 "$REPLY"
+t cc.scope_hint
+hint "$REPLY"
 while :; do
     if [ -n "$default_scope" ]; then
-        ask "Scope (« - » pour aucun) [$default_scope] : "
+        t cc.scope_prompt_default "$default_scope"
+        ask "$REPLY"
         scope="${REPLY:-$default_scope}"
         [ "$scope" = - ] && scope=""
     else
-        ask "Scope : "
+        t cc.scope_prompt
+        ask "$REPLY"
         scope="$REPLY"
     fi
     [[ -z "$scope" || "$scope" =~ ^[a-z0-9._-]+$ ]] && break
-    fail "Scope : minuscules, chiffres, . _ - uniquement."
+    t cc.scope_invalid
+    fail "$REPLY"
 done
 
 # 3. Changement incompatible (version majeure) : sans objet au premier commit
-etape 3 "Changement incompatible ?"
+t cc.step3
+etape 3 "$REPLY"
 breaking=""
 breaking_note=""
 if [ -n "$first_commit" ]; then
-    hint "Premier commit du dépôt : rien d'existant à casser, question sautée."
+    t cc.first_commit
+    hint "$REPLY"
 else
-    hint "Oui seulement si l'existant cesse de fonctionner pour ses utilisateurs"
-    hint "(API, configuration, format, commande supprimés ou modifiés). Version majeure."
-    ask "Incompatible ? [o/N] : "
-    case "$REPLY" in o | O | oui | Oui | y | Y) breaking=1 ;; esac
+    t cc.breaking_hint1
+    hint "$REPLY"
+    t cc.breaking_hint2
+    hint "$REPLY"
+    t cc.breaking_prompt
+    ask "$REPLY"
+    case "$REPLY" in o | O | oui | Oui | y | Y | yes | Yes) breaking=1 ;; esac
     if [ -n "$breaking" ]; then
-        hint "Ce qui casse et comment migrer (affiché dans les notes de version)."
+        t cc.breaking_note_hint
+        hint "$REPLY"
         while :; do
-            ask "Ce qui change : "
+            t cc.breaking_note_prompt
+            ask "$REPLY"
             if [ "${#REPLY}" -ge 10 ] && [[ ! "$REPLY" =~ ^(RAS|ras|rien|aucun|none|-|\.)$ ]]; then
                 breaking_note="$REPLY"
                 break
             fi
-            fail "Décris le changement (10 caractères au moins) ; sinon, réponds non à la question précédente."
+            t cc.breaking_note_invalid
+            fail "$REPLY"
         done
     fi
 fi
@@ -141,36 +152,43 @@ fi
 header_prefix="$type${scope:+($scope)}${breaking:+!}: "
 
 # 4. Description, avec contrôle de longueur de l'en-tête
-etape 4 "Description"
+t cc.step4
+etape 4 "$REPLY"
 authored_length "$header_prefix"
 max=$((72 - REPLY))
-hint "À l'impératif, sans majuscule initiale ni point final ; $max caractères au plus."
+t cc.desc_hint "$max"
+hint "$REPLY"
 while :; do
     ask "$header_prefix"
     description="$REPLY"
     description="${description%.}"
     if [ -z "$description" ]; then
-        fail "La description est obligatoire."
+        t cc.desc_required
+        fail "$REPLY"
         continue
     fi
     authored_length "$header_prefix$description"
     if [ "$REPLY" -gt 72 ]; then
-        fail "En-tête trop long : $REPLY caractères (72 max). Raccourcis la description."
+        t cc.header_too_long "$REPLY"
+        fail "$REPLY"
         continue
     fi
     break
 done
 
 # 5. Détails (optionnels) : corps puis références
-etape 5 "Détails (optionnels)"
-hint "Corps : explique le pourquoi, sur plusieurs lignes ; ligne vide pour terminer."
+t cc.step5
+etape 5 "$REPLY"
+t cc.body_hint
+hint "$REPLY"
 body=""
 while :; do
     ask "> "
     [ -n "$REPLY" ] || break
     body="$body$REPLY"$'\n'
 done
-ask "Références (ex. Closes #12, Refs JIRA-42 ; Entrée pour aucune) : "
+t cc.refs_prompt "$FORGE_REFS"
+ask "$REPLY"
 refs="$REPLY"
 
 # Message final : en-tête, puis corps et pied séparés par une ligne vide
@@ -181,7 +199,8 @@ message="$header_prefix$description"$'\n'
 [ -z "$body" ] || message="$message"$'\n'"$body"
 [ -z "$footer" ] || message="$message"$'\n'"$footer"
 
-printf '\n%s┌─ Message ───────────────────────────────────────────────%s\n' "$D" "$N" >&2
+t cc.preview
+printf '\n%s┌─ %s ───────────────────────────────────────────────%s\n' "$D" "$REPLY" "$N" >&2
 while IFS= read -r line; do
     printf '%s│%s %s\n' "$D" "$N" "$line" >&2
 done <<<"${message%$'\n'}"
@@ -192,9 +211,11 @@ if [ -n "$DRY_RUN" ]; then
     exit 0
 fi
 
-ask "Commiter ? [O/n] : "
-case "$REPLY" in n | N | non | Non)
-    printf '%sAbandonné : rien n%sa été commité.%s\n' "$D" "'" "$N" >&2
+t cc.confirm
+ask "$REPLY"
+case "$REPLY" in n | N | non | Non | no | No)
+    t cc.aborted
+    printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
     exit 1
     ;;
 esac
@@ -206,9 +227,13 @@ git commit -F "$file" "$@"
 
 # Suite : rappel de la convention de branches
 cfg_r protectedBranches "main master"
-if [[ " $REPLY " == *" $branch "* ]]; then
-    printf '\n%s%s✔ Commit créé.%s Prochains changements : sur une branche, ex. %sgit switch -c %s/<sujet>%s, puis une PR.\n' \
-        "$G" "$B" "$N" "$B" "$type" "$N" >&2
+protected="$REPLY"
+t cc.created
+created="$REPLY"
+if [[ " $protected " == *" $branch "* ]]; then
+    t cc.topic
+    t cc.next_branch "${B}git switch -c $type/<$REPLY>$N" "$FORGE_PR"
 else
-    printf '\n%s%s✔ Commit créé.%s Envoyer : %sgit push -u origin %s%s\n' "$G" "$B" "$N" "$B" "$branch" "$N" >&2
+    t cc.next_push "${B}git push -u origin $branch$N"
 fi
+printf '\n%s%s✔ %s%s %s\n' "$G" "$B" "$created" "$N" "$REPLY" >&2

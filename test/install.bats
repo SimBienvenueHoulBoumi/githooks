@@ -64,3 +64,14 @@ setup() {
     run "$INSTALL" --purge
     [ "$status" -ne 0 ]
 }
+
+@test "install : --lang enregistre la langue et l'applique aux messages" {
+    git config --unset core.hooksPath
+    run "$BATS_TEST_DIRNAME/../install.sh" --lang en
+    [ "$status" -eq 0 ]
+    [ "$(git config --local --get repogarde.lang)" = en ]
+    [[ "$output" == *"Message language: English"* ]]
+    [[ "$output" == *"Hooks enabled"* ]]
+    run "$BATS_TEST_DIRNAME/../install.sh" --lang de
+    [ "$status" -ne 0 ]
+}
