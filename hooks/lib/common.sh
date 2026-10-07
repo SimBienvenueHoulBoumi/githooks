@@ -363,3 +363,9 @@ run_local_hook() {
 # Chargement immédiat dans le processus qui source ce fichier : un appel $(cfg …)
 # s'exécute dans un sous-shell et ne pourrait pas remplir le cache du parent.
 cfg_load
+
+# Langue des messages et plateforme (après la lecture de la configuration)
+# shellcheck source=i18n.sh
+source "$(dirname "${BASH_SOURCE[0]}")/i18n.sh"
+# shellcheck source=forge.sh
+source "$(dirname "${BASH_SOURCE[0]}")/forge.sh"

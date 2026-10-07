@@ -2,6 +2,8 @@
 # avec les hooks du dépôt repogarde courant.
 
 HOOKS="$(cd "$BATS_TEST_DIRNAME/../hooks" && pwd -P)"
+# Messages attendus en français (les tests anglais fixent REPOGARDE_LANG=en)
+export REPOGARDE_LANG=fr
 
 setup_repo() {
     REPO="$BATS_TEST_TMPDIR/repo"
