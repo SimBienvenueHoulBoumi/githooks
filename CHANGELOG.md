@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.6.2...v2.7.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* assistant de commit plus clair et charte visuelle commune ([#67](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/67)) ([9f8bc59](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/9f8bc59d902d392cfa09e84dd46decc61eb9111d))
+
 ## [2.6.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.6.1...v2.6.2) (2026-10-07)
 
 
