@@ -30,7 +30,7 @@ hide_unstaged() {
     done <"$UNSTAGED_BACKUP/.files"
     trap restore_unstaged EXIT INT TERM
     git checkout -q -- .
-    echo "ℹ Modifications non stagées mises de côté le temps du formatage."
+    info "Modifications non stagées mises de côté le temps du formatage."
 }
 
 # Réapplique les modifications non stagées sur la version formatée. Si le
@@ -73,7 +73,7 @@ run_on_commit() {
             git stash push -q --include-untracked -m "repogarde pre-push"
             [ "$(git rev-parse -q --verify refs/stash || true)" != "$before" ] && STASHED=1
             trap restore_stash EXIT INT TERM
-            echo "ℹ Modifications locales mises de côté : tests sur le commit poussé."
+            info "Modifications locales mises de côté : tests sur le commit poussé."
         fi
         "$@" || rc=$?
         restore_stash
@@ -82,7 +82,7 @@ run_on_commit() {
         trap remove_worktree EXIT INT TERM
         git worktree add -q --detach "$WORKTREE" "$sha"
         [ -d node_modules ] && ln -s "$PWD/node_modules" "$WORKTREE/node_modules"
-        echo "ℹ Tests de ${sha:0:7} dans un worktree temporaire."
+        info "Tests de ${sha:0:7} dans un worktree temporaire."
         (cd "$WORKTREE" && "$@") || rc=$?
         remove_worktree
     fi

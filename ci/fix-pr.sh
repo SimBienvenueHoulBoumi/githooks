@@ -40,7 +40,7 @@ fi
 
 # 2. Titre
 if header_valid "$TITLE"; then
-    echo "✔ Titre conforme : $TITLE"
+    ok "Titre conforme : $TITLE"
     exit 0
 fi
 git fetch -q origin "$target" 2>/dev/null || true

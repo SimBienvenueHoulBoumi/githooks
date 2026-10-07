@@ -12,6 +12,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd -P)"
 HOOKS="$ROOT/hooks"
+# shellcheck source=hooks/lib/ui.sh
+source "$HOOKS/lib/ui.sh"
 SCOPE="--local"
 ACTION="install"
 PURGE=""
@@ -39,7 +41,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$SCOPE" = --local ] && ! git rev-parse --git-dir >/dev/null 2>&1; then
-    echo "✖ Pas dans un dépôt git (utilise --global pour tous les dépôts)." >&2
+    err "Pas dans un dépôt git (utilise --global pour tous les dépôts)." >&2
     exit 1
 fi
 
@@ -63,11 +65,11 @@ install_alias() {
     local current
     current="$(git config "$1" --get alias.cc || true)"
     if [ -n "$current" ] && [[ "$current" != *"/bin/commit"* ]]; then
-        echo "⚠ Alias git cc déjà utilisé ('$current') : assistant de commit non installé." >&2
+        attention "Alias git cc déjà utilisé ('$current') : assistant de commit non installé." >&2
         return 0
     fi
     git config "$1" alias.cc "$ALIAS_VALUE"
-    echo "✔ Assistant de commit : git cc"
+    ok "Assistant de commit : git cc"
 }
 
 uninstall_alias() {
@@ -75,7 +77,7 @@ uninstall_alias() {
     current="$(git config "$1" --get alias.cc || true)"
     if [[ "$current" == *"/bin/commit"* ]]; then
         git config "$1" --unset alias.cc
-        echo "✔ Alias git cc retiré ($1)."
+        ok "Alias git cc retiré ($1)."
     fi
 }
 
@@ -83,13 +85,13 @@ uninstall_scope() {
     local current
     current="$(git config "$1" --get core.hooksPath || true)"
     if [ -z "$current" ]; then
-        echo "ℹ Aucun core.hooksPath ($1) : rien à retirer."
+        info "Aucun core.hooksPath ($1) : rien à retirer."
     elif is_repogarde_hooks "$current"; then
         git config "$1" --unset core.hooksPath
-        echo "✔ Hooks repogarde retirés ($1)."
+        ok "Hooks repogarde retirés ($1)."
     else
         # Un autre outil (husky…) : ne jamais le désactiver
-        echo "⚠ core.hooksPath ($1) = '$current' n'est pas repogarde : laissé intact." >&2
+        attention "core.hooksPath ($1) = '$current' n'est pas repogarde : laissé intact." >&2
     fi
 }
 
@@ -98,11 +100,11 @@ purge() {
     for cache in "${XDG_CACHE_HOME:-$HOME/.cache}/repogarde" "${XDG_CACHE_HOME:-$HOME/.cache}/githooks"; do
         if [ -d "$cache" ]; then
             rm -rf -- "$cache"
-            echo "✔ Cache supprimé : $cache"
+            ok "Cache supprimé : $cache"
         fi
     done
     if [ -n "$SCAN" ]; then
-        echo "▶ Dépôts de $SCAN encore branchés sur repogarde :"
+        step "Dépôts de $SCAN encore branchés sur repogarde :"
         local found=0
         while IFS= read -r dir; do
             repo="$(dirname "$dir")"
@@ -136,7 +138,7 @@ if [ "$ACTION" = uninstall ]; then
 fi
 
 if [ -n "$PURGE$SCAN" ]; then
-    echo "✖ --purge et --scan s'utilisent avec --uninstall." >&2
+    err "--purge et --scan s'utilisent avec --uninstall." >&2
     exit 1
 fi
 
@@ -144,13 +146,13 @@ chmod +x "$ROOT/bin/commit" "$HOOKS"/pre-commit "$HOOKS"/prepare-commit-msg "$HO
 
 CURRENT="$(git config "$SCOPE" --get core.hooksPath || true)"
 if [ -n "$CURRENT" ] && [ "$CURRENT" != "$HOOKS" ]; then
-    echo "⚠ core.hooksPath ($SCOPE) valait '$CURRENT', remplacé."
+    attention "core.hooksPath ($SCOPE) valait '$CURRENT', remplacé."
 fi
 
 git config "$SCOPE" core.hooksPath "$HOOKS"
-echo "✔ Hooks activés ($SCOPE) → $HOOKS"
+ok "Hooks activés ($SCOPE) → $HOOKS"
 install_alias "$SCOPE"
 
 if [ "$SCOPE" = --global ]; then
-    echo "ℹ Un core.hooksPath local (ex. husky) reste prioritaire dans le dépôt concerné."
+    info "Un core.hooksPath local (ex. husky) reste prioritaire dans le dépôt concerné."
 fi

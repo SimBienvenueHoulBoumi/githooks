@@ -15,7 +15,7 @@ skipped branch-name && exit 0
 
 BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
 if ! branch_name_valid "$BRANCH"; then
-    echo "⚠ Attention : commits et push seront refusés sur cette branche." >&2
+    attention "Attention : commits et push seront refusés sur cette branche." >&2
     branch_help "$BRANCH"
 fi
 exit 0

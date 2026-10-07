@@ -19,6 +19,6 @@ ruby_test() {
     if [ -x bin/rails ]; then step "Ruby : rails test"; bin/rails test
     elif [ -d spec ] && grep -qs '^    rspec' Gemfile.lock; then step "Ruby : rspec"; bundle exec rspec
     elif [ -f Rakefile ]; then step "Ruby : rake test"; bundle exec rake test
-    else echo "ℹ Ruby : aucun lanceur de tests trouvé."
+    else info "Ruby : aucun lanceur de tests trouvé."
     fi
 }

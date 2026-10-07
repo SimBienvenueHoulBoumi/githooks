@@ -2,8 +2,9 @@
 # Assistant de commit conventionnel : guide l'en-tête, le corps et le pied.
 #   git cc [options de git commit]     alias installé par install.sh
 #   bin/commit --dry-run               affiche le message sans commiter
-# Les réponses sont lues sur l'entrée standard (terminal, ou fichier/tube pour
-# les tests). Le commit passe ensuite par les hooks habituels.
+# Les réponses sont lues sur l'entrée standard (terminal avec édition de
+# ligne, ou fichier/tube pour les tests). Le commit passe ensuite par les
+# hooks habituels. Couleurs désactivables : NO_COLOR=1.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -16,17 +17,38 @@ if [ "${1:-}" = --dry-run ]; then
     shift
 fi
 
-ask() { # $1 = question ; réponse dans REPLY
-    printf '%s' "$1" >&2
-    IFS= read -r REPLY || REPLY=""
+# Charte visuelle commune (hooks/lib/ui.sh, chargée par common.sh)
+B="$UI_B" D="$UI_D" G="$UI_G" R="$UI_R" C="$UI_C" N="$UI_N"
+STEPS=5
+
+etape() { printf '\n%s◇ %s/%s%s  %s%s%s\n' "$C" "$1" "$STEPS" "$N" "$B" "$2" "$N" >&2; }
+hint() { printf '  %s%s%s\n' "$D" "$*" "$N" >&2; }
+fail() { printf '  %s✖ %s%s\n' "$R" "$*" "$N" >&2; }
+
+# Réponse dans REPLY, nettoyée : séquences d'échappement (flèches, Échap) et
+# caractères de contrôle retirés, espaces de début et de fin supprimés.
+# Dans un terminal, édition de ligne (flèches, effacement) avec read -e.
+ask() {
+    if [ -t 0 ]; then
+        IFS= read -e -r -p "$1" REPLY || REPLY=""
+    else
+        printf '%s' "$1" >&2
+        IFS= read -r REPLY || REPLY=""
+    fi
+    REPLY="$(printf '%s' "$REPLY" | LC_ALL=C sed -e $'s/\x1b\\[[0-9;?]*[ -\\/]*[@-~]//g' -e $'s/\x1b.//g' |
+        LC_ALL=C tr -d '\000-\010\013-\037\177')"
+    REPLY="${REPLY#"${REPLY%%[![:space:]]*}"}"
+    REPLY="${REPLY%"${REPLY##*[![:space:]]}"}"
 }
 
 if [ -z "$DRY_RUN" ] && git diff --cached --quiet; then
-    echo "✖ Rien n'est stagé : ajoute d'abord tes modifications (git add …)." >&2
+    fail "Rien n'est stagé : ajoute d'abord tes modifications (git add …)."
     exit 1
 fi
 
 TYPES=(feat fix docs style refactor perf test build ci chore revert)
+# Emojis à la gitmoji : repères visuels du menu, jamais écrits dans le message
+EMOJIS=(✨ 🐛 📝 🎨 ♻️ ⚡ ✅ 📦 👷 🔧 ⏪)
 DESCRIPTIONS=(
     "nouvelle fonctionnalité"
     "correction de bug"
@@ -43,6 +65,8 @@ DESCRIPTIONS=(
 
 # Valeurs proposées d'après la branche : feat/panier → feat, panier
 branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
+first_commit=""
+git rev-parse -q --verify HEAD >/dev/null || first_commit=1
 default_type="feat"
 default_scope=""
 if [[ "$branch" == */* ]]; then
@@ -53,13 +77,16 @@ if [[ "$branch" == */* ]]; then
     [ "${#default_scope}" -le 20 ] || default_scope=""
 fi
 
+brand "commit conventionnel" >&2
+printf '%sEntrée = valeur proposée entre [crochets] · Ctrl+C pour abandonner%s\n' "$D" "$N" >&2
+
 # 1. Type
-echo "Type de changement :" >&2
+etape 1 "Type de changement"
 for i in "${!TYPES[@]}"; do
-    printf '  %2d) %-9s %s\n' "$((i + 1))" "${TYPES[$i]}" "${DESCRIPTIONS[$i]}" >&2
+    printf '  %s%2d%s  %s  %s%-9s%s %s%s%s\n' "$D" "$((i + 1))" "$N" "${EMOJIS[$i]}" "$B" "${TYPES[$i]}" "$N" "$D" "${DESCRIPTIONS[$i]}" "$N" >&2
 done
 while :; do
-    ask "Type [$default_type] : "
+    ask "Numéro ou nom [$default_type] : "
     answer="${REPLY:-$default_type}"
     if [[ "$answer" =~ ^[0-9]+$ ]] && [ "$answer" -ge 1 ] && [ "$answer" -le "${#TYPES[@]}" ]; then
         type="${TYPES[$((answer - 1))]}"
@@ -68,79 +95,97 @@ while :; do
         type="$answer"
         break
     fi
-    echo "  ✖ Choisis un numéro ou un type de la liste." >&2
+    fail "« $answer » : choisis un numéro (1 à ${#TYPES[@]}) ou un nom de la liste."
 done
 
 # 2. Scope (optionnel)
+etape 2 "Scope (optionnel)"
+hint "Partie du projet concernée, ex. api, auth, chart ; Entrée pour aucun."
 while :; do
     if [ -n "$default_scope" ]; then
-        ask "Scope (optionnel, « - » pour aucun) [$default_scope] : "
+        ask "Scope (« - » pour aucun) [$default_scope] : "
         scope="${REPLY:-$default_scope}"
         [ "$scope" = - ] && scope=""
     else
-        ask "Scope (optionnel) : "
+        ask "Scope : "
         scope="$REPLY"
     fi
     [[ -z "$scope" || "$scope" =~ ^[a-z0-9._-]+$ ]] && break
-    echo "  ✖ Scope : minuscules, chiffres, . _ - uniquement." >&2
+    fail "Scope : minuscules, chiffres, . _ - uniquement."
 done
 
-# 3. Changement incompatible (version majeure)
-ask "Changement incompatible (version majeure) ? [o/N] : "
+# 3. Changement incompatible (version majeure) : sans objet au premier commit
+etape 3 "Changement incompatible ?"
 breaking=""
-case "$REPLY" in o | O | oui | y | Y) breaking=1 ;; esac
+breaking_note=""
+if [ -n "$first_commit" ]; then
+    hint "Premier commit du dépôt : rien d'existant à casser, question sautée."
+else
+    hint "Oui seulement si l'existant cesse de fonctionner pour ses utilisateurs"
+    hint "(API, configuration, format, commande supprimés ou modifiés). Version majeure."
+    ask "Incompatible ? [o/N] : "
+    case "$REPLY" in o | O | oui | Oui | y | Y) breaking=1 ;; esac
+    if [ -n "$breaking" ]; then
+        hint "Ce qui casse et comment migrer (affiché dans les notes de version)."
+        while :; do
+            ask "Ce qui change : "
+            if [ "${#REPLY}" -ge 10 ] && [[ ! "$REPLY" =~ ^(RAS|ras|rien|aucun|none|-|\.)$ ]]; then
+                breaking_note="$REPLY"
+                break
+            fi
+            fail "Décris le changement (10 caractères au moins) ; sinon, réponds non à la question précédente."
+        done
+    fi
+fi
 
 header_prefix="$type${scope:+($scope)}${breaking:+!}: "
 
 # 4. Description, avec contrôle de longueur de l'en-tête
+etape 4 "Description"
 authored_length "$header_prefix"
 max=$((72 - REPLY))
+hint "À l'impératif, sans majuscule initiale ni point final ; $max caractères au plus."
 while :; do
-    ask "Description (${max} caractères max) : $header_prefix"
+    ask "$header_prefix"
     description="$REPLY"
+    description="${description%.}"
     if [ -z "$description" ]; then
-        echo "  ✖ La description est obligatoire." >&2
+        fail "La description est obligatoire."
         continue
     fi
     authored_length "$header_prefix$description"
     if [ "$REPLY" -gt 72 ]; then
-        echo "  ✖ En-tête trop long : $REPLY caractères (72 max). Raccourcis la description." >&2
+        fail "En-tête trop long : $REPLY caractères (72 max). Raccourcis la description."
         continue
     fi
     break
 done
 
-# 5. Corps (optionnel, plusieurs lignes)
-echo "Corps (optionnel) : explique le pourquoi ; ligne vide pour terminer." >&2
+# 5. Détails (optionnels) : corps puis références
+etape 5 "Détails (optionnels)"
+hint "Corps : explique le pourquoi, sur plusieurs lignes ; ligne vide pour terminer."
 body=""
 while :; do
     ask "> "
     [ -n "$REPLY" ] || break
     body="$body$REPLY"$'\n'
 done
-
-# 6. Pied : changement incompatible, références
-footer=""
-if [ -n "$breaking" ]; then
-    while :; do
-        ask "Décris le changement incompatible : "
-        [ -n "$REPLY" ] && break
-        echo "  ✖ Obligatoire pour un changement majeur." >&2
-    done
-    footer="BREAKING CHANGE: $REPLY"$'\n'
-fi
-ask "Références (optionnel, ex. Closes #12) : "
-[ -z "$REPLY" ] || footer="$footer$REPLY"$'\n'
+ask "Références (ex. Closes #12, Refs JIRA-42 ; Entrée pour aucune) : "
+refs="$REPLY"
 
 # Message final : en-tête, puis corps et pied séparés par une ligne vide
+footer=""
+[ -z "$breaking_note" ] || footer="BREAKING CHANGE: $breaking_note"$'\n'
+[ -z "$refs" ] || footer="$footer$refs"$'\n'
 message="$header_prefix$description"$'\n'
 [ -z "$body" ] || message="$message"$'\n'"$body"
 [ -z "$footer" ] || message="$message"$'\n'"$footer"
 
-echo >&2
-echo "──── Message ────" >&2
-printf '%s' "$message" >&2
-echo "─────────────────" >&2
+printf '\n%s┌─ Message ───────────────────────────────────────────────%s\n' "$D" "$N" >&2
+while IFS= read -r line; do
+    printf '%s│%s %s\n' "$D" "$N" "$line" >&2
+done <<<"${message%$'\n'}"
+printf '%s└─────────────────────────────────────────────────────────%s\n' "$D" "$N" >&2
 
 if [ -n "$DRY_RUN" ]; then
     printf '%s' "$message"
@@ -148,8 +193,8 @@ if [ -n "$DRY_RUN" ]; then
 fi
 
 ask "Commiter ? [O/n] : "
-case "$REPLY" in n | N | non)
-    echo "Abandonné : rien n'a été commité." >&2
+case "$REPLY" in n | N | non | Non)
+    printf '%sAbandonné : rien n%sa été commité.%s\n' "$D" "'" "$N" >&2
     exit 1
     ;;
 esac
@@ -158,3 +203,12 @@ file="$(mktemp)"
 trap 'rm -f "$file"' EXIT
 printf '%s' "$message" >"$file"
 git commit -F "$file" "$@"
+
+# Suite : rappel de la convention de branches
+cfg_r protectedBranches "main master"
+if [[ " $REPLY " == *" $branch "* ]]; then
+    printf '\n%s%s✔ Commit créé.%s Prochains changements : sur une branche, ex. %sgit switch -c %s/<sujet>%s, puis une PR.\n' \
+        "$G" "$B" "$N" "$B" "$type" "$N" >&2
+else
+    printf '\n%s%s✔ Commit créé.%s Envoyer : %sgit push -u origin %s%s\n' "$G" "$B" "$N" "$B" "$branch" "$N" >&2
+fi

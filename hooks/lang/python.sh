@@ -47,12 +47,12 @@ python_test() {
         rm -rf "$cache"
         return "$rc"
     fi
-    if ! python_has_tests; then echo "ℹ Python : aucun test."; rm -rf "$cache"; return 0; fi
+    if ! python_has_tests; then info "Python : aucun test."; rm -rf "$cache"; return 0; fi
     if ! python_has pytest; then warn "Python : pytest absent, tests ignorés."; rm -rf "$cache"; return 0; fi
     step "Python : pytest"
     python_run pytest -q -p no:cacheprovider || rc=$?
     rm -rf "$cache"
     # 5 = aucun test collecté : pas une erreur
-    if [ "$rc" -eq 5 ]; then echo "ℹ Python : aucun test trouvé."; return 0; fi
+    if [ "$rc" -eq 5 ]; then info "Python : aucun test trouvé."; return 0; fi
     return "$rc"
 }

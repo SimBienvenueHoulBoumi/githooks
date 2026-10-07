@@ -254,10 +254,10 @@ format_files() {
         if [ "$dir" = . ]; then key="$plugin"; else key="$plugin ($dir)"; fi
         standalone=""
         has_marker "$dir" "$plugin" || standalone=1
-        echo "ℹ $key : ${#rel[@]} fichier(s)"
+        info "$key : ${#rel[@]} fichier(s)"
         # Échec d'un formateur (ex. erreur de syntaxe) : signalé, jamais ignoré
         if ! (cd "$dir" && STANDALONE="$standalone" "${plugin}_format" "${rel[@]}") </dev/null; then
-            echo "✖ Échec du formatage $key (erreur de syntaxe ?)." >&2
+            err "Échec du formatage $key (erreur de syntaxe ?)." >&2
             failed=1
             continue
         fi
@@ -319,14 +319,14 @@ test_projects() {
             declare -F "${p}_test" >/dev/null || continue
             ran=1
             if [ "$dir" = . ]; then key="$p"; else key="$p ($dir)"; fi
-            echo "ℹ Tests $key"
+            info "Tests $key"
             if ! (cd "$dir" && "${p}_test") </dev/null; then
-                echo "✖ Échec des tests $key : push refusé." >&2
+                err "Échec des tests $key : push refusé." >&2
                 return 1
             fi
         done
     done < <(projects_for_files)
 
-    [ "$ran" = 1 ] || echo "ℹ Aucun projet testable touché par ce push."
+    [ "$ran" = 1 ] || info "Aucun projet testable touché par ce push."
     return 0
 }

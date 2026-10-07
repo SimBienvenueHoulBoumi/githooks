@@ -6,13 +6,15 @@
 HOOK_NAME="$(basename "$0")"
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
+# shellcheck source=ui.sh
+source "$(dirname "${BASH_SOURCE[0]}")/ui.sh"
+
 # Avertissement ; si REPOGARDE_WARN_FILE est défini (CI), il est aussi journalisé
 # pour le mode strict (outil manquant = échec)
 warn() {
-    echo "⚠ $*" >&2
+    echo "${UI_Y}⚠${UI_N} $*" >&2
     if [ -n "${REPOGARDE_WARN_FILE:-}" ]; then echo "$*" >>"$REPOGARDE_WARN_FILE"; fi
 }
-step() { echo "▶ $*"; }
 has() { command -v "$1" >/dev/null 2>&1; }
 
 # Anciens noms (githooks ≤ v1) : toujours acceptés, avec un avertissement unique
@@ -22,7 +24,7 @@ DEPRECATED_SEEN=""
 deprecated() {
     case "$DEPRECATED_SEEN" in *"|$1|"*) return 0 ;; esac
     DEPRECATED_SEEN="$DEPRECATED_SEEN|$1|"
-    echo "ℹ $1 : ancien nom (githooks), à remplacer par $2." >&2
+    info "$1 : ancien nom (githooks), à remplacer par $2." >&2
 }
 
 # Variables d'environnement GITHOOKS_* → REPOGARDE_*
@@ -293,7 +295,7 @@ skipped() {
 # Le hook entier est-il désactivé ? (à appeler en tête de hook)
 exit_if_skipped() {
     if skipped "$HOOK_NAME"; then
-        echo "ℹ $HOOK_NAME désactivé (git config repogarde.skip)."
+        info "$HOOK_NAME désactivé (git config repogarde.skip)."
         exit 0
     fi
 }
@@ -353,7 +355,7 @@ run_local_hook() {
         [ "$candidate" = ".githooks/$HOOK_NAME" ] && deprecated ".githooks/" ".repogarde/"
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
-        echo "ℹ Hook local du projet : $candidate"
+        info "Hook local du projet : $candidate"
         "$candidate" "$@" || return $?
     done
 }

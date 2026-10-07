@@ -15,6 +15,6 @@ php_test() {
     elif [ -f artisan ]; then step "PHP : artisan test"; php artisan test
     elif [ -x vendor/bin/pest ]; then step "PHP : pest"; vendor/bin/pest
     elif [ -x vendor/bin/phpunit ]; then step "PHP : phpunit"; vendor/bin/phpunit
-    else echo "ℹ PHP : aucun lanceur de tests trouvé (composer install ?)."
+    else info "PHP : aucun lanceur de tests trouvé (composer install ?)."
     fi
 }

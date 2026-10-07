@@ -63,3 +63,9 @@ git config repogarde.skip "node"                  # désactive un langage
 ## Hooks propres au projet
 
 Un script exécutable `.repogarde/<hook>` (ou `.git/hooks/<hook>`) est lancé en plus, avant les vérifications communes. Avec lefthook, déclarer plutôt les jobs du projet dans `lefthook.yml`.
+
+## Affichage
+
+Tous les messages de repogarde (hooks, CI, assistant `git cc`, installation) suivent la même charte : `✔` succès en vert, `✖` erreur en rouge, `⚠` avertissement en jaune, `ℹ` information en bleu, `▶` étape en cours en cyan, aides en gris atténué.
+
+Les couleurs s'affichent dans un terminal et dans les logs de l'action GitHub. Elles sont désactivées par `NO_COLOR=1`, par `TERM=dumb` ou quand la sortie est redirigée (fichier, tube) ; `FORCE_COLOR=1` les impose.
