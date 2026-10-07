@@ -24,7 +24,8 @@
         "templates/project/lefthook.yml",
         "templates/project/gitlab-ci.yml",
         "templates/project/.github/workflows/repogarde.yml",
-        "templates/project/.github/workflows/release.yml"
+        "templates/project/.github/workflows/release.yml",
+        ".github/workflows/release-auto.yml"
       ]
     }
   }

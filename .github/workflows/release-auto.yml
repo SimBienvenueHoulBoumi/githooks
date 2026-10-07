@@ -11,6 +11,10 @@
 #    d'événement que GITHUB_TOKEN a le droit de déclencher), son résultat réel
 #    est reporté en statuts sur le commit, puis la PR est mergée (squash) ;
 # 3. release-please, relancé, crée le tag vX.Y.Z et la release GitHub.
+# Mode « tag » (flux develop → main, entrée mode: tag) : aucune PR de release
+# ni fichier de version. Sur la branche d'intégration, une PR de livraison
+# develop → main est tenue à jour (titre « chore(release): vX.Y.Z », notes) ;
+# la merger (humain) publie : sur main, tag vX.Y.Z et release GitHub.
 # Les sorties (release_created, tag_name, version…) permettent au projet
 # d'enchaîner ses propres jobs de publication (registre, image, paquet…).
 name: release-auto
@@ -36,6 +40,24 @@ on:
         description: Version de la toute première release (aucun tag ni release existant).
         type: string
         default: 0.1.0
+      mode:
+        description: >-
+          « pr » (défaut) : release-please, PR de release mergée automatiquement.
+          « tag » : flux develop → main, version calculée et tag posé au merge sur main.
+        type: string
+        default: pr
+      integration-branch:
+        description: "Mode tag : branche d'intégration"
+        type: string
+        default: develop
+      main-branch:
+        description: "Mode tag : branche des releases"
+        type: string
+        default: main
+      repogarde-ref:
+        description: "Mode tag : version de repogarde utilisée pour calculer la version"
+        type: string
+        default: v2 # x-release-please-major
       config-file:
         type: string
         default: release-please-config.json
@@ -44,20 +66,21 @@ on:
         default: .release-please-manifest.json
     outputs:
       release_created:
-        value: ${{ jobs.release.outputs.release_created }}
+        value: ${{ jobs.release.outputs.release_created || jobs.tag.outputs.release_created }}
       tag_name:
-        value: ${{ jobs.release.outputs.tag_name }}
+        value: ${{ jobs.release.outputs.tag_name || jobs.tag.outputs.tag_name }}
       version:
-        value: ${{ jobs.release.outputs.version }}
+        value: ${{ jobs.release.outputs.version || jobs.tag.outputs.version }}
       major:
-        value: ${{ jobs.release.outputs.major }}
+        value: ${{ jobs.release.outputs.major || jobs.tag.outputs.major }}
       sha:
-        value: ${{ jobs.release.outputs.sha }}
+        value: ${{ jobs.release.outputs.sha || jobs.tag.outputs.sha }}
 
 permissions: {}
 
 jobs:
   release:
+    if: inputs.mode != 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
@@ -265,3 +288,86 @@ jobs:
           ::notice::Si release-please indique « GitHub Actions is not permitted to create or approve pull requests » :
           Settings → Actions → General → Workflow permissions → cocher « Allow GitHub Actions to create and approve pull requests ».
           EOF
+
+  # Mode tag : flux develop → main
+  tag:
+    if: inputs.mode == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # tag et release
+      pull-requests: write # PR de livraison
+    outputs:
+      release_created: ${{ steps.publier.outputs.release_created }}
+      tag_name: ${{ steps.publier.outputs.tag_name }}
+      version: ${{ steps.publier.outputs.version }}
+      major: ${{ steps.publier.outputs.major }}
+      sha: ${{ steps.publier.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # tags et historique : calcul de version
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: SimBienvenueHoulBoumi/repogarde
+          ref: ${{ inputs.repogarde-ref }}
+          path: .repogarde-ci
+          persist-credentials: false
+
+      - name: PR de livraison
+        if: github.ref_name == inputs.integration-branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INTEGRATION: ${{ inputs.integration-branch }}
+          MAIN: ${{ inputs.main-branch }}
+          INITIAL_VERSION: ${{ inputs.initial-version }}
+        run: |
+          git fetch -q origin "$MAIN"
+          pr="$(gh pr list --head "$INTEGRATION" --base "$MAIN" --state open --json number -q '.[0].number // empty')"
+          if [ -z "$(git log --oneline "origin/$MAIN..HEAD")" ]; then
+            echo "$INTEGRATION ne contient rien de plus que $MAIN : pas de livraison."
+            exit 0
+          fi
+          version="$(bash .repogarde-ci/ci/version.sh next HEAD)"
+          if [ -n "$version" ]; then
+            title="chore(release): v$version"
+            body="$(printf 'Merger cette PR (merge commit) publie **v%s** : tag et release GitHub automatiques.\n\n%s\n\n---\n_Tenue à jour à chaque merge sur %s (repogarde)._\n' \
+              "$version" "$(bash .repogarde-ci/ci/version.sh notes HEAD)" "$INTEGRATION")"
+          else
+            title="chore(release): livrer $INTEGRATION sur $MAIN"
+            body="Aucune nouvelle version : maintenance uniquement (ci, chore, docs…)."
+          fi
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "$title" --body "$body" >/dev/null
+            echo "::notice::PR #$pr : $title"
+          else
+            gh pr create --head "$INTEGRATION" --base "$MAIN" --title "$title" --body "$body"
+            echo "::notice::PR de livraison créée : $title"
+          fi
+
+      - name: Tag et release
+        id: publier
+        if: github.ref_name == inputs.main-branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INITIAL_VERSION: ${{ inputs.initial-version }}
+        run: |
+          version="$(bash .repogarde-ci/ci/version.sh next HEAD)"
+          if [ -z "$version" ]; then
+            echo "Rien à publier."
+            exit 0
+          fi
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::warning::$tag existe déjà : rien à faire."
+            exit 0
+          fi
+          bash .repogarde-ci/ci/version.sh notes HEAD >"$RUNNER_TEMP/notes.md"
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
+          {
+            echo "release_created=true"
+            echo "tag_name=$tag"
+            echo "version=$version"
+            echo "major=${version%%.*}"
+            echo "sha=$GITHUB_SHA"
+          } >>"$GITHUB_OUTPUT"
