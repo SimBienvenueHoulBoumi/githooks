@@ -9,7 +9,7 @@
 #   - validation humaine (optionnelle) : approbations obligatoires, revue des
 #     CODEOWNERS, environnement de déploiement approuvé par des personnes.
 #
-#   bin/proteger [--repo propriétaire/nom] [--checks "repogarde …"] [--relecteurs N]
+#   bin/proteger [--repo propriétaire/nom] [--checks "repogarde,tests (ubuntu-latest)"] [--relecteurs N]
 #                [--codeowners] [--environnement NOM] [--approbateurs "login …"] [--dry-run]
 # Réglages équivalents dans .repogarde.conf (requiredReviews, codeOwnerReview,
 # environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
@@ -59,12 +59,20 @@ integration="$REPLY"
 # Branches protégées existant sur GitHub (main ou master selon le dépôt)
 existing=""
 for b in $protected; do
-    gh api "repos/$REPO/branches/$b" --silent 2>/dev/null && existing="$existing $b"
+    # Nom renvoyé comparé : GitHub redirige une branche renommée (master → main)
+    [ "$(gh api "repos/$REPO/branches/$b" --jq .name 2>/dev/null)" = "$b" ] && existing="$existing $b"
 done
 [ -n "$existing" ] || { echo "✖ Aucune des branches « $protected » n'existe sur $REPO." >&2; exit 1; }
 
+# Vérifications séparées par des virgules : un nom de job peut contenir des
+# espaces (« tests (ubuntu-latest) »)
 contexts=""
-for c in $CHECKS; do contexts="$contexts {\"context\": \"$c\", \"integration_id\": 15368},"; done
+IFS=, read -ra checks <<<"$CHECKS"
+for c in "${checks[@]}"; do
+    c="${c#"${c%%[![:space:]]*}"}"
+    c="${c%"${c##*[![:space:]]}"}"
+    [ -n "$c" ] && contexts="$contexts {\"context\": \"$c\", \"integration_id\": 15368},"
+done
 contexts="${contexts%,}"
 
 refs_json() { # branches → "refs/heads/a", "refs/heads/b"

@@ -331,7 +331,9 @@ case "$*" in
     "repo view"*) echo moi/projet ;;
     "api user --jq .login") echo moi ;;
     "api users/"*) case "$2" in users/moi) echo 101 ;; users/alice) echo 102 ;; *) exit 1 ;; esac ;;
-    "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] ;;
+    # branche renommée : GitHub redirige master vers main
+    "api repos/moi/projet/branches/master"*) echo main ;;
+    "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] && echo "${2##*/}" ;;
 esac
 GH
     chmod +x "$BATS_TEST_TMPDIR/bin/gh"
@@ -367,14 +369,14 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     fake_gh_repo
     git config repogarde.integrationBranch develop
     git config repogarde.protectedBranches "main develop"
-    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde ci"
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde, tests (ubuntu-latest)"
     [ "$status" -eq 0 ]
     python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==3; m,d,t=r; \
         assert m["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
         assert m["rules"][2]["parameters"]["allowed_merge_methods"]==["merge"]; \
         assert d["name"]=="repogarde (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
         assert d["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
-        assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","ci"]; \
+        assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","tests (ubuntu-latest)"]; \
         assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]

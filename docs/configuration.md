@@ -32,11 +32,11 @@ Par défaut, tout part de `main` et y revient par PR. Pour un flux à deux branc
 
 La CI vérifie alors la cible de chaque PR :
 
-| Branche de la PR | Cible attendue |
-|---|---|
-| travail (`feat/…`, `fix/…`), bots (`dependabot/…`) | `develop` |
-| `develop` | `main` |
-| `release/…`, `hotfix/…` | `main` ou `develop` |
+| Branche de la PR                                   | Cible attendue      |
+| -------------------------------------------------- | ------------------- |
+| travail (`feat/…`, `fix/…`), bots (`dependabot/…`) | `develop`           |
+| `develop`                                          | `main`              |
+| `release/…`, `hotfix/…`                            | `main` ou `develop` |
 
 Une PR mal ciblée est refusée, avec la commande de correction (`gh pr edit --base develop`). Avec l'entrée `fix-pr: true` de l'action, elle est **reciblée automatiquement** (ou fermée si une PR de la même branche vise déjà la bonne cible), et un titre non conforme est remplacé : par le commit conforme au plus fort impact de version (incompatible, puis `feat`, puis `fix`/`perf` ; « ! » ajouté si un pied `BREAKING CHANGE` existe), sinon déduit de la branche.
 
@@ -53,12 +53,12 @@ git config repogarde.skip "node"                  # désactive un langage
 
 ## Ce qui peut être désactivé (`skip`)
 
-| Catégorie | Valeurs |
-|---|---|
-| Hooks | `pre-commit`, `prepare-commit-msg`, `commit-msg`, `pre-push`, `post-checkout`, `post-merge` |
-| Étapes | `branch-name`, `protect-branch`, `secrets`, `format`, `tests`, `prune-branches` |
+| Catégorie          | Valeurs                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| Hooks              | `pre-commit`, `prepare-commit-msg`, `commit-msg`, `pre-push`, `post-checkout`, `post-merge`      |
+| Étapes             | `branch-name`, `protect-branch`, `secrets`, `format`, `tests`, `prune-branches`                  |
 | Langages et outils | `maven`, `gradle`, `node`, `python`, `go`, `helm`, `docker`… (nom du fichier dans `hooks/lang/`) |
-| Tout | `true` |
+| Tout               | `true`                                                                                           |
 
 ## Hooks propres au projet
 
