@@ -116,11 +116,31 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
 ### Branches mergées : supprimées automatiquement
 
 - Serveur — GitHub : *Settings → General → Automatically delete head branches* ; GitLab : *Settings → Merge requests → Enable "Delete source branch" option by default*.
+- Flux `develop` : une branche `release/…` ou `hotfix/…` est mergée deux fois (vers `main` et `develop`) ; la suppression automatique de GitHub la supprimerait après le premier merge. Le workflow réutilisable `nettoyage-branches.yml` la conserve tant qu'une autre PR ouverte l'utilise (`bin/proteger` désactive alors la suppression automatique) :
+
+  ```yaml
+  on:
+    pull_request:
+      types: [closed]
+  jobs:
+    nettoyage:
+      uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v2
+      permissions: { contents: write, pull-requests: read }
+  ```
+
 - Postes : le hook `post-merge` de repogarde supprime, après un `git pull`, les branches locales dont la branche distante a disparu et dont toutes les modifications sont dans la branche courante (merge classique ou squash) ; une branche avec du travail non intégré est conservée.
 
 ### GitHub
 
-*Settings → Rules → Rulesets* (ou *Branches → Branch protection rules*) sur `main` :
+**En une commande**, d'après `.repogarde.conf` (branches protégées, flux `develop`) — relançable sans risque, `--dry-run` pour voir avant d'appliquer :
+
+```bash
+bin/proteger --checks "repogarde"        # depuis le dépôt du projet, gh connecté (admin)
+```
+
+Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigées à jour, ni suppression ni push forcé), les modes de merge (squash ; merge commit en plus pour la livraison `develop` → `main`), le titre de PR comme message de commit, et autorise GitHub Actions à créer des PR (releases automatiques).
+
+À la main : *Settings → Rules → Rulesets* (ou *Branches → Branch protection rules*) sur `main` :
 
 - Require a pull request before merging
 - Require status checks to pass → ajouter **`repogarde`**
