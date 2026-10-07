@@ -104,19 +104,29 @@ jobs:
         env:
           LANG_E2E: ${{ matrix.lang }}
         run: |
+          # Services de téléchargement parfois indisponibles (proxy et sommes
+          # Go, PyPI, GitHub) : 5 tentatives espacées ; vérifications inchangées
+          reessayer() {
+            for i in 1 2 3 4 5; do
+              "$@" && return 0
+              echo "↻ échec ($i/5) : $*"
+              sleep $((i * 10))
+            done
+            return 1
+          }
           gobin=""
           if command -v go >/dev/null; then gobin="$(go env GOPATH)/bin"; fi
           case "$LANG_E2E" in
-            python) pip install --require-hashes -r ci/requirements/e2e-python.txt ;;
-            ansible) pip install --require-hashes -r ci/requirements/e2e-ansible.txt ;;
-            cpp) sudo apt-get install -y -qq clang-format >/dev/null ;;
-            shell) go install mvdan.cc/sh/v3/cmd/shfmt@v3.14.1 && echo "$gobin" >>"$GITHUB_PATH" ;;
+            python) reessayer pip install --require-hashes -r ci/requirements/e2e-python.txt ;;
+            ansible) reessayer pip install --require-hashes -r ci/requirements/e2e-ansible.txt ;;
+            cpp) reessayer sudo apt-get install -y -qq clang-format >/dev/null ;;
+            shell) reessayer go install mvdan.cc/sh/v3/cmd/shfmt@v3.14.1 && echo "$gobin" >>"$GITHUB_PATH" ;;
             helm | kubernetes)
-              go install github.com/yannh/kubeconform/cmd/kubeconform@v0.8.0 && echo "$gobin" >>"$GITHUB_PATH" ;;
-            actions) go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 && echo "$gobin" >>"$GITHUB_PATH" ;;
+              reessayer go install github.com/yannh/kubeconform/cmd/kubeconform@v0.8.0 && echo "$gobin" >>"$GITHUB_PATH" ;;
+            actions) reessayer go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 && echo "$gobin" >>"$GITHUB_PATH" ;;
             docker)
               mkdir -p "$HOME/.local/bin"
-              curl -fsSL -o "$HOME/.local/bin/hadolint" \
+              reessayer curl -fsSL -o "$HOME/.local/bin/hadolint" \
                 https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-x86_64
               chmod +x "$HOME/.local/bin/hadolint"
               echo "$HOME/.local/bin" >>"$GITHUB_PATH" ;;
