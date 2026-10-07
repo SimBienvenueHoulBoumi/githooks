@@ -5,7 +5,7 @@
 #       types: [closed]
 #   jobs:
 #     nettoyage:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v2
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v2 # x-release-please-major
 #       permissions: { contents: write, pull-requests: read }
 #
 # Contrairement à la suppression automatique de GitHub, une branche encore

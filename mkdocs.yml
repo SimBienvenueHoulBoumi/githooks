@@ -50,7 +50,6 @@ nav:
   - Validation humaine: validation.md
   - Code mort: code-mort.md
   - En organisation: industrialisation.md
-  - Migration depuis githooks: migration.md
   - Désinstallation: desinstallation.md
   - Limites: limites.md
   - Sécurité: securite.md
@@ -86,7 +85,6 @@ plugins:
             Validation humaine: Human approval
             Code mort: Dead code
             En organisation: In an organisation
-            Migration depuis githooks: Migrating from githooks
             Désinstallation: Uninstalling
             Limites: Limitations
             Sécurité: Security

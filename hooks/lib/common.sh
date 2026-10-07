@@ -20,25 +20,6 @@ warn() {
 }
 has() { command -v "$1" >/dev/null 2>&1; }
 
-# Anciens noms (githooks ≤ v1) : toujours acceptés, avec un avertissement unique
-# par processus. Volontairement hors de `warn` : le mode strict de la CI ne doit
-# pas faire échouer un projet qui n'a pas encore migré.
-DEPRECATED_SEEN=""
-deprecated() {
-    case "$DEPRECATED_SEEN" in *"|$1|"*) return 0 ;; esac
-    DEPRECATED_SEEN="$DEPRECATED_SEEN|$1|"
-    info_t hook.common.1 "$1" "$2" >&2
-}
-
-# Variables d'environnement GITHOOKS_* → REPOGARDE_*
-for _v in BIN BASE BRANCH CHECKS STRICT PR_TITLE CACHE; do
-    if eval "[ -z \"\${REPOGARDE_$_v:-}\" ] && [ -n \"\${GITHOOKS_$_v:-}\" ]"; then
-        eval "export REPOGARDE_$_v=\"\$GITHOOKS_$_v\""
-        deprecated "GITHOOKS_$_v" "REPOGARDE_$_v"
-    fi
-done
-unset _v
-
 # Config repogarde.* chargée UNE fois par processus : chaque appel git coûte cher
 # (20 à 50 ms sous Windows), et un hook lit la config des dizaines de fois.
 # Priorité : git config (local puis global), puis .repogarde.conf versionné.
@@ -48,37 +29,14 @@ CFG_LOADED=""
 # Racine du dépôt, calculée une fois et réutilisée par les hooks
 GIT_TOPLEVEL=""
 
-# Normalise la sortie de --get-regexp : clés hooks.* (anciennes) renommées en
-# repogarde.* et placées AVANT les nouvelles, qui l'emportent donc (dernière valeur)
-cfg_normalize() {
-    local line old="" new=""
-    while IFS= read -r line; do
-        case "$line" in
-            hooks.*) old="$old${line/#hooks./repogarde.}"$'\n' ;;
-            ?*) new="$new$line"$'\n' ;;
-        esac
-    done <<<"$1"
-    [ -z "$old" ] || deprecated "$2 hooks.*" "repogarde.*"
-    REPLY="$old$new"
-}
-
 cfg_load() {
     local file=""
     GIT_TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-    cfg_normalize "$(git config --get-regexp '^(hooks|repogarde)\.' 2>/dev/null || true)" "git config"
-    CFG_GIT="$REPLY"
+    CFG_GIT="$(git config --get-regexp '^repogarde\.' 2>/dev/null || true)"
     CFG_FILE=""
-    if [ -n "$GIT_TOPLEVEL" ]; then
-        if [ -f "$GIT_TOPLEVEL/.repogarde.conf" ]; then
-            file="$GIT_TOPLEVEL/.repogarde.conf"
-        elif [ -f "$GIT_TOPLEVEL/.githooks.conf" ]; then
-            file="$GIT_TOPLEVEL/.githooks.conf"
-            deprecated ".githooks.conf" ".repogarde.conf (section [repogarde])"
-        fi
-    fi
-    if [ -n "$file" ]; then
-        cfg_normalize "$(git config -f "$file" --get-regexp '^(hooks|repogarde)\.' 2>/dev/null || true)" "${file##*/} :"
-        CFG_FILE="$REPLY"
+    file="$GIT_TOPLEVEL/.repogarde.conf"
+    if [ -n "$GIT_TOPLEVEL" ] && [ -f "$file" ]; then
+        CFG_FILE="$(git config -f "$file" --get-regexp '^repogarde\.' 2>/dev/null || true)"
     fi
     CFG_LOADED=1
 }
@@ -374,9 +332,8 @@ delegate_to_lefthook() {
 run_local_hook() {
     local candidate real
     [ "${REPOGARDE_RUNNER:-}" = lefthook ] && return 0
-    for candidate in ".repogarde/$HOOK_NAME" ".githooks/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
+    for candidate in ".repogarde/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
         [ -x "$candidate" ] || continue
-        [ "$candidate" = ".githooks/$HOOK_NAME" ] && deprecated ".githooks/" ".repogarde/"
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
         info_t hook.common.5 "$candidate"

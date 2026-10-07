@@ -90,7 +90,7 @@ gh secret set REPOGARDE_WEBHOOK      # adresse collée en saisie masquée
 ```yaml
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
     secrets:
       webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
     with:

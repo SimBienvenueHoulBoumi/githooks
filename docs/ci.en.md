@@ -55,7 +55,7 @@ jobs:
 ```yaml title=".gitlab-ci.yml"
 include:
   - project: outils/repogarde                # repogarde hosted on your GitLab
-    ref: v2.8.0 # x-release-please-version
+    ref: v2.13.0 # x-release-please-version
     file: templates/gitlab/repogarde.gitlab-ci.yml
 
 repogarde:

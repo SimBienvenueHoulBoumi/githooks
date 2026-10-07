@@ -8,7 +8,7 @@
 ~/repogarde/install.sh --uninstall --global
 ```
 
-Désinstallation complète, avec suppression des caches (`~/.cache/repogarde`, ancien `~/.cache/githooks`) et liste des dépôts encore branchés sur repogarde :
+Désinstallation complète, avec suppression des caches (`~/.cache/repogarde`) et liste des dépôts encore branchés sur repogarde :
 
 ```bash
 ~/repogarde/install.sh --uninstall --global --purge --scan ~/projets

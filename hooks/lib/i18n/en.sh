@@ -99,7 +99,6 @@ _msg_en() {
         hook.post_merge.2) _M="🧹 Local branch deleted (squash-merged and deleted on the server): %s" ;;
         hook.post_merge.3) _M="%s: deleted on the server but some changes are missing here, kept." ;;
         hook.post_merge.4) _M="  To delete it anyway: git branch -D %s" ;;
-        hook.common.1) _M="%s: old name (githooks), replace with %s." ;;
         hook.common.3) _M="%s disabled (git config repogarde.skip)." ;;
         hook.common.4) _M="lefthook project (%s) but lefthook is not installed: default repogarde rules. Install lefthook." ;;
         hook.common.5) _M="Project local hook: %s" ;;
@@ -196,7 +195,7 @@ _msg_en() {
         ci.check.16) _M="Target \"%s\" matches the flow." ;;
         ci.check.17) _M="PR from \"%s\" to \"%s\": expected target %s (integrationBranch setting)." ;;
         ci.check.18) _M="  Fix: change the PR base branch (Edit, next to the title), or gh pr edit --base %s" ;;
-        ci.check.19) _M="gitleaks not installed: run ci/install-gitleaks.sh before this script." ;;
+        ci.check.19) _M="gitleaks not installed: run ci/install-tool.sh gitleaks before this script." ;;
         ci.check.20) _M="Working tree modified before the check: formatting cannot be verified." ;;
         ci.check.21) _M="A formatter failed (syntax error, or tool / dependency unavailable): see the log above." ;;
         ci.check.22) _M="Fix: install the hooks (lefthook install) or run the formatter, then commit." ;;

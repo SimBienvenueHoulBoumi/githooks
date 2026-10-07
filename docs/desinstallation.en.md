@@ -8,7 +8,7 @@
 ~/repogarde/install.sh --uninstall --global
 ```
 
-Full uninstall, removing the caches (`~/.cache/repogarde`, legacy `~/.cache/githooks`) and listing the repositories still wired to repogarde:
+Full uninstall, removing the caches (`~/.cache/repogarde`) and listing the repositories still wired to repogarde:
 
 ```bash
 ~/repogarde/install.sh --uninstall --global --purge --scan ~/projets

@@ -124,7 +124,7 @@ One PR = one commit on `main`, whose message is the **PR title**: a clean change
       types: [closed]
   jobs:
     nettoyage:
-      uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v2
+      uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v3
       permissions: { contents: write, pull-requests: read }
   ```
 
