@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.6.0...v2.6.1) (2026-10-07)
+
+
+### Corrections
+
+* **proteger:** branches renommées et noms de vérifications avec espaces ([#63](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/63)) ([c0e7258](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/c0e7258dcedf53d088aeb385ab571a1c181c2823))
+
 ## [2.6.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.5.0...v2.6.0) (2026-10-07)
 
 
