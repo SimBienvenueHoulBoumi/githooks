@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.11.3](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.2...v2.11.3) (2026-10-07)
+
+
+### Corrections
+
+* **release:** la notification ne bloque plus jamais une release ([#90](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/90)) ([b8999c0](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/b8999c0592ea3a2f2979708124cae625471577b4))
+* **release:** release bloquée expliquée, avec les commandes ([#91](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/91)) ([99b6863](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/99b686381cce7a7ea18e061b7c209dd4076634f9))
+
+
+### Documentation
+
+* assistant git cc à jour (FR/EN) ([#89](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/89)) ([1b62eb5](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/1b62eb53c12a4d82648718de6290c44814f58b61))
+
 ## [2.11.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.1...v2.11.2) (2026-10-07)
 
 
