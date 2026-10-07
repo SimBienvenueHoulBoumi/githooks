@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.4.0...v2.5.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* protection GitHub en une commande et nettoyage des branches ([#55](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/55)) ([2939f4d](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/2939f4d389ecd7829c9c9b502be48ebbec683b36))
+
 ## [2.4.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.3.0...v2.4.0) (2026-10-06)
 
 
