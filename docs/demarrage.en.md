@@ -33,15 +33,15 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
     **With npm** (Node installed): same result, as a machine-wide command. Nothing is added to the projects or their `package.json`.
 
     ```bash
-    npm install -g @simbienvenuehoulboumi/repogarde
+    npm install -g @simbie/repogarde
     repogarde install --global           # asks for the language, installs git cc
     repogarde code-mort                  # every command: repogarde --help
     ```
 
     | Action | Command |
     |---|---|
-    | Update | `npm update -g @simbienvenuehoulboumi/repogarde` (the hooks follow) |
-    | Uninstall | `repogarde uninstall --global`, then `npm uninstall -g @simbienvenuehoulboumi/repogarde` |
+    | Update | `npm update -g @simbie/repogarde` (the hooks follow) |
+    | Uninstall | `repogarde uninstall --global`, then `npm uninstall -g @simbie/repogarde` |
 
     `npx` is refused for the global installation: its temporary folder can be deleted at any time. With nvm, each Node version has its own global packages: run `repogarde install --global` again after switching versions.
 

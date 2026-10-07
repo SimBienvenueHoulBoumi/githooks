@@ -47,11 +47,11 @@ Mettre à jour : `git -C ~/repogarde pull` · Désinstaller : `~/repogarde/insta
 Avec npm (Node installé), en commande globale de la machine, sans clone ni ajout aux `package.json` des projets :
 
 ```bash
-npm install -g @simbienvenuehoulboumi/repogarde
+npm install -g @simbie/repogarde
 repogarde install --global           # mêmes hooks, git cc ; repogarde code-mort, repogarde proteger…
 ```
 
-Mettre à jour : `npm update -g @simbienvenuehoulboumi/repogarde` · Désinstaller : `repogarde uninstall --global`, puis `npm uninstall -g @simbienvenuehoulboumi/repogarde`.
+Mettre à jour : `npm update -g @simbie/repogarde` · Désinstaller : `repogarde uninstall --global`, puis `npm uninstall -g @simbie/repogarde`.
 
 ### 2. Dans un projet d'équipe (version figée, CI qui fait foi)
 

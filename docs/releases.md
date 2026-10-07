@@ -153,9 +153,18 @@ La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications p
 
 ## Publier sur npm
 
-Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbienvenuehoulboumi/repogarde`).
+Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbie/repogarde`).
 
-Mise en place guidée, une fois, depuis le dépôt du projet : compte npm, première publication (npm n'accepte la publication de confiance que sur un paquet existant), formulaire de l'éditeur de confiance avec les valeurs à saisir, puis activation (variable `REPOGARDE_NPM`) :
+Mise en place en une commande, depuis le dépôt du projet. Tout est publié par la pipeline, la première version comprise :
+
+1. **Connexion à npm** : `npm login` si besoin.
+2. **Paquet pas encore sur npm** (npm n'accepte la publication de confiance que sur un paquet existant) :
+   - un jeton npm temporaire est créé, valable 7 jours et limité au scope du paquet ;
+   - il va directement dans le secret `NPM_TOKEN`, sans jamais s'afficher ; le mot de passe et le code 2FA sont demandés en saisie masquée ;
+   - la variable `REPOGARDE_NPM` active le job, puis la commande attend que la prochaine release publie le paquet.
+3. **Publication de confiance** : configurée avec `npm trust github`, sans formulaire. Le secret est ensuite supprimé et le jeton révoqué. Les releases suivantes publient sans jeton.
+
+Interrompue (Ctrl+C), la commande reprend où elle en était quand on la relance.
 
 ```bash
 ~/repogarde/bin/npm-publication      # ou : repogarde npm-publication
@@ -173,6 +182,8 @@ Puis, dans `.github/workflows/release.yml` :
       tag: ${{ needs.release.outputs.tag_name }}
       # environment: production     # approbation avant publication (validation humaine)
       # directory: packages/ui      # paquet hors de la racine
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}   # première publication seulement
 ```
 
 Le paquet est publié à la version du tag (y compris en mode tag, sans fichier de version). Une version déjà publiée est ignorée : relancer le run ne casse rien.

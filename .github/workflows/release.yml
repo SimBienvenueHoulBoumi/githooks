@@ -54,8 +54,9 @@ jobs:
         run: gh workflow run docs.yml --ref main
 
   # Paquet npm (installation sur la machine : npm install -g), publié sans
-  # jeton (publication de confiance). Activé par la variable REPOGARDE_NPM une
-  # fois la mise en place faite : bin/npm-publication
+  # jeton (publication de confiance). Activé par la variable REPOGARDE_NPM ;
+  # mise en place : bin/npm-publication. Le secret NPM_TOKEN ne sert qu'à la
+  # toute première publication (vide ensuite : publication de confiance).
   npm:
     needs: release
     if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
@@ -65,6 +66,8 @@ jobs:
       id-token: write
     with:
       tag: ${{ needs.release.outputs.tag_name }}
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}
 
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repogarde@v1`
   tag-major:

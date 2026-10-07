@@ -153,9 +153,18 @@ The project's CI must run on pushes to `develop`: its checks apply to the head c
 
 ## Publishing to npm
 
-A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbienvenuehoulboumi/repogarde`).
+A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbie/repogarde`).
 
-Guided setup, once, from the project repository: npm account, first publication (npm only accepts trusted publishing on an existing package), trusted publisher form with the values to enter, then activation (`REPOGARDE_NPM` variable):
+One-command setup, from the project repository. Everything is published by the pipeline, the first version included:
+
+1. **npm login**, if needed.
+2. **Package not on npm yet** (npm only accepts trusted publishing on an existing package):
+   - a temporary npm token is created, valid for 7 days and limited to the package scope;
+   - it goes straight into the `NPM_TOKEN` secret and is never displayed; the password and 2FA code are asked as hidden input;
+   - the `REPOGARDE_NPM` variable enables the job, then the command waits for the next release to publish the package.
+3. **Trusted publishing**: configured with `npm trust github`, no form to fill in. The secret is then deleted and the token revoked. The following releases publish without a token.
+
+If interrupted (Ctrl+C), the command resumes where it left off when run again.
 
 ```bash
 ~/repogarde/bin/npm-publication      # or: repogarde npm-publication
@@ -173,6 +182,8 @@ Then, in `.github/workflows/release.yml`:
       tag: ${{ needs.release.outputs.tag_name }}
       # environment: production     # approval before publishing (human validation)
       # directory: packages/ui      # package outside the root
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}   # first publication only
 ```
 
 The package is published at the tag version (tag mode included, without a version file). An already published version is skipped: re-running the workflow breaks nothing.

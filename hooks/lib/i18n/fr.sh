@@ -293,21 +293,28 @@ _msg_fr() {
         bot.ask_delete) _M="Supprimer la copie locale de la clé (%s), désormais inutile ? [o/N] " ;;
         bot.deleted) _M="Clé locale supprimée." ;;
         # Paquet npm
-        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g @simbienvenuehoulboumi/repogarde, puis repogarde install --global." ;;
+        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g @simbie/repogarde, puis repogarde install --global." ;;
         npm.no_npm) _M="npm requis : https://nodejs.org" ;;
         npm.no_package) _M="Aucun package.json à la racine du dépôt." ;;
+        npm.old_npm) _M="npm %s trop ancien : 11.15 au minimum (npm install -g npm@11)." ;;
         npm.step_login) _M="1/3 Compte npm" ;;
-        npm.not_logged) _M="Non connecté à npm : lance npm login (dans ce terminal), puis relance cette commande." ;;
         npm.logged) _M="Connecté à npm : %s" ;;
-        npm.step_first) _M="2/3 Première publication" ;;
-        npm.exists) _M="%s existe déjà sur npm." ;;
-        npm.no_tag) _M="Aucun tag vX.Y.Z : la première release doit exister avant la publication." ;;
-        npm.ask_first) _M="Publier %s@%s depuis ce poste (une seule fois, la CI prend le relais) ? [o/N] " ;;
-        npm.published) _M="%s@%s publié." ;;
-        npm.step_trust) _M="3/3 Éditeur de confiance (Settings → Trusted Publisher)" ;;
-        npm.hint_trust) _M="Choisir GitHub Actions et renseigner :" ;;
-        npm.hint_tokens) _M="Conseillé ensuite, même page : « Require two-factor authentication and disallow tokens »." ;;
-        npm.done) _M="Publication npm automatique activée pour %s (variable REPOGARDE_NPM)." ;;
+        npm.step_token) _M="2/3 Première publication, par la pipeline (jeton temporaire)" ;;
+        npm.token_exists) _M="Secret NPM_TOKEN déjà présent : réutilisé." ;;
+        npm.ask_password) _M="Mot de passe npm (saisie masquée, transmis à npm seulement) : " ;;
+        npm.ask_otp) _M="Code à usage unique (application d'authentification ou e-mail de npm) : " ;;
+        npm.token_failed) _M="Création du jeton npm impossible (voir ci-dessus) : rien n'a été enregistré." ;;
+        npm.token_stored) _M="Jeton temporaire (7 jours) créé et enregistré en secret NPM_TOKEN, sans affichage." ;;
+        npm.waiting) _M="La prochaine release publie %s : merge une PR (ou laisse le bot merger la PR de release). Attente… (Ctrl+C : relancer la commande plus tard, elle reprendra)" ;;
+        npm.still_waiting) _M="toujours en attente (%s min)…" ;;
+        npm.not_yet) _M="Pas encore publié : relance cette commande après la prochaine release." ;;
+        npm.first_published) _M="%s@%s publié par la pipeline." ;;
+        npm.step_trust) _M="3/3 Publication sans jeton (publication de confiance)" ;;
+        npm.trust_exists) _M="Publication de confiance déjà configurée." ;;
+        npm.trust_set) _M="Publication de confiance : %s, workflow %s." ;;
+        npm.token_removed) _M="Secret NPM_TOKEN supprimé du dépôt." ;;
+        npm.token_revoked) _M="Jeton temporaire révoqué sur npm." ;;
+        npm.done) _M="Terminé : chaque release publie %s sur npm, sans jeton." ;;
         *) _M="" ;;
     esac
 }

@@ -33,15 +33,15 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
     **Avec npm** (Node installé) : même résultat, en commande globale de la machine. Rien n'est ajouté aux projets ni à leur `package.json`.
 
     ```bash
-    npm install -g @simbienvenuehoulboumi/repogarde
+    npm install -g @simbie/repogarde
     repogarde install --global           # demande la langue, installe git cc
     repogarde code-mort                  # toutes les commandes : repogarde --help
     ```
 
     | Action | Commande |
     |---|---|
-    | Mettre à jour | `npm update -g @simbienvenuehoulboumi/repogarde` (les hooks suivent) |
-    | Désinstaller | `repogarde uninstall --global`, puis `npm uninstall -g @simbienvenuehoulboumi/repogarde` |
+    | Mettre à jour | `npm update -g @simbie/repogarde` (les hooks suivent) |
+    | Désinstaller | `repogarde uninstall --global`, puis `npm uninstall -g @simbie/repogarde` |
 
     `npx` est refusé pour l'installation globale : son dossier temporaire peut être effacé à tout moment. Avec nvm, chaque version de Node a ses propres paquets globaux : relancer `repogarde install --global` après un changement de version.
 
