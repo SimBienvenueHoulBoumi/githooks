@@ -330,6 +330,7 @@ echo "$*" >>"$GH_LOG"
 case "$*" in
     "repo view"*) echo moi/projet ;;
     "api user --jq .login") echo moi ;;
+    "api repos/moi/projet --jq .owner.type") echo "${GH_OWNER_TYPE:-User}" ;;
     "api users/"*) case "$2" in users/moi) echo 101 ;; users/alice) echo 102 ;; *) exit 1 ;; esac ;;
     # branche renommée : GitHub redirige master vers main
     "api repos/moi/projet/branches/master"*) echo main ;;
@@ -419,6 +420,22 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert [r["id"] for r in e["reviewers"]]==[101,102] and e["prevent_self_review"] is True' "$(rulesets_json "$output")"
     GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production --approbateurs inconnu
     [ "$status" -ne 0 ]
+}
+
+@test "proteger : tags -> workflows seuls (organisation), ni deplaces ni supprimes (compte perso)" {
+    require python3
+    fake_gh_repo
+    GH_OWNER_TYPE=Organization GH_BRANCHES="main" run "$PROTEGER" --dry-run
+    python3 -c 'import json,sys; t=json.loads(sys.argv[1])[-1]; \
+        assert [r["type"] for r in t["rules"]]==["creation","update","deletion"]; \
+        assert t["bypass_actors"][0]["actor_type"]=="Integration"' "$(rulesets_json "$output")"
+    GH_OWNER_TYPE=User GH_BRANCHES="main" run "$PROTEGER" --dry-run
+    python3 -c 'import json,sys; t=json.loads(sys.argv[1])[-1]; \
+        assert [r["type"] for r in t["rules"]]==["update","deletion"]; \
+        assert t["bypass_actors"][0]["actor_type"]=="RepositoryRole"' "$(rulesets_json "$output")"
+    [[ "$output" == *"compte personnel"* ]]
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --sans-tags
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert all(x["target"]=="branch" for x in r)' "$(rulesets_json "$output")"
 }
 
 @test "proteger : aucune branche protegee existante -> erreur" {

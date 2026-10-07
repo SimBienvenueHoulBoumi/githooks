@@ -10,7 +10,9 @@
 #     CODEOWNERS, environnement de déploiement approuvé par des personnes.
 #
 #   bin/proteger [--repo propriétaire/nom] [--checks "repogarde,tests (ubuntu-latest)"] [--relecteurs N]
-#                [--codeowners] [--environnement NOM] [--approbateurs "login …"] [--dry-run]
+#                [--codeowners] [--environnement NOM] [--approbateurs "login …"]
+#                [--sans-tags] [--dry-run]
+# --sans-tags : dépôt qui déplace lui-même un tag (tag majeur flottant v2…).
 # Réglages équivalents dans .repogarde.conf (requiredReviews, codeOwnerReview,
 # environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
 set -euo pipefail
@@ -30,6 +32,7 @@ APPROVERS="$REPLY"
 REPO=""
 CHECKS="repogarde"
 DRY_RUN=""
+NO_TAGS=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
@@ -38,8 +41,9 @@ while [ $# -gt 0 ]; do
         --codeowners) CODEOWNERS=true ;;
         --environnement) shift; ENVIRONMENT="${1:?--environnement attend un nom}" ;;
         --approbateurs) shift; APPROVERS="${1:?--approbateurs attend des logins}" ;;
+        --sans-tags) NO_TAGS=1 ;;
         --dry-run) DRY_RUN=1 ;;
-        -h | --help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h | --help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Argument inconnu : $1" >&2; exit 1 ;;
     esac
     shift
@@ -110,15 +114,30 @@ branch_ruleset() {
 JSON
 }
 
-# Tags de version : posés uniquement par les workflows (GitHub Actions)
-tags_ruleset='{
+# Tags de version v*. Organisation : posés uniquement par les workflows
+# (GitHub Actions en exception). Compte personnel : GitHub n'accepte pas
+# cette exception ; un tag publié ne peut alors être ni déplacé ni supprimé
+# (exception : administrateurs, tracée), sa création restant libre.
+tags_ruleset() { # $1 : Organization ou User
+    local bypass rules
+    if [ "$1" = Organization ]; then
+        bypass='{"actor_id": 15368, "actor_type": "Integration", "bypass_mode": "always"}'
+        rules='{"type": "creation"}, {"type": "update"}, {"type": "deletion"}'
+    else
+        bypass='{"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}'
+        rules='{"type": "update"}, {"type": "deletion"}'
+    fi
+    cat <<JSON
+{
   "name": "repogarde (tags)",
   "target": "tag",
   "enforcement": "active",
-  "bypass_actors": [{"actor_id": 15368, "actor_type": "Integration", "bypass_mode": "always"}],
+  "bypass_actors": [$bypass],
   "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
-  "rules": [{"type": "creation"}, {"type": "update"}, {"type": "deletion"}]
-}'
+  "rules": [$rules]
+}
+JSON
+}
 
 rulesets=()
 if [ -n "$integration" ]; then
@@ -141,13 +160,23 @@ else
     delete_on_merge=true
     methods="squash"
 fi
-rulesets+=("$tags_ruleset")
+owner_type="$(gh api "repos/$REPO" --jq .owner.type)"
+if [ -z "$NO_TAGS" ]; then
+    rulesets+=("$(tags_ruleset "$owner_type")")
+    if [ "$owner_type" = Organization ]; then
+        tags_msg="réservés aux workflows"
+    else
+        tags_msg="ni déplacés ni supprimés (compte personnel : création libre)"
+    fi
+else
+    tags_msg="non protégés (--sans-tags)"
+fi
 
 echo "Dépôt : $REPO"
 echo "  branches protégées :$existing"
 echo "  vérifications exigées : $CHECKS"
 echo "  merges : $methods ; suppression auto des branches : $delete_on_merge"
-echo "  tags v* : réservés aux workflows"
+echo "  tags v* : $tags_msg"
 [ -z "$integration" ] || echo "  branche par défaut : $integration"
 echo "  approbations exigées : $REVIEWS ; revue des CODEOWNERS : $CODEOWNERS"
 if [ "$REVIEWS" != 0 ] || [ "$CODEOWNERS" = true ]; then
@@ -190,10 +219,10 @@ for ruleset in "${rulesets[@]}"; do
     name="$(sed -n 's/^  "name": "\(.*\)",$/\1/p' <<<"$ruleset")"
     id="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name == \"$name\") | .id")"
     if [ -n "$id" ]; then
-        gh api -X PUT "repos/$REPO/rulesets/$id" --input - --silent <<<"$ruleset"
+        gh api -X PUT "repos/$REPO/rulesets/$id" --input - <<<"$ruleset" >/dev/null
         echo "✔ Ruleset « $name » mis à jour."
     else
-        gh api -X POST "repos/$REPO/rulesets" --input - --silent <<<"$ruleset"
+        gh api -X POST "repos/$REPO/rulesets" --input - <<<"$ruleset" >/dev/null
         echo "✔ Ruleset « $name » créé."
     fi
 done
