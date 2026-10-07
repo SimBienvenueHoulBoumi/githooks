@@ -409,6 +409,8 @@ jobs:
   notifier:
     needs: [release, tag]
     if: always() && !cancelled()
+    # Une notification ne fait jamais échouer une release (ni sauter ses suites)
+    continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -435,7 +437,10 @@ jobs:
           REPO: ${{ github.repository }}
           SERVER: ${{ github.server_url }}
           RUN_ID: ${{ github.run_id }}
+          REPOGARDE_REF: ${{ inputs.repogarde-ref }}
         run: |
+          # Version de repogarde sans notifications (ancien tag) : rien à faire
+          [ -f .repogarde-ci/ci/notifier.sh ] || { echo "notifier.sh absent de $REPOGARDE_REF : ignoré"; exit 0; }
           notifier() { bash .repogarde-ci/ci/notifier.sh "$@"; }
           a_notifier() { [[ " $EVENTS " == *" $1 "* ]]; }
           if [ "$FAILED" = true ] && a_notifier echec; then
