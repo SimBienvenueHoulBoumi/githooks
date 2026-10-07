@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.9.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.8.0...v2.9.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **i18n:** CI, notes de version et protection traduites (fr, en) ([#72](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/72)) ([221c8b8](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/221c8b83b710fc6baf7a1eb82c93d06e967cd490))
+
+
+### Documentation
+
+* **site:** documentation en anglais (sélecteur FR / EN) ([#73](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/73)) ([8bd3721](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/8bd37211f86c5bed140e428202b06308ba9a9a83))
+
 ## [2.8.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.7.0...v2.8.0) (2026-10-07)
 
 
