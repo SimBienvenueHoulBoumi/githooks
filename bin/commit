@@ -30,15 +30,33 @@ fail() { printf '  %s✖ %s%s\n' "$R" "$*" "$N" >&2; }
 # Dans un terminal, édition de ligne (flèches, effacement) avec read -e.
 ask() {
     if [ -t 0 ]; then
-        IFS= read -e -r -p "$1" REPLY || REPLY=""
+        # Ctrl+D (fin de saisie) : abandon
+        IFS= read -e -r -p "$1" REPLY || { echo >&2; t cc.aborted; fail "$REPLY"; exit 1; }
     else
         printf '%s' "$1" >&2
-        IFS= read -r REPLY || REPLY=""
+        # Fin de la saisie (entrée épuisée) : abandon, jamais de boucle infinie
+        if ! IFS= read -r REPLY; then
+            [ -n "$REPLY" ] || { echo >&2; t cc.aborted; fail "$REPLY"; exit 1; }
+        fi
     fi
     REPLY="$(printf '%s' "$REPLY" | LC_ALL=C sed -e $'s/\x1b\\[[0-9;?]*[ -\\/]*[@-~]//g' -e $'s/\x1b.//g' |
         LC_ALL=C tr -d '\000-\010\013-\037\177')"
     REPLY="${REPLY#"${REPLY%%[![:space:]]*}"}"
     REPLY="${REPLY%"${REPLY##*[![:space:]]}"}"
+}
+
+# Question oui/non : $1 invite, $2 réponse par défaut (o ou n). Toute autre
+# réponse est refusée et la question reposée. Résultat : YN=1 pour oui.
+ask_yn() {
+    while :; do
+        ask "$1"
+        case "${REPLY:-$2}" in
+            o | O | oui | Oui | OUI | y | Y | yes | Yes | YES) YN=1; return 0 ;;
+            n | N | non | Non | NON | no | No | NO) YN=""; return 0 ;;
+        esac
+        t cc.yn_invalid
+        fail "$REPLY"
+    done
 }
 
 if [ -z "$DRY_RUN" ] && git diff --cached --quiet; then
@@ -117,6 +135,38 @@ while :; do
     fail "$REPLY"
 done
 
+# Branche protégée (main…) : le commit y serait refusé. On le dit tout de suite
+# et on propose une branche <type>/<scope>, les modifications suivent.
+cfg_r protectedBranches "main master"
+protected="$REPLY" # à garder : skipped réécrit REPLY
+if [ -z "$first_commit" ] && [ -z "$DRY_RUN" ] && ! skipped protect-branch &&
+    [[ " $protected " == *" $branch "* ]]; then
+    t cc.topic_default
+    suggestion="$type/${scope:-$REPLY}"
+    t cc.protected_hint "$branch"
+    printf '\n  %s%s%s\n' "$B" "$REPLY" "$N" >&2
+    while :; do
+        t cc.new_branch_prompt "$suggestion"
+        ask "$REPLY"
+        name="${REPLY:-$suggestion}"
+        case "$name" in n | N | non | no)
+            t cc.aborted
+            printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
+            exit 1
+            ;;
+        esac
+        if branch_name_valid "$name" && ! git show-ref -q --verify "refs/heads/$name" &&
+            git switch -q -c "$name" </dev/null >/dev/null 2>&1; then
+            branch="$name"
+            t cc.branch_created "$name"
+            hint "$REPLY"
+            break
+        fi
+        t cc.branch_invalid "$name"
+        fail "$REPLY"
+    done
+fi
+
 # 3. Changement incompatible (version majeure) : sans objet au premier commit
 t cc.step3
 etape 3 "$REPLY"
@@ -131,8 +181,8 @@ else
     t cc.breaking_hint2
     hint "$REPLY"
     t cc.breaking_prompt
-    ask "$REPLY"
-    case "$REPLY" in o | O | oui | Oui | y | Y | yes | Yes) breaking=1 ;; esac
+    ask_yn "$REPLY" n
+    breaking="$YN"
     if [ -n "$breaking" ]; then
         t cc.breaking_note_hint
         hint "$REPLY"
@@ -212,18 +262,22 @@ if [ -n "$DRY_RUN" ]; then
 fi
 
 t cc.confirm
-ask "$REPLY"
-case "$REPLY" in n | N | non | Non | no | No)
+ask_yn "$REPLY" o
+if [ -z "$YN" ]; then
     t cc.aborted
     printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
     exit 1
-    ;;
-esac
+fi
 
-file="$(mktemp)"
-trap 'rm -f "$file"' EXIT
+# Message gardé dans le dépôt si le commit est refusé (hook, secret…) : rien à ressaisir
+file="$(git rev-parse --git-dir)/repogarde-message"
 printf '%s' "$message" >"$file"
-git commit -F "$file" "$@"
+if ! git commit -F "$file" "$@"; then
+    t cc.kept "$file"
+    printf '\n%s%s%s\n' "$B" "$REPLY" "$N" >&2
+    exit 1
+fi
+rm -f "$file"
 
 # Suite : rappel de la convention de branches
 cfg_r protectedBranches "main master"
