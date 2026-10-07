@@ -274,6 +274,25 @@ _msg_fr() {
         ci.notify.released) _M="🚀 %s %s publiée : %s" ;;
         ci.notify.waiting) _M="⏳ %s : la PR de release #%s attend une approbation : %s" ;;
         ci.notify.failure) _M="❌ %s : échec du workflow de release : %s" ;;
+        # Bot de release
+        bot.gitlab_soon) _M="GitLab : le bot de release (jeton d'accès de projet → variable REPOGARDE_RELEASE_TOKEN) arrive avec le lot GitLab." ;;
+        bot.no_gh) _M="GitHub CLI (gh) requis : https://cli.github.com" ;;
+        bot.press_enter) _M="Entrée quand c'est fait… " ;;
+        bot.step_create) _M="1/4 Créer l'App (formulaire pré-rempli : privée, sans webhook, droits minimaux)" ;;
+        bot.hint_create) _M="En bas de la page : « Create GitHub App ». Nom proposé : %s (modifiable)." ;;
+        bot.step_id) _M="2/4 Identifiant de l'App" ;;
+        bot.ask_id) _M="App ID (affiché en haut de la page de l'App) : " ;;
+        bot.bad_id) _M="Un nombre est attendu (ex. 1234567)." ;;
+        bot.step_key) _M="3/4 Clé privée" ;;
+        bot.hint_key) _M="Page de l'App → « Generate a private key » : un fichier .pem est téléchargé." ;;
+        bot.ask_key) _M="Chemin du fichier .pem : " ;;
+        bot.bad_key) _M="Fichier introuvable ou ce n'est pas une clé privée PEM." ;;
+        bot.step_install) _M="4/4 Installer l'App sur le dépôt" ;;
+        bot.hint_install) _M="Choisir « Only select repositories » → %s, puis « Install »." ;;
+        bot.done) _M="Bot de release configuré pour %s (secrets REPOGARDE_APP_ID et REPOGARDE_APP_KEY)." ;;
+        bot.hint_workflow) _M="Dans release.yml : secrets: { app-id: \${{ secrets.REPOGARDE_APP_ID }}, app-key: \${{ secrets.REPOGARDE_APP_KEY }} }" ;;
+        bot.ask_delete) _M="Supprimer la copie locale de la clé (%s), désormais inutile ? [o/N] " ;;
+        bot.deleted) _M="Clé locale supprimée." ;;
         *) _M="" ;;
     esac
 }

@@ -67,7 +67,33 @@ gh release create vX.Y.Z --target <merge commit of the PR> --title vX.Y.Z --note
 gh pr edit <PR number> --remove-label "autorelease: pending" --add-label "autorelease: tagged"
 ```
 
-then run the `release` workflow again.
+then run the `release` workflow again. To never face it again: set up a [release bot](#release-bot).
+
+## Release bot
+
+So that releases are **never** blocked, even in the case above, the repository can have its own bot: a dedicated identity with limited permissions, used instead of the automatic token. Without a bot, nothing changes.
+
+| | GitHub | GitLab (coming) |
+|---|---|---|
+| Identity | private **GitHub App**: one-hour tokens generated on each run, no long-lived token stored | **project access token**: a bot user specific to the project, with an expiry date |
+| Permissions | contents, PRs, workflows, labels (write); metadata (read) | Maintainer role, `api` and `write_repository` scopes |
+| Stored in | `REPOGARDE_APP_ID`, `REPOGARDE_APP_KEY` secrets | masked and protected CI variable `REPOGARDE_RELEASE_TOKEN` |
+
+Guided setup, from the project repository (pre-filled creation form, installation on the repository, secrets stored without the key being displayed):
+
+```bash
+~/repogarde/bin/bot-release
+```
+
+Then, in `.github/workflows/release.yml`:
+
+```yaml
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    secrets:
+      app-id: ${{ secrets.REPOGARDE_APP_ID }}
+      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
+```
 
 ## Version file
 

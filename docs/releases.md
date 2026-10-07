@@ -67,7 +67,33 @@ gh release create vX.Y.Z --target <commit de merge de la PR> --title vX.Y.Z --no
 gh pr edit <n° de la PR> --remove-label "autorelease: pending" --add-label "autorelease: tagged"
 ```
 
-puis relancer le workflow `release`.
+puis relancer le workflow `release`. Pour ne plus y être confronté : configurer un [bot de release](#bot-de-release).
+
+## Bot de release
+
+Pour que les releases ne soient **jamais** bloquées, même dans le cas ci-dessus, le dépôt peut avoir son propre bot : une identité dédiée, aux droits limités, utilisée à la place du jeton automatique. Sans bot, rien ne change.
+
+| | GitHub | GitLab (à venir) |
+|---|---|---|
+| Identité | **GitHub App** privée : jetons d'une heure générés à chaque run, aucun jeton long terme stocké | **jeton d'accès de projet** : utilisateur bot propre au projet, avec expiration |
+| Droits | contenu, PR, workflows, étiquettes (écriture) ; métadonnées (lecture) | rôle Maintainer, portées `api` et `write_repository` |
+| Rangé dans | secrets `REPOGARDE_APP_ID`, `REPOGARDE_APP_KEY` | variable CI masquée et protégée `REPOGARDE_RELEASE_TOKEN` |
+
+Configuration guidée, depuis le dépôt du projet (formulaire de création pré-rempli, installation sur le dépôt, secrets enregistrés sans que la clé apparaisse) :
+
+```bash
+~/repogarde/bin/bot-release
+```
+
+Puis, dans `.github/workflows/release.yml` :
+
+```yaml
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    secrets:
+      app-id: ${{ secrets.REPOGARDE_APP_ID }}
+      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
+```
 
 ## Fichier de version
 
