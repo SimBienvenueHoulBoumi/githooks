@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.5.0...v2.6.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* proteger gère le flux develop et réserve les tags aux workflows ([#59](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/59)) ([3532428](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/35324285d43780c539b2ae1f5594ddcfa2199a2b))
+
 ## [2.5.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.4.0...v2.5.0) (2026-10-07)
 
 
