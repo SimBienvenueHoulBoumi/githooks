@@ -32,6 +32,8 @@ jobs:
     with:
       # docs.yml déploierait le site depuis la branche de release : exclu
       workflows: ci.yml codeql.yml
+      # repogarde s'utilise lui-même au commit publié, pas au tag v2
+      repogarde-ref: ${{ github.sha }}
 
   # Le merge fait par GITHUB_TOKEN ne déclenche pas le site : on le relance
   docs:
