@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     release:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2 # x-release-please-major
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
 #       permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
 #
 # 1. release-please tient à jour une PR "release x.y.z" : version calculée
@@ -64,7 +64,10 @@ on:
       repogarde-ref:
         description: "Mode tag : version de repogarde utilisée pour calculer la version"
         type: string
-        default: v2 # x-release-please-major
+        # Version majeure courante, à changer à la main à chaque majeure : la
+        # release ne modifie aucun fichier de .github/workflows/ (le jeton des
+        # Actions n'en a pas le droit)
+        default: v3
       notify:
         description: >-
           Événements envoyés au canal de l'équipe (secret webhook) : release
