@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.11.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.1...v2.11.2) (2026-10-07)
+
+
+### Corrections
+
+* **cc:** branche protégée gérée dès le début ([#84](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/84)) ([49523d4](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/49523d4ed5674172e64dfbfd6a0567a8b8bdb9ad))
+* **deadcode:** scripts isolés analysés, « rien à vérifier » assumé ([#83](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/83)) ([bcac8aa](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/bcac8aae863e37404deaafc651810207a600fd40))
+
 ## [2.11.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.0...v2.11.1) (2026-10-07)
 
 
