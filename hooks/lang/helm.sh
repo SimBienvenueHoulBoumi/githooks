@@ -8,21 +8,21 @@ helm_test() {
     has helm || { warn "Helm : helm absent, vérification ignorée."; return 0; }
     local rendered rc=0
     if grep -qs '^dependencies:' Chart.yaml; then
-        step "Helm : dependency build"
+        step_t lang.helm.1
         helm dependency build >/dev/null || return 1
     fi
-    step "Helm : lint + template"
+    step_t lang.helm.2
     helm lint --quiet . || return 1
     rendered="$(mktemp)"
     helm template repogarde . >"$rendered" || { rm -f "$rendered"; return 1; }
     if has kubeconform; then
-        step "Helm : kubeconform (schémas Kubernetes)"
+        step_t lang.helm.3
         kubeconform -strict -summary -ignore-missing-schemas -cache "$(kubeconform_cache)" <"$rendered" || rc=1
     fi
     rm -f "$rendered"
     [ "$rc" = 0 ] || return 1
     if [ -d tests ] && helm plugin list 2>/dev/null | grep -q '^unittest'; then
-        step "Helm : unittest"
+        step_t lang.helm.4
         helm unittest .
     fi
 }

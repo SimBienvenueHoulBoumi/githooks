@@ -6,7 +6,7 @@ maven_cmd() { if [ -x ./mvnw ]; then echo ./mvnw; else echo mvn; fi; }
 
 maven_format() {
     grep -q spotless pom.xml || { tool_missing "Maven : Spotless non configuré dans pom.xml, formatage ignoré."; return 0; }
-    step "Maven : spotless:apply"
+    step_t lang.maven.1
     # Nom complet du plugin : pas de résolution du préfixe « spotless: » sur un
     # index distant (un incident Maven Central faisait échouer le commit) ; la
     # version utilisée reste celle déclarée dans le pom.xml.

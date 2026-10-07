@@ -6,17 +6,17 @@ cpp_format() {
     has clang-format || { tool_missing "C/C++ : clang-format absent, formatage ignoré."; return 0; }
     find_up .clang-format >/dev/null || find_up _clang-format >/dev/null ||
         { tool_missing "C/C++ : pas de .clang-format, formatage ignoré."; return 0; }
-    step "C/C++ : clang-format"; clang-format -i --style=file "$@"
+    step_t lang.cpp.1; clang-format -i --style=file "$@"
 }
 
 cpp_test() {
     # Recompile avant de tester : sinon les tests tournent sur l'ancien binaire
     if [ -f build/CTestTestfile.cmake ] && has ctest; then
-        step "C/C++ : cmake --build + ctest"
+        step_t lang.cpp.2
         cmake --build build && ctest --test-dir build --output-on-failure
     elif [ -f builddir/build.ninja ] && has meson; then
-        step "C/C++ : meson test"; meson test -C builddir
+        step_t lang.cpp.3; meson test -C builddir
     else
-        info "C/C++ : pas de dossier de build configuré (build/ ou builddir/), tests ignorés."
+        info_t lang.cpp.4
     fi
 }

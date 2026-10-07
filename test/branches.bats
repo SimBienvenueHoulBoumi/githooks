@@ -200,3 +200,16 @@ server_squash_and_delete() {
     run git pull -q
     git show-ref -q --verify refs/heads/feat/sq2
 }
+
+@test "en anglais : commit direct sur main et branche mal nommee expliques en anglais" {
+    export REPOGARDE_LANG=en
+    run git commit -q --allow-empty -m "fix: x"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Direct commit on 'main' forbidden"* ]]
+    git switch -q -c Bad 2>/dev/null
+    git commit -q --no-verify --allow-empty -m "feat: x"
+    run git push -q origin Bad
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Invalid branch name"* ]]
+    [[ "$output" == *"new feature"* ]]
+}

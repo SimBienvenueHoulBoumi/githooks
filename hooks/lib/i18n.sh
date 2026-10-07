@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Langue des messages (fr, en) et traduction. Compatible bash 3.2, sans
-# sous-processus : t <clé> [arguments printf] → REPLY.
+# sous-processus.
 #   Poste : REPOGARDE_LANG, sinon repogarde.lang (git config : choisie à
 #           l'installation, prioritaire), sinon lang de .repogarde.conf,
 #           sinon la langue du système.
@@ -15,8 +15,11 @@ source "$I18N_DIR/fr.sh"
 # shellcheck source=i18n/en.sh
 source "$I18N_DIR/en.sh"
 
+# Valeur imposée par l'environnement, mémorisée avant toute résolution
+[ -n "${REPOGARDE_LANG_ENV+x}" ] || REPOGARDE_LANG_ENV="${REPOGARDE_LANG:-}"
+
 i18n_init() {
-    local lang="${REPOGARDE_LANG:-}"
+    local lang="$REPOGARDE_LANG_ENV"
     if [ -z "$lang" ]; then
         if declare -F cfg_r >/dev/null; then
             cfg_r lang ""
@@ -35,15 +38,38 @@ i18n_init() {
     case "$lang" in fr* | FR*) REPOGARDE_LANG=fr ;; *) REPOGARDE_LANG=en ;; esac
 }
 
-t() {
+# Traduction dans _T, sans toucher à REPLY (utilisé par les hooks pour
+# transmettre des résultats entre fonctions)
+_tr() {
     local key="$1"
     shift
-    REPLY=""
-    [ "$REPOGARDE_LANG" = en ] && _msg_en "$key"
-    [ -n "$REPLY" ] || _msg_fr "$key"
-    [ -n "$REPLY" ] || REPLY="$key"
-    # shellcheck disable=SC2059 # le format vient du catalogue
-    [ $# -eq 0 ] || printf -v REPLY "$REPLY" "$@"
+    _M=""
+    [ "${REPOGARDE_LANG:-}" = en ] && _msg_en "$key"
+    [ -n "$_M" ] || _msg_fr "$key"
+    [ -n "$_M" ] || _M="$key"
+    if [ $# -gt 0 ]; then
+        # shellcheck disable=SC2059 # le format vient du catalogue
+        printf -v _T "$_M" "$@"
+    else
+        _T="$_M"
+    fi
 }
+
+# t <clé> [args] → REPLY (scripts interactifs : assistant, installation)
+t() {
+    _tr "$@"
+    REPLY="$_T"
+}
+
+# Traduire et afficher en une fois, REPLY préservé : ok_t, info_t, step_t,
+# err_t, attention_t, warn_t, dim_t, echo_t <clé> [args]
+ok_t() { _tr "$@"; ok "$_T"; }
+info_t() { _tr "$@"; info "$_T"; }
+step_t() { _tr "$@"; step "$_T"; }
+err_t() { _tr "$@"; err "$_T"; }
+attention_t() { _tr "$@"; attention "$_T"; }
+warn_t() { _tr "$@"; warn "$_T"; }
+dim_t() { _tr "$@"; dim "$_T"; }
+echo_t() { _tr "$@"; echo "$_T"; }
 
 i18n_init

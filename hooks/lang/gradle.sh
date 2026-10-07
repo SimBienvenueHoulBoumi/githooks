@@ -18,7 +18,7 @@ gradle_format() {
         if has cygpath; then f="$(cygpath -m "$f")"; fi
         files="${files:+$files,}$f"
     done
-    step "Gradle : spotlessApply (fichiers stagés)"
+    step_t lang.gradle.1
     "$(gradle_cmd)" -q spotlessApply -PspotlessIdeHook="$files"
 }
 
