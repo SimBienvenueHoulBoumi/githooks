@@ -667,3 +667,25 @@ T
     [ "$status" -eq 0 ]
     [[ "$output" == *"release non affectée"* ]]
 }
+
+@test "code mort : script isole sans fichier de projet -> analyse quand meme" {
+    fake_python_tools
+    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    printf 'import os\ndef aide():\n    pass\n' >script.py
+    git add -A
+    git commit -q --no-verify -m "feat: script"
+    run "$CHECK" deadcode
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"script.py:1"*"(code mort prouvé)"* ]]
+}
+
+@test "code mort : aucun fichier analysable -> le dire, sans pretendre que tout va bien" {
+    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    echo note >NOTES.txt
+    git add -A
+    git commit -q --no-verify -m "docs: note"
+    run "$CHECK" deadcode
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"rien à vérifier"* ]]
+    [[ "$output" != *"Aucun nouveau code mort"* ]]
+}

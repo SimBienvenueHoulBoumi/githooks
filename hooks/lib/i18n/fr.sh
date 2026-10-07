@@ -72,7 +72,7 @@ _msg_fr() {
         install.replaced) _M="core.hooksPath (%s) valait '%s', remplacé." ;;
         install.enabled) _M="Hooks activés (%s) → %s" ;;
         install.local_wins) _M="Un core.hooksPath local (ex. husky) reste prioritaire dans le dépôt concerné." ;;
-        install.lang_set) _M="Langue des messages : français (changer : ./install.sh --global --lang en)" ;;
+        install.lang_set) _M="Langue des messages : français (changer : %s --global --lang en)" ;;
         install.lang_invalid) _M="--lang : fr ou en." ;;
         # Hooks et plugins de langage
         hook.pre_commit.1) _M="Commit refusé : nom de branche non conforme." ;;
@@ -251,6 +251,7 @@ _msg_fr() {
         dc.no_base) _M="Pas de base : analyse du code mort ignorée." ;;
         dc.proven) _M="%s : %s (code mort prouvé)" ;;
         dc.candidate) _M="%s : %s (candidat : vérifier les usages dynamiques)" ;;
+        dc.nothing) _M="Aucun fichier d'un langage analysable parmi les modifications : rien à vérifier." ;;
         dc.none) _M="Aucun nouveau code mort." ;;
         dc.summary_candidates) _M="%s candidat(s) à vérifier : non bloquant (appel par réflexion, framework, API publique possibles)." ;;
         dc.summary_proven) _M="%s élément(s) de code mort prouvé : à supprimer, ou à ignorer (deadcodeIgnore)." ;;

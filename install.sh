@@ -70,7 +70,7 @@ choose_lang() {
     esac
     git config "$SCOPE" repogarde.lang "$LANG_CHOICE"
     REPOGARDE_LANG="$LANG_CHOICE"
-    t install.lang_set
+    t install.lang_set "$ROOT/install.sh"
     ok "$REPLY"
 }
 
