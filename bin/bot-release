@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Configure le bot de release d'un dépôt : une identité dédiée, aux droits
+# limités, qui publie les releases sans jamais être bloquée (le jeton des
+# Actions ne peut pas publier un commit dont les workflows ont changé).
+#
+#   bin/bot-release [--repo propriétaire/nom]
+#
+# GitHub : GitHub App privée (jetons d'une heure générés à chaque run, aucun
+# jeton long terme stocké). Le script ouvre la page de création pré-remplie,
+# attend ta validation, puis enregistre l'identifiant et la clé privée en
+# secrets du dépôt (REPOGARDE_APP_ID, REPOGARDE_APP_KEY).
+# GitLab (à venir) : jeton d'accès de projet → variable REPOGARDE_RELEASE_TOKEN.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../hooks/lib/common.sh
+source "$ROOT/hooks/lib/common.sh"
+
+REPO=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
+        -h | --help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) err_t install.unknown_arg "$1"; exit 1 ;;
+    esac
+    shift
+done
+
+if [ "$FORGE" = gitlab ]; then
+    info_t bot.gitlab_soon
+    exit 0
+fi
+command -v gh >/dev/null || { err_t bot.no_gh; exit 1; }
+[ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+owner="${REPO%%/*}"
+owner_type="$(gh api "users/$owner" --jq .type)"
+
+ouvrir() {
+    echo "  → $1"
+    if command -v open >/dev/null; then open "$1"
+    elif command -v xdg-open >/dev/null; then xdg-open "$1" >/dev/null 2>&1
+    elif command -v cmd.exe >/dev/null; then cmd.exe /c start "" "$1"
+    fi
+}
+attendre() { t bot.press_enter; read -r -p "  $REPLY" _; }
+
+brand "bot de release · $REPO"
+
+# 1. Création de l'App, formulaire pré-rempli : privée, sans webhook, droits
+#    minimaux (contenu, PR, workflows, étiquettes ; métadonnées en lecture)
+step_t bot.step_create
+name="repogarde-release-${REPO##*/}"
+params="name=$name&url=https://github.com/$REPO&public=false&webhook_active=false&contents=write&pull_requests=write&workflows=write&issues=write&metadata=read"
+if [ "$owner_type" = Organization ]; then
+    ouvrir "https://github.com/organizations/$owner/settings/apps/new?$params"
+else
+    ouvrir "https://github.com/settings/apps/new?$params"
+fi
+dim_t bot.hint_create "$name"
+attendre
+
+# 2. Identifiant de l'App
+step_t bot.step_id
+while :; do
+    t bot.ask_id
+    read -r -p "  $REPLY" app_id
+    [[ "$app_id" =~ ^[0-9]+$ ]] && break
+    err_t bot.bad_id
+done
+
+# 3. Clé privée (téléchargée depuis la page de l'App)
+step_t bot.step_key
+dim_t bot.hint_key
+while :; do
+    t bot.ask_key
+    read -r -p "  $REPLY" pem
+    pem="${pem/#\~/$HOME}"
+    [ -f "$pem" ] && grep -q "PRIVATE KEY" "$pem" && break
+    err_t bot.bad_key
+done
+
+# 4. Installation de l'App sur le dépôt
+step_t bot.step_install
+slug="$(gh api "apps/$name" --jq .slug 2>/dev/null || echo "$name")"
+ouvrir "https://github.com/apps/$slug/installations/new"
+dim_t bot.hint_install "$REPO"
+attendre
+
+# 5. Secrets du dépôt (la clé passe par l'entrée standard, jamais en argument)
+gh secret set REPOGARDE_APP_ID --repo "$REPO" --body "$app_id"
+gh secret set REPOGARDE_APP_KEY --repo "$REPO" <"$pem"
+ok_t bot.done "$REPO"
+dim_t bot.hint_workflow
+t bot.ask_delete "$pem"
+read -r -p "  $REPLY" rep
+case "$rep" in o | O | oui | y | Y | yes) rm -f -- "$pem"; ok_t bot.deleted ;; esac

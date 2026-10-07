@@ -34,6 +34,10 @@ jobs:
       workflows: ci.yml codeql.yml
       # repogarde s'utilise lui-même au commit publié, pas au tag v2
       repogarde-ref: ${{ github.sha }}
+    # Bot de release (GitHub App) s'il est configuré : bin/bot-release
+    secrets:
+      app-id: ${{ secrets.REPOGARDE_APP_ID }}
+      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
 
   # Le merge fait par GITHUB_TOKEN ne déclenche pas le site : on le relance
   docs:
