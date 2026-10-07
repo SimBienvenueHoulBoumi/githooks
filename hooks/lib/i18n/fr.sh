@@ -293,7 +293,7 @@ _msg_fr() {
         bot.ask_delete) _M="Supprimer la copie locale de la clé (%s), désormais inutile ? [o/N] " ;;
         bot.deleted) _M="Clé locale supprimée." ;;
         # Paquet npm
-        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g @simbienvenuehoulboumi/repogarde, puis repogarde install --global." ;;
+        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g @simbie/repogarde, puis repogarde install --global." ;;
         npm.no_npm) _M="npm requis : https://nodejs.org" ;;
         npm.no_package) _M="Aucun package.json à la racine du dépôt." ;;
         npm.step_login) _M="1/3 Compte npm" ;;

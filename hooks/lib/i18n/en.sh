@@ -293,7 +293,7 @@ _msg_en() {
         bot.ask_delete) _M="Delete the local copy of the key (%s), no longer needed? [y/N] " ;;
         bot.deleted) _M="Local key deleted." ;;
         # npm package
-        npm.npx_global) _M="npx uses a temporary folder: global hooks would point to a deleted folder. Install the package first: npm install -g @simbienvenuehoulboumi/repogarde, then repogarde install --global." ;;
+        npm.npx_global) _M="npx uses a temporary folder: global hooks would point to a deleted folder. Install the package first: npm install -g @simbie/repogarde, then repogarde install --global." ;;
         npm.no_npm) _M="npm required: https://nodejs.org" ;;
         npm.no_package) _M="No package.json at the repository root." ;;
         npm.step_login) _M="1/3 npm account" ;;

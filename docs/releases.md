@@ -153,7 +153,7 @@ La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications p
 
 ## Publier sur npm
 
-Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbienvenuehoulboumi/repogarde`).
+Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbie/repogarde`).
 
 Mise en place guidée, une fois, depuis le dépôt du projet : compte npm, première publication (npm n'accepte la publication de confiance que sur un paquet existant), formulaire de l'éditeur de confiance avec les valeurs à saisir, puis activation (variable `REPOGARDE_NPM`) :
 

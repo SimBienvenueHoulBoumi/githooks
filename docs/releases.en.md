@@ -153,7 +153,7 @@ The project's CI must run on pushes to `develop`: its checks apply to the head c
 
 ## Publishing to npm
 
-A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbienvenuehoulboumi/repogarde`).
+A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbie/repogarde`).
 
 Guided setup, once, from the project repository: npm account, first publication (npm only accepts trusted publishing on an existing package), trusted publisher form with the values to enter, then activation (`REPOGARDE_NPM` variable):
 
