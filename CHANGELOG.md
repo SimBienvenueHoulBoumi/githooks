@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.3...v2.12.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **release:** bot de release (GitHub App), pensé aussi pour GitLab ([#93](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/93)) ([c402d9c](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/c402d9cc05c8b79317aa86876ce282fd3fb5acbc))
+
 ## [2.11.3](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.2...v2.11.3) (2026-10-07)
 
 
