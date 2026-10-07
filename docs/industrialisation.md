@@ -138,7 +138,7 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
 bin/proteger --checks "repogarde"        # depuis le dépôt du projet, gh connecté (admin)
 ```
 
-Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigées à jour, ni suppression ni push forcé), les modes de merge (squash ; merge commit en plus pour la livraison `develop` → `main`), le titre de PR comme message de commit, et autorise GitHub Actions à créer des PR (releases automatiques).
+Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigées à jour, ni suppression ni push forcé), les modes de merge (squash ; avec un flux `develop` : merge commit sur `main`, squash ou merge commit sur `develop`, qui devient la branche par défaut), réserve les tags `v*` aux workflows (ruleset « repogarde (tags) »), prend le titre de PR comme message de commit et autorise GitHub Actions à créer des PR (releases automatiques).
 
 À la main : *Settings → Rules → Rulesets* (ou *Branches → Branch protection rules*) sur `main` :
 
