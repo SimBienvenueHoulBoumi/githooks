@@ -596,8 +596,12 @@ python_dead_code() {
 }
 
 @test "code mort : outil absent -> signale, sans echec meme en mode strict" {
+    # ruff et vulture « absents » : ils échouent à --version (portable, Windows compris)
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    for t in ruff vulture; do printf '#!/bin/sh\nexit 127\n' >"$BATS_TEST_TMPDIR/bin/$t"; chmod +x "$BATS_TEST_TMPDIR/bin/$t"; done
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
     python_dead_code
-    PATH="/usr/bin:/bin" REPOGARDE_STRICT=true run "$CHECK" deadcode
+    REPOGARDE_STRICT=true run "$CHECK" deadcode
     [ "$status" -eq 0 ]
     [[ "$output" == *"ruff / vulture absent"* ]]
 }
