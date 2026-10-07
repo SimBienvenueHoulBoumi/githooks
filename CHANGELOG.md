@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.3.0...v2.4.0) (2026-10-06)
+
+
+### Fonctionnalités
+
+* **ci:** PR reciblée et titre corrigé automatiquement ([#53](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/53)) ([7a5d2ce](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/7a5d2ce7de11462fbbf9395ef54d9a8bc283466c))
+
 ## [2.3.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.2.2...v2.3.0) (2026-10-06)
 
 
