@@ -650,11 +650,11 @@ T
     fake_curl
     REPOGARDE_WEBHOOK=https://hooks.slack.com/services/x run "$NOTIFIER" ci.notify.released 'acme/app' 'v1.2.0' 'https://x/"y"'
     [ "$status" -eq 0 ]
-    python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["text"]=="🚀 acme/app v1.2.0 publiée : https://x/\"y\""' "$CURL_BODY"
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert d["text"]=="🚀 acme/app v1.2.0 publiée : https://x/\"y\""' "$CURL_BODY"
     REPOGARDE_WEBHOOK=https://discord.com/api/webhooks/x run "$NOTIFIER" ci.notify.failure acme/app https://run
-    python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["content"].startswith("❌ acme/app")' "$CURL_BODY"
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert d["content"].startswith("❌ acme/app")' "$CURL_BODY"
     REPOGARDE_WEBHOOK=https://prod-01.westeurope.logic.azure.com/workflows/x run "$NOTIFIER" ci.notify.waiting acme/app 12 https://pr
-    python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert "#12" in d["attachments"][0]["content"]["body"][0]["text"]' "$CURL_BODY"
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert "#12" in d["attachments"][0]["content"]["body"][0]["text"]' "$CURL_BODY"
 }
 
 @test "notification : sans adresse rien n'est envoye ; un echec d'envoi ne casse rien" {
