@@ -329,6 +329,8 @@ fake_gh_repo() {
 echo "$*" >>"$GH_LOG"
 case "$*" in
     "repo view"*) echo moi/projet ;;
+    "api user --jq .login") echo moi ;;
+    "api users/"*) case "$2" in users/moi) echo 101 ;; users/alice) echo 102 ;; *) exit 1 ;; esac ;;
     "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] ;;
 esac
 GH
@@ -376,6 +378,45 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]
+}
+
+@test "proteger : relecture exigee (approbations, CODEOWNERS, pas d'auto-approbation du dernier push)" {
+    require python3
+    fake_gh_repo
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --relecteurs 2 --codeowners
+    [ "$status" -eq 0 ]
+    python3 -c 'import json,sys; b=json.loads(sys.argv[1])[0]; p=b["rules"][2]["parameters"]; \
+        assert p["required_approving_review_count"]==2 and p["require_code_owner_review"] is True; \
+        assert p["require_last_push_approval"] is True and p["dismiss_stale_reviews_on_push"] is True' "$(rulesets_json "$output")"
+    [[ "$output" == *"contournement explicite"* ]]
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --relecteurs beaucoup
+    [ "$status" -ne 0 ]
+}
+
+@test "proteger : reglages lus dans .repogarde.conf" {
+    require python3
+    fake_gh_repo
+    git config repogarde.requiredReviews 1
+    git config repogarde.codeOwnerReview true
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"approbations exigées : 1 ; revue des CODEOWNERS : true"* ]]
+}
+
+@test "proteger : environnement de deploiement approuve par des personnes" {
+    require python3
+    fake_gh_repo
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production
+    [ "$status" -eq 0 ]
+    python3 -c 'import json,sys; e=json.loads(sys.argv[1])[-1]; \
+        assert e["reviewers"]==[{"type":"User","id":101}] and e["prevent_self_review"] is False; \
+        assert e["deployment_branch_policy"]["custom_branch_policies"] is True' "$(rulesets_json "$output")"
+    [[ "$output" == *"environnement « production » : approbation de moi"* ]]
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production --approbateurs "moi alice"
+    python3 -c 'import json,sys; e=json.loads(sys.argv[1])[-1]; \
+        assert [r["id"] for r in e["reviewers"]]==[101,102] and e["prevent_self_review"] is True' "$(rulesets_json "$output")"
+    GH_BRANCHES="main" run "$PROTEGER" --dry-run --environnement production --approbateurs inconnu
+    [ "$status" -ne 0 ]
 }
 
 @test "proteger : aucune branche protegee existante -> erreur" {
