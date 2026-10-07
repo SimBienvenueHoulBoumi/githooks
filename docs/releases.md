@@ -57,7 +57,7 @@ Les vérifications exigées par la protection de `main` restent obligatoires : s
 
 ## Merger la PR de release : laisser faire le bot
 
-La PR de release est mergée **par le workflow lui-même**, dès que la CI est verte, et la release est publiée dans le même run. La merger à la main fonctionne aussi, sauf dans un cas : si un fichier de `.github/workflows/` change sur `main` avant que la release soit publiée, GitHub refuse au jeton des Actions de créer le tag (il faudrait la permission `workflow`, que ce jeton n'a jamais) : « Resource not accessible by integration ».
+La PR de release est mergée **par le workflow lui-même**, dès que la CI est verte, et la release est publiée dans le même run. La merger à la main fonctionne aussi (le run qui attendait sa CI s'arrête alors proprement, et c'est le run déclenché par ton merge qui publie), sauf dans un cas : si un fichier de `.github/workflows/` change sur `main` avant que la release soit publiée, GitHub refuse au jeton des Actions de créer le tag (il faudrait la permission `workflow`, que ce jeton n'a jamais) : « Resource not accessible by integration ».
 
 Le workflow le détecte et affiche la cause et les commandes exactes ; en résumé, avec un compte qui a la permission `workflow` :
 

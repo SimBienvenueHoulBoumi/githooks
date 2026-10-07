@@ -266,8 +266,13 @@ jobs:
               runs="$runs $run_id"
             done
             for id in $runs; do
-              gh run watch "$id" --exit-status --interval 30 >/dev/null ||
-                { echo "✖ CI en échec : $(gh run view "$id" --json url -q .url)"; exit 1; }
+              if ! gh run watch "$id" --exit-status --interval 30 >/dev/null; then
+                # CI interrompue par un merge manuel (branche de release supprimée)
+                [ "$(gh pr view "$pr" --json state -q .state)" != MERGED ] ||
+                  { echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0; }
+                echo "✖ CI en échec : $(gh run view "$id" --json url -q .url)"
+                exit 1
+              fi
             done
             # Vérifications exigées par la protection de la branche : résultat
             # réel de chacune (cherché dans les runs lancés), reporté en statut
@@ -292,6 +297,12 @@ jobs:
             # pull_request) : on attend que GitHub la déclare mergeable (toutes
             # les vérifications terminées et vertes) ; sinon, pas de merge.
             for _ in $(seq 1 90); do
+              # Mergée (ou fermée) par une personne entre-temps : son merge
+              # relance ce workflow, qui publie la release ; rien d'autre à faire
+              case "$(gh pr view "$pr" --json state -q .state)" in
+                MERGED) echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0 ;;
+                CLOSED) echo "PR #$pr fermée sans merge : pas de release"; exit 0 ;;
+              esac
               state="$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)"
               case "$state" in
                 CLEAN | BEHIND) break ;;

@@ -57,7 +57,7 @@ The checks required by the protection of `main` remain mandatory: without green 
 
 ## Merging the release PR: let the bot do it
 
-The release PR is merged **by the workflow itself** as soon as the CI is green, and the release is published in the same run. Merging it by hand works too, except in one case: if a file in `.github/workflows/` changes on `main` before the release is published, GitHub refuses to let the Actions token create the tag (it would need the `workflow` permission, which this token never has): "Resource not accessible by integration".
+The release PR is merged **by the workflow itself** as soon as the CI is green, and the release is published in the same run. Merging it by hand works too (the run waiting for its CI then stops cleanly, and the run triggered by your merge publishes), except in one case: if a file in `.github/workflows/` changes on `main` before the release is published, GitHub refuses to let the Actions token create the tag (it would need the `workflow` permission, which this token never has): "Resource not accessible by integration".
 
 The workflow detects it and shows the cause and the exact commands; in short, with an account that has the `workflow` permission:
 
