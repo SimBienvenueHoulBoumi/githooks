@@ -35,3 +35,19 @@ sys.exit(1 if missing else 0)
 PY
     [ "$status" -eq 0 ] || { echo "Fichiers jamais lancés sous Windows :"; echo "$output"; return 1; }
 }
+
+@test "release : tout fichier marque x-release-please est mis a jour par la release, et inversement" {
+    command -v python3 >/dev/null || skip "python3 absent"
+    run python3 - "$BATS_TEST_DIRNAME" <<'PY'
+import json, subprocess, sys, pathlib
+root = pathlib.Path(sys.argv[1]).parent
+config = json.loads((root / "release-please-config.json").read_text(encoding="utf-8"))
+listed = {f for f in config["packages"]["."]["extra-files"] if isinstance(f, str)}
+out = subprocess.run(["git", "-C", str(root), "grep", "-l", "x-release-please-"], capture_output=True, text=True).stdout
+marked = set(out.split()) - {"release-please-config.json", "test/test_names.bats"}
+for f in sorted(marked - listed): print("marqué mais jamais mis à jour :", f)
+for f in sorted(listed - marked): print("listé sans marqueur :", f)
+sys.exit(1 if marked ^ listed else 0)
+PY
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+}

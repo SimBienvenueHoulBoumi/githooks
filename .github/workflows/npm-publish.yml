@@ -3,12 +3,12 @@
 #
 #   jobs:
 #     release:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2 # x-release-please-major
 #       …
 #     npm:
 #       needs: release
 #       if: needs.release.outputs.release_created == 'true'
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v2
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v2 # x-release-please-major
 #       permissions: { contents: read, id-token: write }
 #       with:
 #         tag: ${{ needs.release.outputs.tag_name }}

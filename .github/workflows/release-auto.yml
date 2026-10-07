@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     release:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2 # x-release-please-major
 #       permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
 #
 # 1. release-please tient à jour une PR "release x.y.z" : version calculée

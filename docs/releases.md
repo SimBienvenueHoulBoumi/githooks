@@ -89,7 +89,7 @@ Puis, dans `.github/workflows/release.yml` :
 
 ```yaml
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
     secrets:
       app-id: ${{ secrets.REPOGARDE_APP_ID }}
       app-key: ${{ secrets.REPOGARDE_APP_KEY }}
@@ -127,7 +127,7 @@ on:
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
     permissions: { contents: write, pull-requests: write }
     with:
       mode: tag
@@ -167,7 +167,7 @@ Puis, dans `.github/workflows/release.yml` :
   npm:
     needs: release
     if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v2
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
     permissions: { contents: read, id-token: write }
     with:
       tag: ${{ needs.release.outputs.tag_name }}

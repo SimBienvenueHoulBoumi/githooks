@@ -124,7 +124,7 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
       types: [closed]
   jobs:
     nettoyage:
-      uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v2
+      uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v3
       permissions: { contents: write, pull-requests: read }
   ```
 
