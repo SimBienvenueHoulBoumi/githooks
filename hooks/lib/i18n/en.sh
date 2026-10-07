@@ -40,7 +40,7 @@ _msg_en() {
         cc.desc_required) _M="The description is required." ;;
         cc.header_too_long) _M="Header too long: %s characters (72 max). Shorten the description." ;;
         cc.step5) _M="Details (optional)" ;;
-        cc.body_hint) _M="Body: explain why, on several lines; empty line to finish." ;;
+        cc.body_hint) _M="Body: explain why, on several lines; press Enter on an empty line to finish." ;;
         cc.refs_prompt) _M="References (e.g. %s; Enter for none): " ;;
         cc.preview) _M="Message" ;;
         cc.confirm) _M="Commit? [Y/n]: " ;;
@@ -49,7 +49,8 @@ _msg_en() {
         cc.topic_default) _M="change" ;;
         cc.protected_hint) _M="You are on \"%s\", which is protected: a commit would be refused there. It will go to a new branch (your changes follow)." ;;
         cc.new_branch_prompt) _M="New branch (\"n\" to cancel) [%s]: " ;;
-        cc.branch_invalid) _M="\"%s\": expected <type>/<topic> in lowercase, and a branch that does not exist yet." ;;
+        cc.branch_exists) _M="Branch \"%s\" already exists: choose another name." ;;
+        cc.branch_fixed) _M="\"%s\": expected <type>/<topic> in lowercase. Suggested: %s (Enter to accept)." ;;
         cc.branch_created) _M="Branch %s created, your changes are on it." ;;
         cc.kept) _M="Commit refused: your message is kept. Once fixed: git commit -F %s" ;;
         cc.created) _M="Commit created." ;;

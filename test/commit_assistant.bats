@@ -125,6 +125,29 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     [ "$(subject)" = "feat(doc-test): ajoute le panier" ]
 }
 
+@test "assistant : branche sur main - type seul complete, nom approximatif corrige" {
+    git switch -q main
+    git add a.txt
+    run answer "" test "feat" "" "ajoute le panier" "" "" ""
+    [ "$status" -eq 0 ]
+    [ "$(git symbolic-ref --short HEAD)" = feat/test ]
+    git switch -q main
+    echo y >b.txt
+    git add b.txt
+    run answer "" autre "Mon Essai" "" "" "ajoute autre chose" "" "" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Proposé : feat/mon-essai"* ]]
+    [ "$(git symbolic-ref --short HEAD)" = feat/mon-essai ]
+}
+
+@test "assistant : une ligne de ponctuation seule (;) termine le corps" {
+    run answer "" "" "" "ajoute le panier" "Le client garde ses articles." ";" "" ""
+    [ "$status" -eq 0 ]
+    git log -1 --format=%B >msg
+    grep -qx 'Le client garde ses articles.' msg
+    ! grep -qx ';' msg
+}
+
 @test "assistant : en-tete trop long -> nouvelle saisie" {
     long="$(printf 'a%.0s' {1..80})"
     run answer "" "" "" "$long" "description courte" "" "" ""
