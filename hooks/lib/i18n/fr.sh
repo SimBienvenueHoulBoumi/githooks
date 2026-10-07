@@ -25,6 +25,7 @@ _msg_fr() {
         cc.scope_hint) _M="Partie du projet concernée, ex. api, auth, chart ; Entrée pour aucun." ;;
         cc.scope_prompt_default) _M="Scope (« - » pour aucun) [%s] : " ;;
         cc.scope_prompt) _M="Scope : " ;;
+        cc.scope_fixed) _M="Scope : minuscules, chiffres, . _ - uniquement. Proposé : %s (Entrée pour l'accepter)." ;;
         cc.scope_invalid) _M="Scope : minuscules, chiffres, . _ - uniquement." ;;
         cc.step3) _M="Changement incompatible ?" ;;
         cc.first_commit) _M="Premier commit du dépôt : rien d'existant à casser, question sautée." ;;

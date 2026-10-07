@@ -25,6 +25,7 @@ _msg_en() {
         cc.scope_hint) _M="Part of the project affected, e.g. api, auth, chart; Enter for none." ;;
         cc.scope_prompt_default) _M="Scope (\"-\" for none) [%s]: " ;;
         cc.scope_prompt) _M="Scope: " ;;
+        cc.scope_fixed) _M="Scope: lowercase letters, digits, . _ - only. Suggested: %s (Enter to accept)." ;;
         cc.scope_invalid) _M="Scope: lowercase letters, digits, . _ - only." ;;
         cc.step3) _M="Breaking change?" ;;
         cc.first_commit) _M="First commit of the repository: nothing existing to break, question skipped." ;;

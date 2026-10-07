@@ -131,7 +131,16 @@ while :; do
         scope="$REPLY"
     fi
     [[ -z "$scope" || "$scope" =~ ^[a-z0-9._-]+$ ]] && break
-    t cc.scope_invalid
+    # Version corrigée proposée (« Doc Test » → « doc-test ») : Entrée pour l'accepter
+    fixed="$(printf '%s' "$scope" | tr '[:upper:] ' '[:lower:]-' | LC_ALL=C tr -cd 'a-z0-9._-' | tr -s '-')"
+    fixed="${fixed#-}"
+    fixed="${fixed%-}"
+    if [ -n "$fixed" ]; then
+        t cc.scope_fixed "$fixed"
+        default_scope="$fixed"
+    else
+        t cc.scope_invalid
+    fi
     fail "$REPLY"
 done
 
