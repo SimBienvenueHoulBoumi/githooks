@@ -68,6 +68,34 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     [ "$(subject)" = "feat(panier): ajoute le panier" ]
 }
 
+@test "assistant : en anglais (REPOGARDE_LANG=en), reponses y/yes acceptees" {
+    export REPOGARDE_LANG=en
+    run answer "" "" "y" "the cart response is now an object" "change the cart API" "" "" "y"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Type of change"* ]]
+    [[ "$output" == *"Breaking change?"* ]]
+    [[ "$output" == *"Commit created."* ]]
+    [ "$(subject)" = "feat(panier)!: change the cart API" ]
+}
+
+@test "plateforme detectee : vocabulaire et exemples de references" {
+    for cas in "git@github.com:a/b.git|github|PR|Closes #12" \
+        "https://gitlab.interne.fr/a/b.git|gitlab|MR|Closes #12, !34" \
+        "git@bitbucket.org:a/b.git|bitbucket|PR|PROJ-42" \
+        "https://codeberg.org/a/b.git|gitea|PR|Closes #12" \
+        "ssh://git.exemple.fr/a/b.git|other|PR|Closes #12"; do
+        IFS='|' read -r url attendu pr refs <<<"$cas"
+        git remote set-url origin "$url"
+        (
+            unset GITHUB_ACTIONS GITLAB_CI BITBUCKET_BUILD_NUMBER GITEA_ACTIONS FORGEJO_ACTIONS
+            source "$HOOKS/lib/common.sh"
+            [ "$FORGE|$FORGE_PR|$FORGE_REFS" = "$attendu|$pr|$refs" ] || { echo "$url -> $FORGE|$FORGE_PR|$FORGE_REFS"; exit 1; }
+        )
+    done
+    git config repogarde.forge gitlab
+    (unset GITHUB_ACTIONS; source "$HOOKS/lib/common.sh"; [ "$FORGE" = gitlab ])
+}
+
 @test "assistant : en-tete trop long -> nouvelle saisie" {
     long="$(printf 'a%.0s' {1..80})"
     run answer "" "" "" "$long" "description courte" "" "" ""

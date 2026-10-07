@@ -69,3 +69,21 @@ Un script exécutable `.repogarde/<hook>` (ou `.git/hooks/<hook>`) est lancé en
 Tous les messages de repogarde (hooks, CI, assistant `git cc`, installation) suivent la même charte : `✔` succès en vert, `✖` erreur en rouge, `⚠` avertissement en jaune, `ℹ` information en bleu, `▶` étape en cours en cyan, aides en gris atténué.
 
 Les couleurs s'affichent dans un terminal et dans les logs de l'action GitHub. Elles sont désactivées par `NO_COLOR=1`, par `TERM=dumb` ou quand la sortie est redirigée (fichier, tube) ; `FORCE_COLOR=1` les impose.
+
+## Langue des messages
+
+Français ou anglais, choisi **une fois à l'installation** (question posée, ou `./install.sh --global --lang en`) et enregistré dans `repogarde.lang`. Ordre de priorité :
+
+| Où | Langue utilisée |
+|---|---|
+| Poste | `REPOGARDE_LANG`, sinon `repogarde.lang` (installation), sinon `lang` de `.repogarde.conf`, sinon la langue du système |
+| CI | `REPOGARDE_LANG`, sinon `lang` de `.repogarde.conf` (langue de l'équipe), sinon anglais |
+
+## Plateforme (GitHub, GitLab, Bitbucket, Gitea)
+
+repogarde reconnaît la plateforme et adapte son vocabulaire (PR ou MR) et ses exemples (`Closes #12`, `!34` sur GitLab, `PROJ-42` sur Bitbucket) : réglage `forge`, sinon variables de la CI (GitHub Actions, GitLab CI, Bitbucket Pipelines, Gitea / Forgejo Actions), sinon adresse du remote `origin`. Un GitLab auto-hébergé dont l'adresse ne contient pas « gitlab » se déclare :
+
+```ini
+[repogarde]
+    forge = gitlab        # github, gitlab, bitbucket, gitea
+```

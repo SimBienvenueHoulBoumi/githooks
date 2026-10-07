@@ -3,6 +3,7 @@
 #   ./install.sh                       active les hooks pour le dépôt courant
 #   ./install.sh --global              active les hooks pour tous les dépôts
 #                                      (et l'assistant de commit : git cc)
+#   ./install.sh --global --lang en    langue des messages (fr, en) ; demandée une fois sinon
 #   ./install.sh --uninstall [--global]
 #                                      retire les hooks (seulement s'ils sont ceux de repogarde)
 #   ./install.sh --uninstall --global --purge [--scan DOSSIER]
@@ -14,34 +15,68 @@ ROOT="$(cd "$(dirname "$0")" && pwd -P)"
 HOOKS="$ROOT/hooks"
 # shellcheck source=hooks/lib/ui.sh
 source "$HOOKS/lib/ui.sh"
+# shellcheck source=hooks/lib/i18n.sh
+source "$HOOKS/lib/i18n.sh"
 SCOPE="--local"
 ACTION="install"
 PURGE=""
 SCAN=""
+LANG_CHOICE=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --global) SCOPE="--global" ;;
         --uninstall) ACTION="uninstall" ;;
         --purge) PURGE=1 ;;
+        --lang)
+            shift
+            LANG_CHOICE="${1:-}"
+            ;;
         --scan)
             shift
             SCAN="${1:?--scan attend un dossier}"
             ;;
         -h | --help)
-            sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
-            echo "Argument inconnu : $1" >&2
+            t install.unknown_arg "$1"
+            echo "$REPLY" >&2
             exit 1
             ;;
     esac
     shift
 done
 
+# Langue des messages : --lang, sinon question (une fois, dans un terminal)
+# si aucune n'est encore choisie ; enregistrée dans la config git
+choose_lang() {
+    local current
+    current="$(git config "$SCOPE" --get repogarde.lang 2>/dev/null || true)"
+    if [ -z "$LANG_CHOICE" ] && [ -z "$current" ] && [ -t 0 ]; then
+        printf '%s\n' "Langue des messages / Message language :" "  1) Français" "  2) English" >&2
+        read -r -p "[$([ "$REPOGARDE_LANG" = fr ] && echo 1 || echo 2)] : " LANG_CHOICE || true
+        case "${LANG_CHOICE:-}" in
+            1 | fr*) LANG_CHOICE=fr ;;
+            2 | en*) LANG_CHOICE=en ;;
+            *) LANG_CHOICE="$REPOGARDE_LANG" ;;
+        esac
+    fi
+    [ -n "$LANG_CHOICE" ] || return 0
+    case "$LANG_CHOICE" in
+        fr | en) ;;
+        *) t install.lang_invalid; err "$REPLY"; exit 1 ;;
+    esac
+    git config "$SCOPE" repogarde.lang "$LANG_CHOICE"
+    REPOGARDE_LANG="$LANG_CHOICE"
+    t install.lang_set
+    ok "$REPLY"
+}
+
 if [ "$SCOPE" = --local ] && ! git rev-parse --git-dir >/dev/null 2>&1; then
-    err "Pas dans un dépôt git (utilise --global pour tous les dépôts)." >&2
+    t install.not_repo
+    err "$REPLY"
     exit 1
 fi
 
@@ -65,11 +100,13 @@ install_alias() {
     local current
     current="$(git config "$1" --get alias.cc || true)"
     if [ -n "$current" ] && [[ "$current" != *"/bin/commit"* ]]; then
-        attention "Alias git cc déjà utilisé ('$current') : assistant de commit non installé." >&2
+        t install.alias_taken "$current"
+        attention "$REPLY"
         return 0
     fi
     git config "$1" alias.cc "$ALIAS_VALUE"
-    ok "Assistant de commit : git cc"
+    t install.alias_ok
+    ok "$REPLY"
 }
 
 uninstall_alias() {
@@ -77,7 +114,8 @@ uninstall_alias() {
     current="$(git config "$1" --get alias.cc || true)"
     if [[ "$current" == *"/bin/commit"* ]]; then
         git config "$1" --unset alias.cc
-        ok "Alias git cc retiré ($1)."
+        t install.alias_removed "$1"
+        ok "$REPLY"
     fi
 }
 
@@ -85,13 +123,16 @@ uninstall_scope() {
     local current
     current="$(git config "$1" --get core.hooksPath || true)"
     if [ -z "$current" ]; then
-        info "Aucun core.hooksPath ($1) : rien à retirer."
+        t install.nothing "$1"
+        info "$REPLY"
     elif is_repogarde_hooks "$current"; then
         git config "$1" --unset core.hooksPath
-        ok "Hooks repogarde retirés ($1)."
+        t install.removed "$1"
+        ok "$REPLY"
     else
         # Un autre outil (husky…) : ne jamais le désactiver
-        attention "core.hooksPath ($1) = '$current' n'est pas repogarde : laissé intact." >&2
+        t install.foreign "$1" "$current"
+        attention "$REPLY"
     fi
 }
 
@@ -100,11 +141,13 @@ purge() {
     for cache in "${XDG_CACHE_HOME:-$HOME/.cache}/repogarde" "${XDG_CACHE_HOME:-$HOME/.cache}/githooks"; do
         if [ -d "$cache" ]; then
             rm -rf -- "$cache"
-            ok "Cache supprimé : $cache"
+            t install.cache_removed "$cache"
+            ok "$REPLY"
         fi
     done
     if [ -n "$SCAN" ]; then
-        step "Dépôts de $SCAN encore branchés sur repogarde :"
+        t install.scan "$SCAN"
+        step "$REPLY"
         local found=0
         while IFS= read -r dir; do
             repo="$(dirname "$dir")"
@@ -121,7 +164,8 @@ purge() {
                 found=1
             fi
         done < <(find "$SCAN" -maxdepth 5 -name .git -type d -prune 2>/dev/null)
-        [ "$found" = 1 ] || echo "  aucun"
+        t install.none
+        [ "$found" = 1 ] || echo "  $REPLY"
     fi
 }
 
@@ -131,28 +175,35 @@ if [ "$ACTION" = uninstall ]; then
     if [ -n "$PURGE" ]; then
         purge
         echo
-        echo "Dernière étape, à lancer toi-même si tu n'utilises plus repogarde :"
+        t install.last_step
+        echo "$REPLY"
         echo "  rm -rf \"$ROOT\""
     fi
     exit 0
 fi
 
 if [ -n "$PURGE$SCAN" ]; then
-    err "--purge et --scan s'utilisent avec --uninstall." >&2
+    t install.purge_needs_uninstall
+    err "$REPLY"
     exit 1
 fi
+
+choose_lang
 
 chmod +x "$ROOT/bin/commit" "$HOOKS"/pre-commit "$HOOKS"/prepare-commit-msg "$HOOKS"/commit-msg "$HOOKS"/pre-push "$HOOKS"/post-checkout "$HOOKS"/post-merge
 
 CURRENT="$(git config "$SCOPE" --get core.hooksPath || true)"
 if [ -n "$CURRENT" ] && [ "$CURRENT" != "$HOOKS" ]; then
-    attention "core.hooksPath ($SCOPE) valait '$CURRENT', remplacé."
+    t install.replaced "$SCOPE" "$CURRENT"
+    attention "$REPLY"
 fi
 
 git config "$SCOPE" core.hooksPath "$HOOKS"
-ok "Hooks activés ($SCOPE) → $HOOKS"
+t install.enabled "$SCOPE" "$HOOKS"
+ok "$REPLY"
 install_alias "$SCOPE"
 
 if [ "$SCOPE" = --global ]; then
-    info "Un core.hooksPath local (ex. husky) reste prioritaire dans le dépôt concerné."
+    t install.local_wins
+    info "$REPLY"
 fi
