@@ -10,7 +10,7 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
 [repogarde]
     # Commandes personnalisées : remplacent la détection automatique
     format = npm run lint:fix --        # reçoit les fichiers stagés en arguments
-    test = make ci                      # lancée à la racine
+    test = make ci                      # lancée à la racine ; fichiers modifiés sur l'entrée standard
     # Réglages
     skip = protect-branch python        # étapes, hooks ou langages désactivés
     protectedBranches = main develop    # commit et push directs interdits ; défaut : main master

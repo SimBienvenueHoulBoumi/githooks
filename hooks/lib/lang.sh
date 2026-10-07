@@ -298,8 +298,10 @@ test_projects() {
     local cmd dir p plugins key ran=0
     cmd="$(cfg test)"
     if [ -n "$cmd" ]; then
+        # Fichiers modifiés transmis sur l'entrée standard : la commande peut
+        # choisir quoi tester (ex. ./scripts/check.sh --if-changed)
         step "Tests personnalisés : $cmd"
-        sh -c "$cmd" </dev/null
+        sh -c "$cmd"
         return $?
     fi
 

@@ -144,6 +144,17 @@ load_engine() {
     [[ "$output" == *"tests-perso"* ]]
 }
 
+@test ".repogarde.conf : test personnalise recoit les fichiers modifies sur stdin" {
+    printf '#!/bin/sh\ngrep -qx src/a.txt || { echo pas-de-liste; exit 1; }\n' >verifie.sh
+    chmod +x verifie.sh
+    printf '[repogarde]\n\ttest = ./verifie.sh\n' >.repogarde.conf
+    mkdir -p src && echo a >src/a.txt
+    git add -A
+    git commit -q -m "ajoute conf"
+    run git push -q origin feat/x
+    [ "$status" -eq 0 ]
+}
+
 @test ".repogarde.conf : reglages partages (skip)" {
     git switch -q main
     printf '[repogarde]\n\tskip = secrets protect-branch\n' >.repogarde.conf
