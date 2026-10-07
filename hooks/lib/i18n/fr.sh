@@ -40,7 +40,7 @@ _msg_fr() {
         cc.desc_required) _M="La description est obligatoire." ;;
         cc.header_too_long) _M="En-tête trop long : %s caractères (72 max). Raccourcis la description." ;;
         cc.step5) _M="Détails (optionnels)" ;;
-        cc.body_hint) _M="Corps : explique le pourquoi, sur plusieurs lignes ; ligne vide pour terminer." ;;
+        cc.body_hint) _M="Corps : explique le pourquoi, sur plusieurs lignes ; Entrée sur une ligne vide pour terminer." ;;
         cc.refs_prompt) _M="Références (ex. %s ; Entrée pour aucune) : " ;;
         cc.preview) _M="Message" ;;
         cc.confirm) _M="Commiter ? [O/n] : " ;;
@@ -49,7 +49,8 @@ _msg_fr() {
         cc.topic_default) _M="modification" ;;
         cc.protected_hint) _M="Tu es sur « %s », protégée : un commit y serait refusé. Il ira sur une nouvelle branche (tes modifications suivent)." ;;
         cc.new_branch_prompt) _M="Nouvelle branche (« n » pour abandonner) [%s] : " ;;
-        cc.branch_invalid) _M="« %s » : nom attendu <type>/<sujet> en minuscules, et branche pas encore existante." ;;
+        cc.branch_exists) _M="La branche « %s » existe déjà : choisis un autre nom." ;;
+        cc.branch_fixed) _M="« %s » : nom attendu <type>/<sujet> en minuscules. Proposé : %s (Entrée pour l'accepter)." ;;
         cc.branch_created) _M="Branche %s créée, tes modifications y sont." ;;
         cc.kept) _M="Commit refusé : ton message est conservé. Après correction : git commit -F %s" ;;
         cc.created) _M="Commit créé." ;;
