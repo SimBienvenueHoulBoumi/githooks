@@ -34,12 +34,12 @@ git for-each-ref --format='%(refname:short)%09%(upstream:track)' refs/heads |
         [ "$track" = "[gone]" ] || continue
         [ "$branch" = "$current" ] && continue
         if git branch -d -q "$branch" 2>/dev/null; then
-            echo "🧹 Branche locale supprimée (mergée et supprimée sur le serveur) : $branch"
+            echo_t hook.post_merge.1 "$branch"
         elif squash_merged "$branch" && git branch -D -q "$branch"; then
-            echo "🧹 Branche locale supprimée (mergée en squash et supprimée sur le serveur) : $branch"
+            echo_t hook.post_merge.2 "$branch"
         else
-            info "$branch : supprimée sur le serveur mais des modifications manquent ici, conservée."
-            echo "  Pour la supprimer quand même : git branch -D $branch"
+            info_t hook.post_merge.3 "$branch"
+            echo_t hook.post_merge.4 "$branch"
         fi
     done
 exit 0

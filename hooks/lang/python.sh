@@ -18,7 +18,7 @@ python_run() {
 python_has() { python_run "$1" --version >/dev/null 2>&1; }
 
 python_format() {
-    if python_has ruff; then step "Python : ruff format"; python_run ruff format -q "$@"
+    if python_has ruff; then step_t lang.python.1; python_run ruff format -q "$@"
     elif python_has black; then step "Python : black"; python_run black -q "$@"
     else tool_missing "Python : ni ruff ni black installé, formatage ignoré."
     fi
@@ -42,17 +42,17 @@ python_test() {
     export PYTHONPYCACHEPREFIX="$cache"
     # Django sans pytest-django : runner intégré
     if [ -f manage.py ] && ! grep -qs pytest-django pyproject.toml requirements*.txt setup.cfg Pipfile; then
-        step "Python : manage.py test"
+        step_t lang.python.2
         python_run python manage.py test || rc=$?
         rm -rf "$cache"
         return "$rc"
     fi
-    if ! python_has_tests; then info "Python : aucun test."; rm -rf "$cache"; return 0; fi
-    if ! python_has pytest; then warn "Python : pytest absent, tests ignorés."; rm -rf "$cache"; return 0; fi
-    step "Python : pytest"
+    if ! python_has_tests; then info_t lang.python.3; rm -rf "$cache"; return 0; fi
+    if ! python_has pytest; then warn_t lang.python.4; rm -rf "$cache"; return 0; fi
+    step_t lang.python.5
     python_run pytest -q -p no:cacheprovider || rc=$?
     rm -rf "$cache"
     # 5 = aucun test collecté : pas une erreur
-    if [ "$rc" -eq 5 ]; then info "Python : aucun test trouvé."; return 0; fi
+    if [ "$rc" -eq 5 ]; then info_t lang.python.6; return 0; fi
     return "$rc"
 }

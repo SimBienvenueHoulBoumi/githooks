@@ -16,7 +16,7 @@ BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
 
 # 0. Nommage de la branche
 if ! skipped branch-name && ! branch_name_valid "$BRANCH"; then
-    err "Commit refusé : nom de branche non conforme." >&2
+    err_t hook.pre_commit.1 >&2
     branch_help "$BRANCH"
     exit 1
 fi
@@ -24,21 +24,21 @@ fi
 # 1. Pas de commit direct sur les branches protégées (sauf commit initial)
 PROTECTED="$(cfg protectedBranches "main master")"
 if ! skipped protect-branch && [[ " $PROTECTED " == *" $BRANCH "* ]] && git rev-parse --verify -q HEAD >/dev/null; then
-    err "Commit direct sur '$BRANCH' interdit. Crée une branche : git switch -c feat/ma-feature" >&2
-    echo "  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" >&2
+    err_t hook.pre_commit.2 "$BRANCH" >&2
+    echo_t hook.pre_commit.3 >&2
     exit 1
 fi
 
 # 2. Détection de secrets
 if ! skipped secrets; then
     if has gitleaks; then
-        step "Détection de secrets (gitleaks)"
+        step_t hook.pre_commit.4
         if ! gitleaks git --pre-commit --staged --redact --no-banner; then
-            err "Secret détecté : commit refusé." >&2
+            err_t hook.pre_commit.5 >&2
             exit 1
         fi
     else
-        warn "gitleaks absent, détection de secrets ignorée (brew install gitleaks)."
+        warn_t hook.pre_commit.6
     fi
 fi
 
@@ -50,4 +50,4 @@ if ! skipped format; then
     restore_unstaged
 fi
 
-ok "Pre-commit OK"
+ok_t hook.pre_commit.7

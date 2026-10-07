@@ -5,7 +5,7 @@ register ansible "ansible.cfg galaxy.yml requirements.yml .ansible-lint .ansible
 
 ansible_format() {
     has ansible-lint || { tool_missing "Ansible : ansible-lint absent, formatage ignoré."; return 0; }
-    step "Ansible : ansible-lint --fix=none (reformatage YAML)"
+    step_t lang.ansible.1
     # --fix=none : reformatage YAML seul ; les violations de règles sont
     # signalées par ansible_test (push / CI), pas au commit.
     ansible-lint -q --nocolor --fix=none "$@" >/dev/null 2>&1 || true
@@ -13,6 +13,6 @@ ansible_format() {
 
 ansible_test() {
     has ansible-lint || { warn "Ansible : ansible-lint absent, vérification ignorée."; return 0; }
-    step "Ansible : ansible-lint"
+    step_t lang.ansible.2
     ansible-lint -q --nocolor
 }

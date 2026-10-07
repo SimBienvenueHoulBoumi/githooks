@@ -15,7 +15,7 @@ node_format() {
     local prettier
     prettier="$(find_up node_modules/.bin/prettier || command -v prettier || true)"
     [ -n "$prettier" ] || { tool_missing "Node : prettier introuvable (npm i -D prettier), formatage ignoré."; return 0; }
-    step "Node : prettier"
+    step_t lang.node.1
     "$prettier" --write --ignore-unknown --log-level warn "$@"
 }
 
@@ -23,12 +23,12 @@ node_test() {
     has node || { warn "Node : node absent, tests ignorés."; return 0; }
     # Ignore le script "test" par défaut généré par npm init
     if ! node -e 'const t=(require("./package.json").scripts||{}).test; process.exit(t && !/no test specified/.test(t) ? 0 : 1)'; then
-        info "Node : pas de script \"test\" dans package.json."
+        info_t lang.node.2
         return 0
     fi
     local pm; pm="$(node_pm)"
     has "$pm" || { warn "Node : $pm absent, tests ignorés."; return 0; }
-    step "Node : $pm test"
+    step_t lang.node.3 "$pm"
     case "$pm" in
         bun) bun run test ;;
         npm) npm test --silent ;;

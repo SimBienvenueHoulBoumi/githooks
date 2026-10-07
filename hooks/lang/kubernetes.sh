@@ -10,18 +10,18 @@ kubernetes_test() {
     local rendered rc=0
     rendered="$(mktemp)"
     if has kubectl; then
-        step "Kubernetes : kubectl kustomize"
+        step_t lang.kubernetes.1
         kubectl kustomize . >"$rendered" || rc=1
     elif has kustomize; then
-        step "Kubernetes : kustomize build"
+        step_t lang.kubernetes.2
         kustomize build . >"$rendered" || rc=1
     else
-        warn "Kubernetes : ni kubectl ni kustomize, vérification ignorée."
+        warn_t lang.kubernetes.3
         rm -f "$rendered"
         return 0
     fi
     if [ "$rc" = 0 ] && has kubeconform; then
-        step "Kubernetes : kubeconform (schémas)"
+        step_t lang.kubernetes.4
         kubeconform -strict -summary -ignore-missing-schemas -cache "$(kubeconform_cache)" <"$rendered" || rc=1
     fi
     rm -f "$rendered"

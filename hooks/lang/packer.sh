@@ -4,13 +4,13 @@ register packer "*.pkr.hcl" '\.(pkr|pkrvars)\.hcl$' standalone
 
 packer_format() {
     has packer || { tool_missing "Packer : packer absent, formatage ignoré."; return 0; }
-    step "Packer : fmt"
+    step_t lang.packer.1
     local f
     for f in "$@"; do packer fmt "$f" >/dev/null || return 1; done
 }
 
 packer_test() {
     has packer || { warn "Packer : packer absent, validation ignorée."; return 0; }
-    step "Packer : validate -syntax-only"
+    step_t lang.packer.2
     packer validate -syntax-only .
 }

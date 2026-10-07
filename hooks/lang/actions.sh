@@ -4,6 +4,6 @@ register actions ".github/workflows" '^$'
 
 actions_test() {
     has actionlint || { warn "GitHub Actions : actionlint absent, workflows non vérifiés."; return 0; }
-    step "GitHub Actions : actionlint"
+    step_t lang.actions.1
     actionlint
 }

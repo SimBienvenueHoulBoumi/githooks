@@ -195,7 +195,7 @@ without_excluded() {
 format_custom() {
     local cmd="$1"
     shift
-    step "Formatage personnalisé : $cmd"
+    step_t hook.lang.1 "$cmd"
     sh -c "$cmd \"\$@\"" repogarde-format "$@"
 }
 
@@ -254,10 +254,10 @@ format_files() {
         if [ "$dir" = . ]; then key="$plugin"; else key="$plugin ($dir)"; fi
         standalone=""
         has_marker "$dir" "$plugin" || standalone=1
-        info "$key : ${#rel[@]} fichier(s)"
+        info_t hook.lang.2 "$key" "${#rel[@]}"
         # Échec d'un formateur (ex. erreur de syntaxe) : signalé, jamais ignoré
         if ! (cd "$dir" && STANDALONE="$standalone" "${plugin}_format" "${rel[@]}") </dev/null; then
-            err "Échec du formatage $key (erreur de syntaxe ?)." >&2
+            err_t hook.lang.3 "$key" >&2
             failed=1
             continue
         fi
@@ -300,7 +300,7 @@ test_projects() {
     if [ -n "$cmd" ]; then
         # Fichiers modifiés transmis sur l'entrée standard : la commande peut
         # choisir quoi tester (ex. ./scripts/check.sh --if-changed)
-        step "Tests personnalisés : $cmd"
+        step_t hook.lang.4 "$cmd"
         sh -c "$cmd"
         return $?
     fi
@@ -319,14 +319,14 @@ test_projects() {
             declare -F "${p}_test" >/dev/null || continue
             ran=1
             if [ "$dir" = . ]; then key="$p"; else key="$p ($dir)"; fi
-            info "Tests $key"
+            info_t hook.lang.5 "$key"
             if ! (cd "$dir" && "${p}_test") </dev/null; then
-                err "Échec des tests $key : push refusé." >&2
+                err_t hook.lang.6 "$key" >&2
                 return 1
             fi
         done
     done < <(projects_for_files)
 
-    [ "$ran" = 1 ] || info "Aucun projet testable touché par ce push."
+    [ "$ran" = 1 ] || info_t hook.lang.7
     return 0
 }

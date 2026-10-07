@@ -8,6 +8,9 @@ HOOKS_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # shellcheck source=ui.sh
 source "$(dirname "${BASH_SOURCE[0]}")/ui.sh"
+# Traduction (langue provisoire jusqu'à la lecture de la configuration)
+# shellcheck source=i18n.sh
+source "$(dirname "${BASH_SOURCE[0]}")/i18n.sh"
 
 # Avertissement ; si REPOGARDE_WARN_FILE est défini (CI), il est aussi journalisé
 # pour le mode strict (outil manquant = échec)
@@ -24,7 +27,7 @@ DEPRECATED_SEEN=""
 deprecated() {
     case "$DEPRECATED_SEEN" in *"|$1|"*) return 0 ;; esac
     DEPRECATED_SEEN="$DEPRECATED_SEEN|$1|"
-    info "$1 : ancien nom (githooks), à remplacer par $2." >&2
+    info_t hook.common.1 "$1" "$2" >&2
 }
 
 # Variables d'environnement GITHOOKS_* → REPOGARDE_*
@@ -141,19 +144,15 @@ DEFAULT_ALLOWED_BRANCHES="main master develop release/* release-please--* depend
 
 # Liste des types avec leur rôle (affichée dans les messages d'aide)
 types_help() {
-    cat >&2 <<'EOF'
-  feat      nouvelle fonctionnalité          (branche : feature/ accepté)
-  fix       correction de bug                (branche : bugfix/, hotfix/ acceptés)
-  docs      documentation uniquement
-  style     formatage, sans changement de logique
-  refactor  restructuration sans changement de comportement
-  perf      amélioration de performance
-  test      ajout ou modification de tests
-  build     build, dépendances (pom.xml, package.json…)
-  ci        intégration continue
-  chore     maintenance diverse
-  revert    annulation d'un commit
-EOF
+    local tp desc
+    for tp in feat fix docs style refactor perf test build ci chore revert; do
+        _tr "cc.type.$tp"
+        desc="$_T"
+        case "$tp" in
+            feat | fix) _tr "help.alias.$tp"; desc="$(printf '%-32s %s' "$desc" "$_T")" ;;
+        esac
+        printf '  %-9s %s\n' "$tp" "$desc" >&2
+    done
 }
 
 # Vrai si la branche respecte la convention ou fait partie des exceptions
@@ -253,8 +252,35 @@ suggest_branch_name() {
 
 # Message d'aide complet pour une branche invalide
 branch_help() {
-    local branch="$1"
-    cat >&2 <<EOF
+    local branch="$1" suggested allowed
+    suggested="$(suggest_branch_name "$branch")"
+    allowed="$(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")"
+    if [ "${REPOGARDE_LANG:-}" = en ]; then
+        cat >&2 <<EOF
+
+Invalid branch name: "$branch"
+
+Expected format: <type>/<topic>
+  topic: lowercase letters, digits, . _ - (and / to split further)
+  e.g.:  feat/signup, fix/user/login, hotfix/db-timeout
+
+Types:
+EOF
+        types_help
+        cat >&2 <<EOF
+
+👉 Rename the current branch:
+     git branch -m $suggested
+
+   If it is already pushed, rename the remote one too:
+     git push origin -u $suggested && git push origin --delete $branch
+
+Allowed exceptions: $allowed
+  (change: git config repogarde.allowedBranches "main develop release/*")
+Disable for this repository: git config repogarde.skip branch-name
+EOF
+    else
+        cat >&2 <<EOF
 
 Nom de branche invalide : "$branch"
 
@@ -264,19 +290,20 @@ Format attendu : <type>/<sujet>
 
 Types :
 EOF
-    types_help
-    cat >&2 <<EOF
+        types_help
+        cat >&2 <<EOF
 
 👉 Renommer la branche courante :
-     git branch -m $(suggest_branch_name "$branch")
+     git branch -m $suggested
 
    Si elle est déjà poussée, renomme aussi le distant :
-     git push origin -u $(suggest_branch_name "$branch") && git push origin --delete $branch
+     git push origin -u $suggested && git push origin --delete $branch
 
-Exceptions autorisées : $(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")
+Exceptions autorisées : $allowed
   (modifier : git config repogarde.allowedBranches "main develop release/*")
 Désactiver pour ce dépôt : git config repogarde.skip branch-name
 EOF
+    fi
 }
 
 # Vrai si l'élément est désactivé (repogarde.skip, git config ou .repogarde.conf).
@@ -295,7 +322,7 @@ skipped() {
 # Le hook entier est-il désactivé ? (à appeler en tête de hook)
 exit_if_skipped() {
     if skipped "$HOOK_NAME"; then
-        info "$HOOK_NAME désactivé (git config repogarde.skip)."
+        info_t hook.common.3 "$HOOK_NAME"
         exit 0
     fi
 }
@@ -338,7 +365,7 @@ delegate_to_lefthook() {
             lefthook_without_global_hookspath
             exec lefthook run "$HOOK_NAME" "$@"
         fi
-        warn "Projet lefthook ($f) mais lefthook absent : règles repogarde par défaut. Installe lefthook."
+        warn_t hook.common.4 "$f"
         return 0
     done
 }
@@ -355,7 +382,7 @@ run_local_hook() {
         [ "$candidate" = ".githooks/$HOOK_NAME" ] && deprecated ".githooks/" ".repogarde/"
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
-        info "Hook local du projet : $candidate"
+        info_t hook.common.5 "$candidate"
         "$candidate" "$@" || return $?
     done
 }
@@ -364,8 +391,7 @@ run_local_hook() {
 # s'exécute dans un sous-shell et ne pourrait pas remplir le cache du parent.
 cfg_load
 
-# Langue des messages et plateforme (après la lecture de la configuration)
-# shellcheck source=i18n.sh
-source "$(dirname "${BASH_SOURCE[0]}")/i18n.sh"
+# Langue confirmée et plateforme, une fois la configuration lue
+i18n_init
 # shellcheck source=forge.sh
 source "$(dirname "${BASH_SOURCE[0]}")/forge.sh"

@@ -19,7 +19,7 @@ if ! skipped branch-name; then
         [[ "$remote_ref" == refs/heads/* ]] || continue
         branch="${remote_ref#refs/heads/}"
         if ! branch_name_valid "$branch"; then
-            err "Push refusé : nom de branche non conforme." >&2
+            err_t hook.pre_push.1 >&2
             branch_help "$branch"
             exit 1
         fi
@@ -36,9 +36,9 @@ if ! skipped protect-branch; then
         branch="${remote_ref#refs/heads/}"
         [[ " $PROTECTED " == *" $branch "* ]] || continue
         [[ "$remote_sha" =~ ^0+$ ]] && continue
-        err "Push direct refusé sur '$branch' : elle n'évolue que par Pull Request." >&2
-        echo "  Crée une branche : git switch -c feat/ma-feature, puis ouvre une PR." >&2
-        echo "  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" >&2
+        err_t hook.pre_push.2 "$branch" >&2
+        echo_t hook.pre_push.3 >&2
+        echo_t hook.pre_push.4 >&2
         exit 1
     done <<<"$REFS"
 fi
@@ -76,7 +76,7 @@ while read -r _ local_sha _ remote_sha; do
     TESTED="$TESTED $local_sha"
     changed_files "$local_sha" "$remote_sha" >"$CHANGED"
     if [ ! -s "$CHANGED" ] && [ -z "$(cfg test)" ]; then
-        info "${local_sha:0:7} : aucun fichier modifié, rien à tester."
+        info_t hook.pre_push.5 "${local_sha:0:7}"
         continue
     fi
     # Teste le commit poussé tel qu'il sera sur le serveur
@@ -84,5 +84,5 @@ while read -r _ local_sha _ remote_sha; do
 done <<<"$REFS"
 
 rm -f "$CHANGED"
-[ -n "$TESTED" ] || info "Rien à tester (suppression de branche uniquement)."
-ok "Pre-push OK"
+[ -n "$TESTED" ] || info_t hook.pre_push.6
+ok_t hook.pre_push.7

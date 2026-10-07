@@ -18,7 +18,26 @@ if [[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]]; then
 fi
 
 if ! [[ "$SUBJECT" =~ $CC_PATTERN ]]; then
-    cat >&2 <<EOF
+    if [ "${REPOGARDE_LANG:-}" = en ]; then
+        cat >&2 <<EOF
+✖ Invalid commit message: "$SUBJECT"
+
+Expected format: <type>(<optional scope>): <description>
+  e.g.: feat(user): add sign-up
+        fix: fix the database timeout
+        refactor!: change the public API   (! = breaking change)
+
+Types:
+EOF
+        types_help
+        cat >&2 <<EOF
+
+👉 Tip: name your branch <type>/<topic> (e.g. feat/user) and the prefix
+   is added automatically: git commit -m "add sign-up"  (or use git cc)
+   Your message is not lost: git commit -e -F .git/COMMIT_EDITMSG
+EOF
+    else
+        cat >&2 <<EOF
 ✖ Message de commit invalide : "$SUBJECT"
 
 Format attendu : <type>(<scope optionnel>): <description>
@@ -28,18 +47,19 @@ Format attendu : <type>(<scope optionnel>): <description>
 
 Types :
 EOF
-    types_help
-    cat >&2 <<EOF
+        types_help
+        cat >&2 <<EOF
 
 👉 Astuce : nomme ta branche <type>/<sujet> (ex. feat/user) et le préfixe
-   sera ajouté automatiquement : git commit -m "ajoute l'inscription"
+   sera ajouté automatiquement : git commit -m "ajoute l'inscription"  (ou git cc)
    Ton message n'est pas perdu : git commit -e -F .git/COMMIT_EDITMSG
 EOF
+    fi
     exit 1
 fi
 
 authored_length "$SUBJECT"
 if [ "$REPLY" -gt 72 ]; then
-    err "Première ligne trop longue ($REPLY > 72 caractères)." >&2
+    err_t hook.commit_msg.1 "$REPLY" >&2
     exit 1
 fi
