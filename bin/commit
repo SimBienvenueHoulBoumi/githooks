@@ -158,6 +158,11 @@ if [ -z "$first_commit" ] && [ -z "$DRY_RUN" ] && ! skipped protect-branch &&
         t cc.new_branch_prompt "$suggestion"
         ask "$REPLY"
         name="${REPLY:-$suggestion}"
+        # Réponse incomplète ou approximative : complétée (« feat » → feat/<scope>,
+        # « Mon Test » → feat/mon-test) puis proposée, sans refus sec
+        if [[ "$name" != */* && "$name" =~ ^($CC_TYPES|feature|bugfix|hotfix)$ ]]; then
+            name="$name/${suggestion#*/}"
+        fi
         case "$name" in n | N | non | no)
             t cc.aborted
             printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
@@ -171,7 +176,12 @@ if [ -z "$first_commit" ] && [ -z "$DRY_RUN" ] && ! skipped protect-branch &&
             hint "$REPLY"
             break
         fi
-        t cc.branch_invalid "$name"
+        if git show-ref -q --verify "refs/heads/$name"; then
+            t cc.branch_exists "$name"
+        else
+            suggestion="$(suggest_branch_name "$name")"
+            t cc.branch_fixed "$name" "$suggestion"
+        fi
         fail "$REPLY"
     done
 fi
@@ -243,7 +253,8 @@ hint "$REPLY"
 body=""
 while :; do
     ask "> "
-    [ -n "$REPLY" ] || break
+    # Ligne vide, ou faite seulement de ponctuation (« ; », « . »…) : fin du corps
+    [[ -n "$REPLY" && ! "$REPLY" =~ ^[[:punct:]]+$ ]] || break
     body="$body$REPLY"$'\n'
 done
 t cc.refs_prompt "$FORGE_REFS"
