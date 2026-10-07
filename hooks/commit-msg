@@ -40,6 +40,6 @@ fi
 
 authored_length "$SUBJECT"
 if [ "$REPLY" -gt 72 ]; then
-    echo "✖ Première ligne trop longue ($REPLY > 72 caractères)." >&2
+    err "Première ligne trop longue ($REPLY > 72 caractères)." >&2
     exit 1
 fi

@@ -38,7 +38,7 @@ git for-each-ref --format='%(refname:short)%09%(upstream:track)' refs/heads |
         elif squash_merged "$branch" && git branch -D -q "$branch"; then
             echo "🧹 Branche locale supprimée (mergée en squash et supprimée sur le serveur) : $branch"
         else
-            echo "ℹ $branch : supprimée sur le serveur mais des modifications manquent ici, conservée."
+            info "$branch : supprimée sur le serveur mais des modifications manquent ici, conservée."
             echo "  Pour la supprimer quand même : git branch -D $branch"
         fi
     done

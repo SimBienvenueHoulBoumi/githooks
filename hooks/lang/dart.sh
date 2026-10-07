@@ -9,7 +9,7 @@ dart_format() {
 }
 
 dart_test() {
-    [ -d test ] || { echo "ℹ Dart : pas de dossier test/."; return 0; }
+    [ -d test ] || { info "Dart : pas de dossier test/."; return 0; }
     if grep -qs 'sdk: flutter' pubspec.yaml; then
         has flutter || { warn "Flutter : flutter absent, tests ignorés."; return 0; }
         step "Flutter : flutter test"; flutter test

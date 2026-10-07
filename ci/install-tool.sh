@@ -4,12 +4,14 @@
 #   ci/install-tool.sh actionlint [version]   défaut : $ACTIONLINT_VERSION ou 1.7.12
 # Destination : $REPOGARDE_BIN (défaut ~/.local/bin), ajouté au PATH par ci/check.sh.
 set -euo pipefail
+# shellcheck source=../hooks/lib/ui.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/ui.sh"
 
 TOOL="${1:?usage : install-tool.sh gitleaks|actionlint [version]}"
 BIN="${REPOGARDE_BIN:-${GITHOOKS_BIN:-$HOME/.local/bin}}" # GITHOOKS_BIN : ancien nom
 
 if command -v "$TOOL" >/dev/null 2>&1; then
-    echo "ℹ $TOOL déjà présent : $(command -v "$TOOL")"
+    info "$TOOL déjà présent : $(command -v "$TOOL")"
     exit 0
 fi
 
@@ -17,12 +19,12 @@ case "$(uname -s)" in
     Linux) os=linux ext=tar.gz ;;
     Darwin) os=darwin ext=tar.gz ;;
     MINGW* | MSYS* | CYGWIN*) os=windows ext=zip ;;
-    *) echo "✖ Système non supporté : $(uname -s)" >&2; exit 1 ;;
+    *) err "Système non supporté : $(uname -s)" >&2; exit 1 ;;
 esac
 case "$(uname -m)" in
     x86_64 | amd64) arch=amd64 ;;
     arm64 | aarch64) arch=arm64 ;;
-    *) echo "✖ Architecture non supportée : $(uname -m)" >&2; exit 1 ;;
+    *) err "Architecture non supportée : $(uname -m)" >&2; exit 1 ;;
 esac
 
 case "$TOOL" in
@@ -41,13 +43,13 @@ case "$TOOL" in
         base="https://github.com/rhysd/actionlint/releases/download/v${version}"
         checksums="actionlint_${version}_checksums.txt"
         ;;
-    *) echo "✖ Outil inconnu : $TOOL" >&2; exit 1 ;;
+    *) err "Outil inconnu : $TOOL" >&2; exit 1 ;;
 esac
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-echo "▶ Téléchargement de $asset"
+step "Téléchargement de $asset"
 curl -fsSL -o "$tmp/$asset" "$base/$asset"
 curl -fsSL -o "$tmp/checksums.txt" "$base/$checksums"
 
@@ -58,7 +60,7 @@ else
     actual="$(shasum -a 256 "$tmp/$asset" | cut -d' ' -f1)"
 fi
 if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
-    echo "✖ Somme SHA-256 invalide pour $asset" >&2
+    err "Somme SHA-256 invalide pour $asset" >&2
     exit 1
 fi
 
@@ -70,4 +72,4 @@ else
 fi
 cp "$tmp/out/$TOOL"* "$BIN/"
 chmod +x "$BIN/$TOOL"*
-echo "✔ $TOOL $version installé dans $BIN"
+ok "$TOOL $version installé dans $BIN"

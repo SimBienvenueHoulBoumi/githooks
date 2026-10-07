@@ -14,7 +14,7 @@ swift_format() {
 }
 
 swift_test() {
-    [ -d Tests ] || { echo "ℹ Swift : pas de dossier Tests/."; return 0; }
+    [ -d Tests ] || { info "Swift : pas de dossier Tests/."; return 0; }
     has swift || { warn "Swift : swift absent, tests ignorés."; return 0; }
     step "Swift : swift test"; swift test
 }

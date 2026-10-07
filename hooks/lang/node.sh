@@ -23,7 +23,7 @@ node_test() {
     has node || { warn "Node : node absent, tests ignorés."; return 0; }
     # Ignore le script "test" par défaut généré par npm init
     if ! node -e 'const t=(require("./package.json").scripts||{}).test; process.exit(t && !/no test specified/.test(t) ? 0 : 1)'; then
-        echo "ℹ Node : pas de script \"test\" dans package.json."
+        info "Node : pas de script \"test\" dans package.json."
         return 0
     fi
     local pm; pm="$(node_pm)"

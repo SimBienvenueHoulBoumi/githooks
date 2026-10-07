@@ -49,8 +49,8 @@ while [ $# -gt 0 ]; do
     shift
 done
 [ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
-[[ "$REVIEWS" =~ ^[0-9]$ ]] || { echo "✖ --relecteurs : nombre de 0 à 9 attendu." >&2; exit 1; }
-[[ "$CODEOWNERS" =~ ^(true|false)$ ]] || { echo "✖ codeOwnerReview : true ou false." >&2; exit 1; }
+[[ "$REVIEWS" =~ ^[0-9]$ ]] || { err "--relecteurs : nombre de 0 à 9 attendu." >&2; exit 1; }
+[[ "$CODEOWNERS" =~ ^(true|false)$ ]] || { err "codeOwnerReview : true ou false." >&2; exit 1; }
 # Avec relecture : le dernier à pousser ne peut pas approuver son propre push
 last_push=false
 [ "$REVIEWS" = 0 ] || last_push=true
@@ -66,7 +66,7 @@ for b in $protected; do
     # Nom renvoyé comparé : GitHub redirige une branche renommée (master → main)
     [ "$(gh api "repos/$REPO/branches/$b" --jq .name 2>/dev/null)" = "$b" ] && existing="$existing $b"
 done
-[ -n "$existing" ] || { echo "✖ Aucune des branches « $protected » n'existe sur $REPO." >&2; exit 1; }
+[ -n "$existing" ] || { err "Aucune des branches « $protected » n'existe sur $REPO." >&2; exit 1; }
 
 # Vérifications séparées par des virgules : un nom de job peut contenir des
 # espaces (« tests (ubuntu-latest) »)
@@ -191,7 +191,7 @@ if [ -n "$ENVIRONMENT" ]; then
     [ -n "$APPROVERS" ] || APPROVERS="$(gh api user --jq .login)"
     reviewers=""
     for login in $APPROVERS; do
-        id="$(gh api "users/$login" --jq .id)" || { echo "✖ Utilisateur inconnu : $login" >&2; exit 1; }
+        id="$(gh api "users/$login" --jq .id)" || { err "Utilisateur inconnu : $login" >&2; exit 1; }
         reviewers="$reviewers {\"type\": \"User\", \"id\": $id},"
     done
     # Seul approbateur = soi-même (projet solo) : l'auto-approbation reste permise
@@ -220,10 +220,10 @@ for ruleset in "${rulesets[@]}"; do
     id="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name == \"$name\") | .id")"
     if [ -n "$id" ]; then
         gh api -X PUT "repos/$REPO/rulesets/$id" --input - <<<"$ruleset" >/dev/null
-        echo "✔ Ruleset « $name » mis à jour."
+        ok "Ruleset « $name » mis à jour."
     else
         gh api -X POST "repos/$REPO/rulesets" --input - <<<"$ruleset" >/dev/null
-        echo "✔ Ruleset « $name » créé."
+        ok "Ruleset « $name » créé."
     fi
 done
 if [ -n "$env_json" ]; then
@@ -235,6 +235,6 @@ if [ -n "$env_json" ]; then
         gh api -X POST "repos/$REPO/environments/$ENVIRONMENT/deployment-branch-policies" --silent \
             -f type="${policy%%:*}" -f name="${policy#*:}"
     done
-    echo "✔ Environnement « $ENVIRONMENT » configuré."
+    ok "Environnement « $ENVIRONMENT » configuré."
 fi
-echo "✔ Réglages appliqués."
+ok "Réglages appliqués."

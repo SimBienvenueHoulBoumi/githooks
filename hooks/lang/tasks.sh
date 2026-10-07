@@ -12,5 +12,5 @@ tasks_test() {
     if compgen -G "Taskfile.y*ml" >/dev/null; then
         if has task && task --list-all 2>/dev/null | grep -q '^\* test:'; then step "task test"; task test; return; fi
     fi
-    echo "ℹ Pas de cible \"test\" (make/just/task)."
+    info "Pas de cible \"test\" (make/just/task)."
 }

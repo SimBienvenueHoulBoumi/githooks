@@ -17,6 +17,6 @@ cpp_test() {
     elif [ -f builddir/build.ninja ] && has meson; then
         step "C/C++ : meson test"; meson test -C builddir
     else
-        echo "ℹ C/C++ : pas de dossier de build configuré (build/ ou builddir/), tests ignorés."
+        info "C/C++ : pas de dossier de build configuré (build/ ou builddir/), tests ignorés."
     fi
 }

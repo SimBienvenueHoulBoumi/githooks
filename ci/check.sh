@@ -32,7 +32,7 @@ ci_error() {
     if [ "${GITHUB_ACTIONS:-}" = true ]; then
         echo "::error title=repogarde::$*"
     else
-        echo "✖ $*" >&2
+        err "$*" >&2
     fi
 }
 
@@ -93,7 +93,7 @@ check_commits() {
     section "Messages de commit (Conventional Commits)"
     local sha subject bad=0 count=0 bot=""
     is_bot_branch "$(detect_branch)" && bot=1
-    if [ -z "$BASE" ]; then echo "ℹ Pas de base : vérification ignorée."; return 0; fi
+    if [ -z "$BASE" ]; then info "Pas de base : vérification ignorée."; return 0; fi
     while IFS= read -r sha; do
         subject="$(git log -1 --format=%s "$sha")"
         count=$((count + 1))
@@ -122,7 +122,7 @@ check_commits() {
             ci_error "Titre de la PR « $title » : plus de 72 caractères."
             bad=1
         else
-            echo "✔ Titre de la PR conforme."
+            ok "Titre de la PR conforme."
         fi
     fi
     if [ "$bad" = 1 ]; then
@@ -132,20 +132,20 @@ check_commits() {
         echo "Sinon (historique conservé) : git rebase -i $BASE (reword), puis git push --force-with-lease"
         return 1
     fi
-    echo "✔ $count commit(s) conforme(s)."
+    ok "$count commit(s) conforme(s)."
 }
 
 check_branch() {
     section "Nom de branche"
     local branch
     branch="$(detect_branch)"
-    if [ -z "$branch" ]; then echo "ℹ Pas de branche (tag ou HEAD détachée) : ignoré."; return 0; fi
+    if [ -z "$branch" ]; then info "Pas de branche (tag ou HEAD détachée) : ignoré."; return 0; fi
     if ! branch_name_valid "$branch"; then
         ci_error "Branche « $branch » non conforme : <type>/<sujet>, ex. $(suggest_branch_name "$branch")."
         branch_help "$branch" 2>&1
         return 1
     fi
-    echo "✔ « $branch » conforme."
+    ok "« $branch » conforme."
     # Flux avec branche d'intégration : la PR vise-t-elle la bonne branche ?
     local target allowed
     target="$(detect_target)"
@@ -153,7 +153,7 @@ check_branch() {
     allowed="$REPLY"
     [ -n "$target" ] && [ -n "$allowed" ] || return 0
     if [[ " $allowed " == *" $target "* ]]; then
-        echo "✔ Cible « $target » conforme au flux."
+        ok "Cible « $target » conforme au flux."
         return 0
     fi
     ci_error "PR de « $branch » vers « $target » : cible attendue ${allowed// / ou } (réglage integrationBranch)."
@@ -194,7 +194,7 @@ check_format() {
         git checkout -q -- .
         return 1
     fi
-    echo "✔ Fichiers modifiés correctement formatés."
+    ok "Fichiers modifiés correctement formatés."
 }
 
 check_tests() {
@@ -227,7 +227,7 @@ for check in $CHECKS; do
     esac
     if skipped "$key"; then
         section "$check"
-        echo "ℹ Désactivé par .repogarde.conf (skip $key)."
+        info "Désactivé par .repogarde.conf (skip $key)."
         continue
     fi
     declare -F "check_$check" >/dev/null || { ci_error "Vérification inconnue : $check"; failed="$failed $check"; continue; }
@@ -242,7 +242,7 @@ fi
 
 echo
 if [ -n "$failed" ]; then
-    echo "✖ Échec :$failed"
+    err "Échec :$failed"
     exit 1
 fi
-echo "✔ Toutes les vérifications repogarde sont passées."
+ok "Toutes les vérifications repogarde sont passées."
