@@ -40,7 +40,6 @@ active_plugins_init() {
     for p in $PLUGINS; do skipped "$p" || ACTIVE_PLUGINS="$ACTIVE_PLUGINS $p"; done
     ACTIVE_PLUGINS_DONE=1
 }
-active_plugins() { active_plugins_init; echo "$ACTIVE_PLUGINS"; }
 
 for _plugin in "$(dirname "${BASH_SOURCE[0]}")/../lang/"*.sh; do
     # shellcheck source=/dev/null
@@ -137,8 +136,6 @@ plugins_for_file_r() {
     done
     REPLY="$out"
 }
-
-plugins_for_file() { plugins_for_file_r "$1"; echo "$REPLY"; }
 
 # Cherche $1 depuis le dossier courant en remontant jusqu'à la racine du dépôt
 # (lockfile ou node_modules hissés à la racine d'un monorepo, config de style…)

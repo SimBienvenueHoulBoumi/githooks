@@ -306,7 +306,7 @@ flux_develop() {
 @test "titres deduits des branches" {
     source "$BATS_TEST_DIRNAME/../hooks/lib/common.sh"
     git config repogarde.integrationBranch develop
-    cfg_reset
+    cfg_load
     for paire in "hotfix/crash-login:fix: crash login" "release/1.2.0:chore(release): 1.2.0" \
         "develop:chore(release): livrer develop sur main" "wip:chore: wip" \
         "feature/a_b:feat: a b"; do
