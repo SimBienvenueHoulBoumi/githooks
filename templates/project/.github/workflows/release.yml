@@ -43,7 +43,7 @@ jobs:
   # Paquet npm à chaque release, sans jeton (mise en place : repogarde/bin/npm-publication) :
   # npm:
   #   needs: release
-  #   if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+  #   if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
   #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3 # x-release-please-major
   #   permissions: { contents: read, id-token: write }
   #   with:

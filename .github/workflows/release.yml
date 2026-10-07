@@ -59,7 +59,9 @@ jobs:
   # toute première publication (vide ensuite : publication de confiance).
   npm:
     needs: release
-    if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+    # Nouvelle release, ou lancement manuel du workflow : rattrape la dernière
+    # release si elle n'est pas encore sur npm (sans effet sinon)
+    if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/npm-publish.yml
     permissions:
       contents: read

@@ -305,6 +305,7 @@ _msg_fr() {
         npm.ask_otp) _M="Code à usage unique (application d'authentification ou e-mail de npm) : " ;;
         npm.token_failed) _M="Création du jeton npm impossible (voir ci-dessus) : rien n'a été enregistré." ;;
         npm.token_stored) _M="Jeton temporaire (7 jours) créé et enregistré en secret NPM_TOKEN, sans affichage." ;;
+        npm.dispatched) _M="Pipeline lancée (%s) : elle publie la dernière release sur npm. Attente… (Ctrl+C : relancer la commande plus tard, elle reprendra)" ;;
         npm.waiting) _M="La prochaine release publie %s : merge une PR (ou laisse le bot merger la PR de release). Attente… (Ctrl+C : relancer la commande plus tard, elle reprendra)" ;;
         npm.still_waiting) _M="toujours en attente (%s min)…" ;;
         npm.not_yet) _M="Pas encore publié : relance cette commande après la prochaine release." ;;

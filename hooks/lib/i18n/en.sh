@@ -305,6 +305,7 @@ _msg_en() {
         npm.ask_otp) _M="One-time code (authenticator app or npm email): " ;;
         npm.token_failed) _M="Could not create the npm token (see above): nothing was stored." ;;
         npm.token_stored) _M="Temporary token (7 days) created and stored as the NPM_TOKEN secret, never displayed." ;;
+        npm.dispatched) _M="Pipeline started (%s): it publishes the latest release to npm. Waiting… (Ctrl+C: run the command again later, it resumes)" ;;
         npm.waiting) _M="The next release publishes %s: merge a PR (or let the bot merge the release PR). Waiting… (Ctrl+C: run the command again later, it resumes)" ;;
         npm.still_waiting) _M="still waiting (%s min)…" ;;
         npm.not_yet) _M="Not published yet: run this command again after the next release." ;;

@@ -11,7 +11,8 @@
 # 2. paquet absent de npm (la publication de confiance exige un paquet
 #    existant) : jeton npm temporaire (7 jours, limité au scope du paquet)
 #    créé et rangé directement en secret NPM_TOKEN, sans être affiché ;
-#    variable REPOGARDE_NPM=true ; attente de la publication par la pipeline ;
+#    variable REPOGARDE_NPM=true ; la pipeline publie la dernière release
+#    (lancée par la commande), ou la prochaine s'il n'y en a pas encore ;
 # 3. publication de confiance (npm trust github), puis jeton révoqué et
 #    secret supprimé. Interrompue, la commande reprend où elle en était.
 set -euo pipefail
@@ -28,7 +29,7 @@ while [ $# -gt 0 ]; do
         --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
         --workflow) shift; WORKFLOW="${1:?--workflow attend un fichier}" ;;
         --environnement | --environment) shift; ENVIRONMENT="${1:?--environnement attend un nom}" ;;
-        -h | --help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h | --help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) err_t install.unknown_arg "$1"; exit 1 ;;
     esac
     shift
@@ -96,8 +97,15 @@ if ! publie; then
     fi
     gh variable set REPOGARDE_NPM --repo "$REPO" --body true
 
-    # Attente de la prochaine release (merge d'une PR) : jusqu'à 3 h
-    info_t npm.waiting "$name"
+    # Release déjà publiée : la pipeline est lancée tout de suite (elle publie
+    # la dernière release absente de npm) ; sinon, la prochaine release publie
+    if git ls-remote --tags origin 'v[0-9]*' | grep -q .; then
+        branche="$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)"
+        gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$branche"
+        info_t npm.dispatched "$WORKFLOW"
+    else
+        info_t npm.waiting "$name"
+    fi
     for i in $(seq 1 360); do
         publie && break
         [ $((i % 10)) -ne 0 ] || dim_t npm.still_waiting "$((i / 2))"

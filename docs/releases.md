@@ -175,7 +175,7 @@ Puis, dans `.github/workflows/release.yml` :
 ```yaml
   npm:
     needs: release
-    if: needs.release.outputs.release_created == 'true' && vars.REPOGARDE_NPM == 'true'
+    if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
     uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
     permissions: { contents: read, id-token: write }
     with:
@@ -186,7 +186,7 @@ Puis, dans `.github/workflows/release.yml` :
       npm-token: ${{ secrets.NPM_TOKEN }}   # première publication seulement
 ```
 
-Le paquet est publié à la version du tag (y compris en mode tag, sans fichier de version). Une version déjà publiée est ignorée : relancer le run ne casse rien.
+Lancer le workflow `release` à la main (Run workflow) publie la dernière release si elle manque sur npm. Le paquet est publié à la version du tag (y compris en mode tag, sans fichier de version). Une version déjà publiée est ignorée : relancer le run ne casse rien.
 
 ## Entrées et sorties
 
