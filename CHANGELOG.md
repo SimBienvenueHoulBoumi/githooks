@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.0...v3.1.1) (2026-10-07)
+
+
+### Corrections
+
+* **npm:** publier sur npm une release déjà sortie ([#107](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/107)) ([f8e03b8](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/f8e03b8105f2f21336a50731586b0287318122ce))
+
 ## [3.1.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.0.0...v3.1.0) (2026-10-07)
 
 
