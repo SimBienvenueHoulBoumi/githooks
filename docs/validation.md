@@ -1,0 +1,74 @@
+# Validation humaine
+
+repogarde automatise ce qui est **mécanique et vérifiable** :
+- formater ;
+- vérifier un message, un nom de branche ou une cible de PR ;
+- calculer une version, écrire un changelog, poser un tag ;
+- construire et signer un paquet.
+
+Ces actions donnent toujours le même résultat pour la même entrée, et chacune est tracée (logs de CI, attestations de provenance).
+
+Ce qui demande du **jugement** reste humain :
+- ce code fait-il ce qu'on veut ?
+- est-ce le moment de livrer ?
+- peut-on publier ?
+
+Le risque n'est pas la machine. C'est une validation humaine trop légère. Cette page décrit comment la rendre obligatoire.
+
+## Les points de décision
+
+| Décision | Mécanisme GitHub | repogarde |
+|---|---|---|
+| Relire le code avant qu'il n'entre | approbations obligatoires ; approbation annulée par un nouveau commit ; le dernier à pousser ne peut pas approuver son propre push | `bin/proteger --relecteurs N` |
+| Faire relire les zones sensibles par leurs responsables | fichier `CODEOWNERS` + revue du propriétaire obligatoire | `bin/proteger --codeowners` |
+| Décider de publier | environnement de déploiement : le job attend l'approbation d'une personne désignée | `bin/proteger --environnement production` |
+| Décider de livrer (flux `develop`) | PR de livraison `develop` → `main`, toujours mergée par un humain | mode `tag` |
+| Garder la main sur la PR de release (mode `pr`) | merge humain | `release-auto` avec `merge-auto: false` |
+
+Avec une relecture exigée, la PR de release n'est jamais mergée par le bot. Il la prépare et la fait valider par la CI, puis elle attend une approbation humaine. Son merge publie la release.
+
+## Mise en place
+
+Réglages versionnés dans `.repogarde.conf`, appliqués par `bin/proteger` (relançable) :
+
+```ini
+[repogarde]
+    requiredReviews = 1              # approbations par PR
+    codeOwnerReview = true           # revue des CODEOWNERS sur leurs fichiers
+    environment = production         # déploiements soumis à approbation
+    environmentReviewers = alice bob # défaut : l'utilisateur gh courant
+```
+
+```text title=".github/CODEOWNERS"
+# Un motif par ligne ; la dernière règle qui correspond l'emporte
+*                  @equipe-dev
+# Workflows et protection
+/.github/          @equipe-plateforme
+# Build et dépendances
+/pom.xml           @equipe-plateforme
+/package.json      @equipe-plateforme
+/src/**/security/  @equipe-securite
+```
+
+Puis, dans les workflows, chaque job de publication déclare l'environnement :
+
+```yaml
+  publier:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    environment: production   # attend l'approbation avant de s'exécuter
+```
+
+L'environnement n'accepte de déploiement que depuis les branches protégées et les tags `v*` : une branche de travail ne peut pas publier.
+
+## Projet solo
+
+GitHub interdit d'approuver sa propre PR. Avec `requiredReviews = 1` et un seul développeur, chaque merge passerait par le **contournement d'administrateur**, qui reste permis mais est explicite et tracé dans l'historique de la PR. Pour un projet solo, le réglage conseillé :
+- `requiredReviews = 0` : la CI fait foi sur la forme ;
+- `environment = production` avec soi-même comme approbateur : chaque publication demande un clic délibéré.
+
+## Traçabilité et arrêt d'urgence
+
+- Chaque merge, approbation, déploiement et contournement est enregistré (historique des PR, onglet *Environments*, journal d'audit).
+- Les tags `v*` ne peuvent être posés que par les workflows (ruleset « repogarde (tags) ») ; chaque paquet publié porte une attestation de provenance vérifiable.
+- Suspendre les releases automatiques : *Actions → release → Disable workflow*.

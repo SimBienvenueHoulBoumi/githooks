@@ -40,6 +40,13 @@ on:
         description: Version de la toute première release (aucun tag ni release existant).
         type: string
         default: 0.1.0
+      merge-auto:
+        description: >-
+          Mode pr : merger la PR de release une fois la CI verte. false : la PR
+          est préparée et validée, un humain la merge (et une relecture exigée
+          par la protection de la branche est toujours respectée).
+        type: boolean
+        default: true
       mode:
         description: >-
           « pr » (défaut) : release-please, PR de release mergée automatiquement.
@@ -165,6 +172,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_JSON: ${{ steps.release.outputs.pr }}
           WORKFLOWS: ${{ steps.config.outputs.workflows }}
+          MERGE_AUTO: ${{ inputs.merge-auto }}
         run: |
           # Erreurs 5xx passagères de l'API GitHub : nouvelles tentatives espacées
           reessayer() {
@@ -250,6 +258,13 @@ jobs:
               case "$state" in
                 CLEAN | BEHIND) break ;;
                 BLOCKED | UNKNOWN | UNSTABLE)
+                  # Relecture humaine exigée : la PR attend son approbation
+                  case "$(gh pr view "$pr" --json reviewDecision -q .reviewDecision)" in
+                    REVIEW_REQUIRED | CHANGES_REQUESTED)
+                      echo "::notice::PR #$pr validée par la CI, en attente d'approbation humaine : son merge publiera la release."
+                      exit 0
+                      ;;
+                  esac
                   approuver_runs
                   sleep 30
                   ;;
@@ -263,6 +278,10 @@ jobs:
               continue
             fi
             [ "$state" = CLEAN ] || { echo "✖ PR #$pr toujours $state après 45 min"; exit 1; }
+            if [ "$MERGE_AUTO" != true ]; then
+              echo "::notice::PR #$pr validée par la CI, à merger par un humain (merge-auto: false) : son merge publiera la release."
+              exit 0
+            fi
             reessayer gh pr merge "$pr" --squash --match-head-commit "$sha"
             echo "merged=true" >>"$GITHUB_OUTPUT"
             exit 0

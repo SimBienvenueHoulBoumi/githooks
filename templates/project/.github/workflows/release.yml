@@ -32,11 +32,15 @@ jobs:
     # with:
     #   release-type: maven          # sinon détecté (pom.xml, package.json, pyproject.toml…)
     #   workflows: repogarde.yml     # sinon les workflows pull_request + workflow_dispatch
+    #   merge-auto: false            # PR de release mergée par un humain
 
-  # Publication propre au projet, après une release (exemple) :
+  # Publication propre au projet, après une release (exemple). L'environnement
+  # « production » (bin/proteger --environnement production) fait attendre
+  # l'approbation d'une personne désignée avant de publier :
   # publier:
   #   needs: release
   #   if: needs.release.outputs.release_created == 'true'
+  #   environment: production
   #   runs-on: ubuntu-latest
   #   steps:
   #     - run: echo "Publier ${{ needs.release.outputs.tag_name }}"
