@@ -1,0 +1,142 @@
+# Versions and releases
+
+Commits in a repogarde project follow the conventional format: the next version and the changelog are derived from them. A reusable workflow turns them into **automatic releases**, with no token to create and no manual step.
+
+## Setup
+
+```yaml title=".github/workflows/release.yml"
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2 # x-release-please-major
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+      checks: read
+      statuses: write
+```
+
+Full template: [`templates/project/.github/workflows/release.yml`](https://github.com/SimBienvenueHoulBoumi/repogarde/blob/main/templates/project/.github/workflows/release.yml).
+
+Two prerequisites:
+
+1. *Settings → Actions → General → Workflow permissions*: check **Allow GitHub Actions to create and approve pull requests**;
+2. the project's CI workflows accept `workflow_dispatch` (already the case for the `repogarde.yml` template): this is how CI is run on the release PR.
+
+## How it works
+
+| Commits since the last release | New version |
+|---|---|
+| `fix:`, `perf:` | patch: 1.4.**2** → 1.4.**3** |
+| `feat:` | feature: 1.**4**.2 → 1.**5**.0 |
+| `feat!:` or `BREAKING CHANGE:` in the footer | major: **1**.4.2 → **2**.0.0 |
+| `ci:`, `chore:`, `test:`, `refactor:`, `style:` | no release |
+
+`docs:` triggers a patch only if its section is visible in the changelog (configuration).
+
+On every push to `main`:
+
+1. [release-please](https://github.com/googleapis/release-please) opens or updates the "release x.y.z" PR: changelog and version in the project file;
+2. the project's CI is run on this PR; once green, the PR is merged (squash). If `main` moves forward in the meantime, the PR is updated and revalidated;
+3. the `vX.Y.Z` tag and the GitHub release are created.
+
+The checks required by the protection of `main` remain mandatory: without green CI, nothing is merged.
+
+## Version file
+
+The project type is detected from the files at the root:
+
+| File | Version updated in |
+|---|---|
+| `pom.xml` | `pom.xml` (Maven) |
+| `package.json` | `package.json`, `package-lock.json` |
+| `pyproject.toml`, `setup.py` | `pyproject.toml` / `setup.py` |
+| `Cargo.toml` | `Cargo.toml`, `Cargo.lock` |
+| `Chart.yaml` | `Chart.yaml` (Helm) |
+| `go.mod` | none: the tag defines the version |
+| `composer.json`, `pubspec.yaml`, `mix.exs` | corresponding file |
+| other | `version.txt` |
+
+!!! tip "Changelog in French, monorepo, options"
+    A `release-please-config.json` file at the root (with `.release-please-manifest.json`) takes precedence over detection: changelog sections, multiple packages, additional files to version… See the [repogarde configuration](https://github.com/SimBienvenueHoulBoumi/repogarde/blob/main/release-please-config.json) for an example in French.
+
+!!! note "Maven"
+    After each release, release-please proposes switching back to `-SNAPSHOT` (PR merged automatically in the same way). To skip it: `"skip-snapshot": true` in `release-please-config.json`.
+
+## develop → main flow (tag mode)
+
+For a project with two long-lived branches ([`integrationBranch` flow](configuration.md#integration-branch-flow-develop)), the version is not written to any file: it is computed from the commits and carried by the tag (a Maven build receives it as `-Drevision`, for example).
+
+```yaml title=".github/workflows/release.yml"
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2
+    permissions: { contents: write, pull-requests: write }
+    with:
+      mode: tag
+
+  publier:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ needs.release.outputs.tag_name }}" }
+      - run: ./mvnw -B verify -Drevision="${{ needs.release.outputs.version }}"
+      - run: gh release upload "${{ needs.release.outputs.tag_name }}" target/*.jar
+        env: { GH_TOKEN: "${{ github.token }}" }
+```
+
+1. On every merge into `develop`, the `develop` → `main` **delivery PR** is created or updated: title `chore(release): vX.Y.Z`, grouped notes (breaking changes, features, fixes, maintenance);
+2. merging it (a human decision, preferably a **merge commit**: the notes keep the commit details) publishes: `vX.Y.Z` tag and GitHub release on `main`;
+3. a `hotfix/…` merged into `main` publishes a patch in the same way.
+
+The project's CI must run on pushes to `develop`: its checks apply to the head commit, and therefore count for the delivery PR.
+
+## Inputs and outputs
+
+| Input | Default | Purpose |
+|---|---|---|
+| `release-type` | detection | release-please type (`maven`, `node`, `python`, `simple`…) |
+| `workflows` | detection | workflows run on the release PR; by default those that respond to `pull_request` and `workflow_dispatch` |
+| `initial-version` | `0.1.0` | version of the first release (no existing tag) |
+| `merge-auto` | `true` | `false`: the release PR is prepared and validated by CI, a human merges it; a review required by the protection is always honored |
+| `mode` | `pr` | `tag`: develop → main flow, with no release PR and no version file |
+| `integration-branch`, `main-branch` | `develop`, `main` | branches for tag mode |
+| `config-file`, `manifest-file` | `release-please-config.json`, `.release-please-manifest.json` | release-please configuration |
+
+!!! warning "Workflows that deploy"
+    A workflow that deploys when it is not triggered by a PR (site, environment) would be run on the release branch: list the CI workflows explicitly with `workflows:`.
+
+Outputs: `release_created`, `tag_name`, `version`, `major`, `sha`, to chain the project's own publishing:
+
+```yaml
+  publier:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ needs.release.outputs.tag_name }}" }
+      # mvn deploy, npm publish, docker push…
+```
+
+Suspend releases: *Actions → release → Disable workflow*.

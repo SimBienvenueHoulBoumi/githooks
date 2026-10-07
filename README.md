@@ -9,7 +9,7 @@
 
 **repogarde** garde l'entrée de vos dépôts Git : messages de commit, nommage des branches, secrets, formatage et tests, **quel que soit le langage** — sur les postes (hooks), en CI (GitHub, GitLab) et côté serveur.
 
-📖 **Documentation : https://simbienvenuehoulboumi.github.io/repogarde/**
+📖 **Documentation : https://simbienvenuehoulboumi.github.io/repogarde/** · 🇬🇧 **English: https://simbienvenuehoulboumi.github.io/repogarde/en/**
 
 ## Ce qu'il fait
 
