@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.10.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.9.0...v2.10.0) (2026-10-07)
+
+
+### Fonctionnalités
+
+* **deadcode:** détection du nouveau code mort (prouvé / candidat) ([#75](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/75)) ([428ce5e](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/428ce5ef148bddb224856b1eb391f01c64aa6910))
+
+
+### Documentation
+
+* code mort, flux develop et fix-pr dans les synthèses ([#77](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/77)) ([a7033f9](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/a7033f9c125ca2905d1a90390b5af103e4058605))
+
 ## [2.9.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.8.0...v2.9.0) (2026-10-07)
 
 
