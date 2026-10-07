@@ -44,6 +44,13 @@ _msg_fr() {
         cc.preview) _M="Message" ;;
         cc.confirm) _M="Commiter ? [O/n] : " ;;
         cc.aborted) _M="Abandonné : rien n'a été commité." ;;
+        cc.yn_invalid) _M="Réponds o (oui) ou n (non)." ;;
+        cc.topic_default) _M="modification" ;;
+        cc.protected_hint) _M="Tu es sur « %s », protégée : un commit y serait refusé. Il ira sur une nouvelle branche (tes modifications suivent)." ;;
+        cc.new_branch_prompt) _M="Nouvelle branche (« n » pour abandonner) [%s] : " ;;
+        cc.branch_invalid) _M="« %s » : nom attendu <type>/<sujet> en minuscules, et branche pas encore existante." ;;
+        cc.branch_created) _M="Branche %s créée, tes modifications y sont." ;;
+        cc.kept) _M="Commit refusé : ton message est conservé. Après correction : git commit -F %s" ;;
         cc.created) _M="Commit créé." ;;
         cc.next_branch) _M="Prochains changements : sur une branche, ex. %s, puis une %s." ;;
         cc.topic) _M="sujet" ;;
