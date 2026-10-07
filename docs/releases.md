@@ -20,7 +20,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v2 # x-release-please-major
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3 # x-release-please-major
     permissions:
       contents: write
       pull-requests: write

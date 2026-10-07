@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.13.0...v3.0.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* retire la compatibilité avec githooks v1 ([#102](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/102))
+
+### Fonctionnalités
+
+* retire la compatibilité avec githooks v1 ([#102](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/102)) ([b827955](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/b827955ae8e1efca333364c97e960c2436553115))
+
+
+### Corrections
+
+* **release:** la release ne modifie plus les fichiers de workflow ([#103](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/103)) ([15c8546](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/15c8546ec24c64a482c6ce470de490b18d4a2d92))
+
 ## [2.13.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.12.0...v2.13.0) (2026-10-07)
 
 
