@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.11.0...v2.11.1) (2026-10-07)
+
+
+### Documentation
+
+* démarrage clair : poste, projet d'équipe, contribution ([#81](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/81)) ([ccffef7](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/ccffef7d120ef5ff889a4ed7a329ed24370307c2))
+
 ## [2.11.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v2.10.0...v2.11.0) (2026-10-07)
 
 
