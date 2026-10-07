@@ -48,6 +48,7 @@ nav:
   - Configuration: configuration.md
   - CI (GitHub, GitLab): ci.md
   - Versions et releases: releases.md
+  - Validation humaine: validation.md
   - En organisation: industrialisation.md
   - Migration depuis githooks: migration.md
   - Désinstallation: desinstallation.md
