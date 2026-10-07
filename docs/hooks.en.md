@@ -29,43 +29,58 @@ A `!` (`feat!: …`) or a `BREAKING CHANGE:` footer produces a **major version**
 
 ## Commit assistant: `git cc`
 
-To write a compliant message without memorising the format, `git cc` guides you step by step (alias installed by `install.sh`):
+To write a compliant message without remembering the format, `git cc` guides you step by step (alias installed by `install.sh`), in the language chosen at installation:
 
 ```text
 $ git cc
-Type of change:
-   1) feat      new feature
-   2) fix       bug fix
-   …
-Type [feat]:                                    ← suggested from the branch feat/cart
-Scope (optional, "-" for none) [cart]:
-Breaking change (major version)? [y/N]:
-Description (58 characters max): feat(cart): add the cart
-Body (optional): explain why; empty line to finish.
-> Customers keep their items between visits.
->
-References (optional, e.g. Closes #12): Closes #12
+◆ repogarde · conventional commit
+Enter = suggested value in [brackets] · Ctrl+C to cancel
 
-──── Message ────
+◇ 1/5  Type of change
+   1  ✨  feat      new feature
+   2  🐛  fix       bug fix
+   …
+Number or name [feat]:                          ← suggested from the feat/cart branch
+
+◇ 2/5  Scope (optional)
+Scope ("-" for none) [cart]:
+
+◇ 3/5  Breaking change?
+Breaking? [y/N]:
+
+◇ 4/5  Description
+  Imperative mood, no initial capital or final period; 60 characters max.
 feat(cart): add the cart
 
-Customers keep their items between visits.
+◇ 5/5  Details (optional)
+> The customer keeps their items between two visits.
+>
+References (e.g. Closes #12; Enter for none): Closes #12
 
-Closes #12
-─────────────────
+┌─ Message ───────────────────────────────────────────────
+│ feat(cart): add the cart
+│
+│ The customer keeps their items between two visits.
+│
+│ Closes #12
+└─────────────────────────────────────────────────────────
 Commit? [Y/n]:
 ```
 
 | Step | Required | Help |
 |---|---|---|
-| Type | yes | menu, suggested from the branch |
-| Scope | no | suggested from the branch |
-| Breaking change | no | adds `!` and the `BREAKING CHANGE: …` footer |
-| Description | yes | header length checked (72 characters) |
-| Body | no | several lines: the why |
-| References | no | `Closes #12`, `Refs #34`… |
+| Type | yes | menu (number or name), suggested from the branch |
+| Scope | no | suggested from the branch; an invalid scope is fixed and suggested ("doc test" → `doc-test`) |
+| Breaking change | no | adds `!` and the `BREAKING CHANGE: …` footer, described right away (at least 10 characters); skipped on the repository's first commit |
+| Description | yes | header length checked (72 characters); final period removed |
+| Body | no | several lines: the why; an empty line (or only `;`, `.`) finishes it |
+| References | no | example adapted to the platform: `Closes #12`, `!34` (GitLab), `PROJ-42` (Bitbucket) |
 
-`git commit` options are passed through (`git cc --no-verify`…); `bin/commit --dry-run` displays the message without committing. With lefthook and without `install.sh`: `git config --global alias.cc '!bash /path/to/repogarde/bin/commit'`.
+**On a protected branch** (`main`…), the commit would be refused: the assistant says so at step 2 and suggests a `<type>/<scope>` branch (Enter to create it, your changes follow; "n" to cancel). An incomplete answer is completed (`feat` → `feat/<scope>`), an approximate name fixed (`My Test` → `feat/my-test`).
+
+**Robust input**: arrow keys and deletion in a terminal, stray keys ignored; an invalid yes/no answer is asked again; Ctrl+D cancels. If a hook refuses the commit, the message is kept (`git commit -F .git/repogarde-message` once fixed).
+
+`git commit` options are passed through (`git cc --no-verify`…); `bin/commit --dry-run` shows the message without committing. With lefthook and no `install.sh`: `git config --global alias.cc '!bash /path/to/repogarde/bin/commit'`.
 
 ## Branch naming
 
