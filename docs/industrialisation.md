@@ -159,11 +159,12 @@ Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigé
 
 | Vérification | Échoue si |
 |---|---|
-| `commits` | un message n'est pas Conventional Commits, dépasse 72 caractères, ou est un `fixup!`/`squash!` non squashé |
-| `branch` | le nom de branche ne respecte pas `<type>/<sujet>` (hors exceptions) |
+| `commits` | un message ou le titre de la PR n'est pas Conventional Commits, dépasse 72 caractères (format seul pour les bots de dépendances), ou est un `fixup!`/`squash!` non squashé |
+| `branch` | le nom de branche ne respecte pas `<type>/<sujet>` (hors exceptions) ; dans un [flux `develop`](configuration.md#flux-avec-branche-dintegration-develop), la PR vise la mauvaise branche (reciblée automatiquement avec `fix-pr`) |
 | `secrets` | gitleaks trouve un secret dans les commits de la branche |
 | `format` | un fichier modifié n'est pas formaté (le formateur est lancé, rien n'est committé) |
 | `tests` | les tests d'un projet touché échouent (monorepo : seulement les projets modifiés) |
+| `deadcode` | du code mort **prouvé** est introduit (inaccessible, inutilisé dans sa portée) ; les candidats avertissent seulement ([Code mort](code-mort.md)) |
 
 Les erreurs apparaissent en annotations sur GitHub et dans le log du job sur GitLab, avec la commande de correction.
 
