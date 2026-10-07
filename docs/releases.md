@@ -50,7 +50,7 @@ Deux prérequis :
 À chaque push sur `main` :
 
 1. [release-please](https://github.com/googleapis/release-please) ouvre ou met à jour la PR « release x.y.z » : changelog et version dans le fichier du projet ;
-2. la CI du projet est lancée sur cette PR ; une fois verte, la PR est mergée (squash). Si `main` avance entre-temps, la PR est mise à jour et revalidée ;
+2. la CI du projet est lancée sur cette PR ; une fois verte, la PR est mergée (squash). Si `main` avance entre-temps, la PR est recalculée (version et changelog incluant les nouveaux commits) par le run suivant, puis revalidée ;
 3. le tag `vX.Y.Z` et la release GitHub sont créés.
 
 Les vérifications exigées par la protection de `main` restent obligatoires : sans CI verte, rien n'est mergé.
