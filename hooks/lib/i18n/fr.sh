@@ -64,6 +64,7 @@ _msg_fr() {
         install.alias_taken) _M="Alias git cc déjà utilisé ('%s') : assistant de commit non installé." ;;
         install.alias_ok) _M="Assistant de commit : git cc" ;;
         install.alias_removed) _M="Alias git cc retiré (%s)." ;;
+        install.npm_remove) _M="Le paquet reste installé ; pour le retirer aussi : %s" ;;
         install.nothing) _M="Aucun core.hooksPath (%s) : rien à retirer." ;;
         install.removed) _M="Hooks repogarde retirés (%s)." ;;
         install.foreign) _M="core.hooksPath (%s) = '%s' n'est pas repogarde : laissé intact." ;;
@@ -322,6 +323,27 @@ _msg_fr() {
         npm.token_removed) _M="Secret NPM_TOKEN supprimé du dépôt." ;;
         npm.token_revoked) _M="Jeton temporaire révoqué sur npm." ;;
         npm.done) _M="Terminé : chaque release publie %s sur npm, sans jeton." ;;
+        # Statut (repogarde statut)
+        st.hooks_on) _M="Hooks git actifs pour tous les dépôts (cette installation)" ;;
+        st.hooks_off) _M="Hooks git non activés : aucun contrôle au commit ni au push" ;;
+        st.hooks_other) _M="Hooks git d'une autre installation de repogarde : %s" ;;
+        st.hooks_foreign) _M="Hooks git d'un autre outil (core.hooksPath = %s) : laissés tels quels" ;;
+        st.cc_on) _M="Assistant de commit : git cc" ;;
+        st.cc_off) _M="Assistant de commit (git cc) non installé" ;;
+        st.cc_other) _M="git cc pointe vers une autre installation de repogarde" ;;
+        st.cc_foreign) _M="Alias git cc déjà pris par autre chose : %s" ;;
+        st.lang) _M="Langue des messages : %s" ;;
+        st.repo) _M="Dépôt : %s" ;;
+        st.repo_local) _M="Hooks propres à ce dépôt (core.hooksPath local = %s), prioritaires" ;;
+        st.repo_lefthook) _M="%s présent : les hooks délèguent à lefthook (version figée du projet)" ;;
+        st.repo_lefthook_missing) _M="%s présent mais lefthook absent : règles par défaut, sans la version du projet" ;;
+        st.repo_version_old) _M="Le projet demande repogarde %s ; installé : %s" ;;
+        st.repo_version_ok) _M="Version demandée par le projet (%s) : respectée" ;;
+        st.repo_forge) _M="Plateforme : %s" ;;
+        st.tools) _M="Outils présents : %s · absents : %s (selon les langages des projets)" ;;
+        st.next) _M="Étape suivante :" ;;
+        st.ready) _M="Tout est prêt : git cc pour commiter, repogarde code-mort sur une branche." ;;
+        st.help) _M="Toutes les commandes : repogarde --help" ;;
         *) _M="" ;;
     esac
 }

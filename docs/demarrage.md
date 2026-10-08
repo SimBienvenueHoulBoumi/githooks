@@ -7,9 +7,12 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
     Tous tes dépôts, sans rien ajouter aux projets ni à leur `package.json` :
 
     ```bash
-    npm install -g @simbie/repogarde     # yarn global add, pnpm add -g : idem
-    repogarde install --global           # demande la langue (fr / en), installe git cc
+    npm install -g @simbie/repogarde     # 1. le paquet (yarn global add, pnpm add -g : idem)
+    repogarde install --global           # 2. active les hooks : demande la langue, installe git cc
+    repogarde                            # 3. vérifie : état du poste et étape suivante
     ```
+
+    L'étape 2 est indispensable : par sécurité, le paquet n'exécute rien à l'installation (aucun script `postinstall`).
 
     Essai immédiat, dans n'importe quel dépôt :
 
@@ -22,6 +25,7 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
 
     | Action | Commande |
     |---|---|
+    | État du poste, étape suivante | `repogarde` (ou `repogarde statut`) |
     | Toutes les commandes | `repogarde --help` |
     | Vérifier | `git config --global core.hooksPath` → `…/repogarde/hooks` |
     | Mettre à jour | `npm update -g @simbie/repogarde` (les hooks suivent) |

@@ -7,9 +7,12 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
     All your repositories, without adding anything to the projects or their `package.json`:
 
     ```bash
-    npm install -g @simbie/repogarde     # yarn global add, pnpm add -g: same
-    repogarde install --global           # asks for the language (fr / en), installs git cc
+    npm install -g @simbie/repogarde     # 1. the package (yarn global add, pnpm add -g: same)
+    repogarde install --global           # 2. enables the hooks: asks for the language, installs git cc
+    repogarde                            # 3. checks: machine status and next step
     ```
+
+    Step 2 is required: for security, the package runs nothing at install time (no `postinstall` script).
 
     Try it right away, in any repository:
 
@@ -22,6 +25,7 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
 
     | Action | Command |
     |---|---|
+    | Machine status, next step | `repogarde` (or `repogarde statut`) |
     | Every command | `repogarde --help` |
     | Check | `git config --global core.hooksPath` → `…/repogarde/hooks` |
     | Update | `npm update -g @simbie/repogarde` (the hooks follow) |

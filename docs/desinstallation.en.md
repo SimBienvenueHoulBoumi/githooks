@@ -9,6 +9,8 @@ repogarde uninstall --global
 npm uninstall -g @simbie/repogarde
 ```
 
+In this order: npm runs nothing when uninstalling, and hooks wired to a deleted package silently stop firing. `repogarde` (status) shows what is still active.
+
 Full uninstall, removing the caches (`~/.cache/repogarde`) and listing the repositories still wired to repogarde:
 
 ```bash
