@@ -749,6 +749,8 @@ GH
     grep -q "api repos/o/r/statuses/abc123 -f state=success -f context=repogarde" "$GH_LOG"
     grep -qx "pr merge 9 --merge --match-head-commit abc123" "$GH_LOG"
     grep -qx "merged=true" "$GITHUB_OUTPUT"
+    # retour vers develop : la branche source (main) n'est jamais supprimée
+    ! grep -q "api -X DELETE" "$GH_LOG"
 }
 
 @test "merger-pr : merge-auto false -> PR validee, laissee a un humain" {
