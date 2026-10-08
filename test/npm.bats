@@ -60,3 +60,14 @@ setup() {
         [[ "$output" != *"\"$d"* ]]
     done
 }
+
+@test "npm : desinstallation complete -> npm uninstall -g propose, pas rm -rf" {
+    pkg="$BATS_TEST_TMPDIR/prefix/lib/node_modules/@simbie/repogarde"
+    mkdir -p "$pkg"
+    cp -R "$PKG/bin" "$PKG/hooks" "$PKG/install.sh" "$PKG/package.json" "$pkg/"
+    "$pkg/bin/repogarde" install --global --lang fr >/dev/null
+    run "$pkg/bin/repogarde" uninstall --global --purge
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"npm uninstall -g @simbie/repogarde"* ]]
+    [[ "$output" != *"rm -rf"* ]]
+}

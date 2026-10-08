@@ -176,7 +176,11 @@ if [ "$ACTION" = uninstall ]; then
         echo
         t install.last_step
         echo "$REPLY"
-        echo "  rm -rf \"$ROOT\""
+        # Paquet npm : le désinstaller ; clone : supprimer son dossier
+        case "$ROOT" in
+            */node_modules/*) echo "  npm uninstall -g $(sed -n 's/^  "name": *"\([^"]*\)".*/\1/p' "$ROOT/package.json")" ;;
+            *) echo "  rm -rf \"$ROOT\"" ;;
+        esac
     fi
     exit 0
 fi
