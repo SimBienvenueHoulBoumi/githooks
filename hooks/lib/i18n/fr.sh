@@ -299,6 +299,8 @@ _msg_fr() {
         npm.old_npm) _M="npm %s trop ancien : 11.15 au minimum (npm install -g npm@11)." ;;
         npm.step_login) _M="1/3 Compte npm" ;;
         npm.logged) _M="Connecté à npm : %s" ;;
+        npm.no_2fa) _M="Double authentification (2FA) non activée sur le compte npm : npm l'exige pour créer le jeton et configurer la publication sans jeton." ;;
+        npm.hint_2fa) _M="Activer : npm profile enable-2fa auth-and-writes (QR code pour une application d'authentification), ou https://www.npmjs.com/settings/%s/tfa ; puis relancer cette commande." ;;
         npm.step_token) _M="2/3 Première publication, par la pipeline (jeton temporaire)" ;;
         npm.token_exists) _M="Secret NPM_TOKEN déjà présent : réutilisé." ;;
         npm.ask_password) _M="Mot de passe npm (saisie masquée, transmis à npm seulement) : " ;;
