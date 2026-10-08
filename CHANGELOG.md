@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.2...v3.4.0) (2026-10-08)
+
+
+### Fonctionnalités
+
+* **branches:** aide courte à la création, renommage en tête ([#128](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/128)) ([5817272](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/58172728fdd89c61a1048eccf7971e5d8e1375a8))
+* **statut:** état du poste et étape suivante ([#127](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/127)) ([88d4b11](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/88d4b11552fd069dec54b97753550a9b440627ac))
+
 ## [3.3.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.1...v3.3.2) (2026-10-08)
 
 
