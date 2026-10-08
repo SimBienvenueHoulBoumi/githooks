@@ -15,7 +15,6 @@ skipped branch-name && exit 0
 
 BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
 if ! branch_name_valid "$BRANCH"; then
-    attention_t hook.post_checkout.1 >&2
-    branch_help "$BRANCH"
+    branch_hint "$BRANCH"
 fi
 exit 0
