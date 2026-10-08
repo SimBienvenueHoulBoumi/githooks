@@ -39,7 +39,7 @@ flowchart LR
 ```yaml title="lefthook.yml — hooks du projet"
 remotes:
   - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v3.1.5 # x-release-please-version
+    ref: v3.2.0 # x-release-please-version
     configs: [lefthook-remote.yml]
 ```
 

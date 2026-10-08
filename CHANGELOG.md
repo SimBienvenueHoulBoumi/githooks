@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.5...v3.2.0) (2026-10-08)
+
+
+### Fonctionnalités
+
+* projet d'équipe sans lefthook obligatoire ([#116](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/116)) ([cfd12fb](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/cfd12fbab7292ebd610b0418b9bdedc9f60a29cd))
+
 ## [3.1.5](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.4...v3.1.5) (2026-10-08)
 
 
