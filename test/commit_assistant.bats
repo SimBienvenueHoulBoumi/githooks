@@ -198,3 +198,55 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     [[ "$output" == *"Abandon (--strict)"* ]]
     [ "$(git rev-parse HEAD)" = "$before" ]
 }
+
+@test "assistant : sans question (-m), type et scope deduits de la branche" {
+    run "$CC" -m "ajoute le panier" --body $'Le client garde ses articles.\nMeme apres deconnexion.' --refs "Closes #12"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"1/5"* ]]
+    [ "$(subject)" = "feat(panier): ajoute le panier" ]
+    git log -1 --format=%B >msg
+    grep -qx 'Le client garde ses articles.' msg
+    grep -qx 'Meme apres deconnexion.' msg
+    grep -qx 'Closes #12' msg
+}
+
+@test "assistant : sans question, options --x=valeur, majeur et options de git commit transmises" {
+    run "$CC" --no-verify --type=fix --scope - --breaking "le total est en centimes" -m "change le calcul du total"
+    [ "$status" -eq 0 ]
+    [ "$(subject)" = "fix!: change le calcul du total" ]
+    git log -1 --format=%B | grep -qx 'BREAKING CHANGE: le total est en centimes'
+}
+
+@test "assistant : sans question, valeur refusee -> abandon, rien n'est commite" {
+    before="$(git rev-parse HEAD)"
+    run "$CC" --type inconnu -m "ajoute le panier"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Abandon (--strict)"* ]]
+    run "$CC" --type feat
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"la description est obligatoire"* ]]
+    run "$CC" -m
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"attend une valeur"* ]]
+    [ "$(git rev-parse HEAD)" = "$before" ]
+}
+
+@test "assistant : sans question sur main -> aucune branche creee, abandon" {
+    git switch -q main
+    run "$CC" -m "ajoute le panier"
+    [ "$status" -ne 0 ]
+    [ "$(git branch --show-current)" = main ]
+    [ "$(subject)" = "chore: init" ]
+}
+
+@test "assistant : branche hors convention -> ni type ni scope proposes" {
+    git config repogarde.allowedBranches "main wip/*"
+    git switch -q -c wip/essai
+    run answer "" "docs" "" "" "ajoute la note" "" "" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Type obligatoire"* ]]
+    [ "$(subject)" = "docs: ajoute la note" ]
+    run "$CC" --dry-run -m "ajoute la note"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Type obligatoire"* ]]
+}
