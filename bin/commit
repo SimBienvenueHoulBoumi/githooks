@@ -5,6 +5,12 @@
 #   git cc --strict                    une réponse refusée arrête tout (scripts :
 #                                      sans cela, la ligne suivante serait lue
 #                                      comme une nouvelle réponse)
+#   git cc -m "description" [--type T] [--scope S] [--breaking NOTE]
+#          [--body TEXTE] [--refs "Closes #12"]
+#                                      sans question (scripts, agents) : mêmes
+#                                      contrôles, toute réponse refusée arrête
+#                                      tout ; type et scope déduits de la
+#                                      branche s'ils sont omis
 # Les réponses sont lues sur l'entrée standard (terminal avec édition de
 # ligne, ou fichier/tube pour les tests). Le commit passe ensuite par les
 # hooks habituels. Couleurs désactivables : NO_COLOR=1.
@@ -14,22 +20,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
 source "$ROOT/hooks/lib/common.sh"
 
-DRY_RUN="" STRICT=""
-while :; do
-    case "${1:-}" in
-        --dry-run) DRY_RUN=1 ;;
-        --strict) STRICT=1 ;;
-        *) break ;;
-    esac
-    shift
-done
-
 # Charte visuelle commune (hooks/lib/ui.sh, chargée par common.sh)
 B="$UI_B" D="$UI_D" G="$UI_G" R="$UI_R" C="$UI_C" N="$UI_N"
 STEPS=5
 
-etape() { printf '\n%s◇ %s/%s%s  %s%s%s\n' "$C" "$1" "$STEPS" "$N" "$B" "$2" "$N" >&2; }
-hint() { printf '  %s%s%s\n' "$D" "$*" "$N" >&2; }
+# Sans question (BATCH) : ni étapes ni aides, seulement les erreurs et l'aperçu
+etape() { [ -z "$BATCH" ] || return 0; printf '\n%s◇ %s/%s%s  %s%s%s\n' "$C" "$1" "$STEPS" "$N" "$B" "$2" "$N" >&2; }
+hint() { [ -z "$BATCH" ] || return 0; printf '  %s%s%s\n' "$D" "$*" "$N" >&2; }
 fail() { printf '  %s✖ %s%s\n' "$R" "$*" "$N" >&2; }
 # Réponse refusée : la question est reposée ; avec --strict, abandon (rien
 # n'est commité) plutôt que de lire la réponse suivante d'un script
@@ -41,8 +38,11 @@ refuse() {
 # Réponse dans REPLY, nettoyée : séquences d'échappement (flèches, Échap) et
 # caractères de contrôle retirés, espaces de début et de fin supprimés.
 # Dans un terminal, édition de ligne (flèches, effacement) avec read -e.
+# Sans question (BATCH) : la réponse est ANSWER, fixée par l'appelant.
 ask() {
-    if [ -t 0 ]; then
+    if [ -n "$BATCH" ]; then
+        REPLY="$ANSWER"
+    elif [ -t 0 ]; then
         # Ctrl+D (fin de saisie) : abandon
         IFS= read -e -r -p "$1" REPLY || { echo >&2; t cc.aborted; fail "$REPLY"; exit 1; }
     else
@@ -72,6 +72,41 @@ ask_yn() {
     done
 }
 
+DRY_RUN="" STRICT="" BATCH="" ANSWER=""
+PASS=() # options transmises à git commit (--no-verify…)
+OPT_TYPE="" OPT_SCOPE="" OPT_MESSAGE="" OPT_BODY="" OPT_REFS="" OPT_BREAKING=""
+# Valeur d'une option : « --type feat » ou « --type=feat »
+option_value() {
+    case "$1" in
+        *=*) REPLY="${1#*=}"; SHIFT=1 ;;
+        *)
+            [ $# -ge 2 ] || { t cc.option_value "$1"; fail "$REPLY"; exit 1; }
+            REPLY="$2"; SHIFT=2
+            ;;
+    esac
+}
+while [ $# -gt 0 ]; do
+    SHIFT=1
+    case "$1" in
+        --dry-run) DRY_RUN=1 ;;
+        --strict) STRICT=1 ;;
+        --type | --type=*) option_value "$@"; OPT_TYPE="$REPLY"; BATCH=1 ;;
+        --scope | --scope=*) option_value "$@"; OPT_SCOPE="$REPLY"; BATCH=1 ;;
+        -m | --message | --message=*) option_value "$@"; OPT_MESSAGE="$REPLY"; BATCH=1 ;;
+        --body | --body=*) option_value "$@"; OPT_BODY="$REPLY"; BATCH=1 ;;
+        --refs | --refs=*) option_value "$@"; OPT_REFS="$REPLY"; BATCH=1 ;;
+        --breaking | --breaking=*) option_value "$@"; OPT_BREAKING="$REPLY"; BATCH=1 ;;
+        --) shift; PASS+=("$@"); break ;;
+        *) PASS+=("$1") ;;
+    esac
+    shift "$SHIFT"
+done
+# Sans question : les valeurs viennent des options, aucune n'est redemandée
+if [ -n "$BATCH" ]; then
+    STRICT=1
+    [ -n "$OPT_MESSAGE" ] || { t cc.batch_message_required; fail "$REPLY"; exit 1; }
+fi
+
 if [ -z "$DRY_RUN" ] && git diff --cached --quiet; then
     t cc.nothing_staged
     fail "$REPLY"
@@ -87,7 +122,9 @@ for _type in "${TYPES[@]}"; do
     DESCRIPTIONS+=("$REPLY")
 done
 
-# Valeurs proposées d'après la branche : feat/panier → feat, panier
+# Valeurs proposées d'après la branche : feat/panier → feat, panier. Branche
+# hors convention (claude/xyz, wip/xyz) : rien n'est proposé, le type doit être
+# choisi (Entrée donnerait sinon un feat, donc une version mineure, par erreur).
 branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
 first_commit=""
 git rev-parse -q --verify HEAD >/dev/null || first_commit=1
@@ -96,27 +133,38 @@ default_scope=""
 if [[ "$branch" == */* ]]; then
     prefix="${branch%%/*}"
     case "$prefix" in feature) prefix=feat ;; bugfix | hotfix) prefix=fix ;; esac
-    [[ "$prefix" =~ ^($CC_TYPES)$ ]] && default_type="$prefix"
-    default_scope="$(echo "${branch#*/}" | tr '[:upper:]/' '[:lower:]-' | tr -cd 'a-z0-9._-')"
-    [ "${#default_scope}" -le 20 ] || default_scope=""
+    if [[ "$prefix" =~ ^($CC_TYPES)$ ]]; then
+        default_type="$prefix"
+        default_scope="$(echo "${branch#*/}" | tr '[:upper:]/' '[:lower:]-' | tr -cd 'a-z0-9._-')"
+        [ "${#default_scope}" -le 20 ] || default_scope=""
+    else
+        default_type=""
+    fi
 fi
 
-t cc.title
-brand "$REPLY" >&2
-t cc.help
-printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
+if [ -z "$BATCH" ]; then
+    t cc.title
+    brand "$REPLY" >&2
+    t cc.help
+    printf '%s%s%s\n' "$D" "$REPLY" "$N" >&2
+fi
 
 # 1. Type
 t cc.step1
 etape 1 "$REPLY"
-for i in "${!TYPES[@]}"; do
+[ -n "$BATCH" ] || for i in "${!TYPES[@]}"; do
     printf '  %s%2d%s  %s  %s%-9s%s %s%s%s\n' "$D" "$((i + 1))" "$N" "${EMOJIS[$i]}" "$B" "${TYPES[$i]}" "$N" "$D" "${DESCRIPTIONS[$i]}" "$N" >&2
 done
 while :; do
-    t cc.type_prompt "$default_type"
+    if [ -n "$default_type" ]; then t cc.type_prompt "$default_type"; else t cc.type_prompt_required; fi
+    ANSWER="$OPT_TYPE"
     ask "$REPLY"
     answer="${REPLY:-$default_type}"
-    if [[ "$answer" =~ ^[0-9]+$ ]] && [ "$answer" -ge 1 ] && [ "$answer" -le "${#TYPES[@]}" ]; then
+    if [ -z "$answer" ]; then
+        t cc.type_required
+        refuse "$REPLY"
+        continue
+    elif [[ "$answer" =~ ^[0-9]+$ ]] && [ "$answer" -ge 1 ] && [ "$answer" -le "${#TYPES[@]}" ]; then
         type="${TYPES[$((answer - 1))]}"
         break
     elif [[ "$answer" =~ ^($CC_TYPES)$ ]]; then
@@ -135,11 +183,13 @@ hint "$REPLY"
 while :; do
     if [ -n "$default_scope" ]; then
         t cc.scope_prompt_default "$default_scope"
+        ANSWER="$OPT_SCOPE"
         ask "$REPLY"
         scope="${REPLY:-$default_scope}"
         [ "$scope" = - ] && scope=""
     else
         t cc.scope_prompt
+        ANSWER="$OPT_SCOPE"
         ask "$REPLY"
         scope="$REPLY"
     fi
@@ -169,6 +219,7 @@ if [ -z "$first_commit" ] && [ -z "$DRY_RUN" ] && ! skipped protect-branch &&
     printf '\n  %s%s%s\n' "$B" "$REPLY" "$N" >&2
     while :; do
         t cc.new_branch_prompt "$suggestion"
+        ANSWER=n # sans question : jamais de branche créée à la place de l'utilisateur
         ask "$REPLY"
         name="${REPLY:-$suggestion}"
         # Réponse incomplète ou approximative : complétée (« feat » → feat/<scope>,
@@ -213,6 +264,7 @@ else
     t cc.breaking_hint2
     hint "$REPLY"
     t cc.breaking_prompt
+    ANSWER="${OPT_BREAKING:+o}"
     ask_yn "$REPLY" n
     breaking="$YN"
     if [ -n "$breaking" ]; then
@@ -220,6 +272,7 @@ else
         hint "$REPLY"
         while :; do
             t cc.breaking_note_prompt
+            ANSWER="$OPT_BREAKING"
             ask "$REPLY"
             if [ "${#REPLY}" -ge 10 ] && [[ ! "$REPLY" =~ ^(RAS|ras|rien|aucun|none|-|\.)$ ]]; then
                 breaking_note="$REPLY"
@@ -241,6 +294,7 @@ max=$((72 - REPLY))
 t cc.desc_hint "$max"
 hint "$REPLY"
 while :; do
+    ANSWER="$OPT_MESSAGE"
     ask "$header_prefix"
     description="$REPLY"
     description="${description%.}"
@@ -264,13 +318,17 @@ etape 5 "$REPLY"
 t cc.body_hint
 hint "$REPLY"
 body=""
-while :; do
+if [ -n "$BATCH" ]; then
+    [ -z "$OPT_BODY" ] || body="${OPT_BODY%$'\n'}"$'\n'
+fi
+while [ -z "$BATCH" ]; do
     ask "> "
     # Ligne vide, ou faite seulement de ponctuation (« ; », « . »…) : fin du corps
     [[ -n "$REPLY" && ! "$REPLY" =~ ^[[:punct:]]+$ ]] || break
     body="$body$REPLY"$'\n'
 done
 t cc.refs_prompt "$FORGE_REFS"
+ANSWER="$OPT_REFS"
 ask "$REPLY"
 refs="$REPLY"
 
@@ -295,6 +353,7 @@ if [ -n "$DRY_RUN" ]; then
 fi
 
 t cc.confirm
+ANSWER=o
 ask_yn "$REPLY" o
 if [ -z "$YN" ]; then
     t cc.aborted
@@ -305,7 +364,7 @@ fi
 # Message gardé dans le dépôt si le commit est refusé (hook, secret…) : rien à ressaisir
 file="$(git rev-parse --git-dir)/repogarde-message"
 printf '%s' "$message" >"$file"
-if ! git commit -F "$file" "$@"; then
+if ! git commit -F "$file" ${PASS[@]+"${PASS[@]}"}; then
     t cc.kept "$file"
     printf '\n%s%s%s\n' "$B" "$REPLY" "$N" >&2
     exit 1
