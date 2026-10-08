@@ -4,7 +4,8 @@ name: e2e
 
 on:
   push:
-    branches: [main]
+    # develop : ses vérifications valent pour la PR de livraison develop → main
+    branches: [main, develop]
   pull_request:
 
 permissions:

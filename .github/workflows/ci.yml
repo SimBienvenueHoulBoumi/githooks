@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # develop : ses vérifications valent pour la PR de livraison develop → main
+    branches: [main, develop]
   pull_request:
   # Lancé par le workflow de release sur sa PR (GITHUB_TOKEN ne déclenche que ce type)
   workflow_dispatch:

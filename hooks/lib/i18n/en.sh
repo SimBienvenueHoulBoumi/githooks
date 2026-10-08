@@ -52,6 +52,7 @@ _msg_en() {
         cc.branch_exists) _M="Branch \"%s\" already exists: choose another name." ;;
         cc.branch_fixed) _M="\"%s\": expected <type>/<topic> in lowercase. Suggested: %s (Enter to accept)." ;;
         cc.branch_created) _M="Branch %s created, your changes are on it." ;;
+        cc.strict_abort) _M="Aborted (--strict): answer refused, nothing was committed." ;;
         cc.kept) _M="Commit refused: your message is kept. Once fixed: git commit -F %s" ;;
         cc.created) _M="Commit created." ;;
         cc.next_branch) _M="Next changes: on a branch, e.g. %s, then a %s." ;;

@@ -80,7 +80,7 @@ Commit? [Y/n]:
 
 **Robust input**: arrow keys and deletion in a terminal, stray keys ignored; an invalid yes/no answer is asked again; Ctrl+D cancels. If a hook refuses the commit, the message is kept (`git commit -F .git/repogarde-message` once fixed).
 
-`git commit` options are passed through (`git cc --no-verify`…); `bin/commit --dry-run` shows the message without committing. With lefthook and no `install.sh`: `git config --global alias.cc '!bash /path/to/repogarde/bin/commit'`.
+`git commit` options are passed through (`git cc --no-verify`…); `git cc --dry-run` shows the message without committing. Answers supplied by a script (one per line on standard input): `git cc --strict`, so that a refused answer stops everything instead of reading the next line as a new answer. With lefthook and no `install.sh`: `git config --global alias.cc '!bash /path/to/repogarde/bin/commit'`.
 
 ## Branch naming
 

@@ -2,6 +2,9 @@
 # Assistant de commit conventionnel : guide l'en-tête, le corps et le pied.
 #   git cc [options de git commit]     alias installé par install.sh
 #   bin/commit --dry-run               affiche le message sans commiter
+#   git cc --strict                    une réponse refusée arrête tout (scripts :
+#                                      sans cela, la ligne suivante serait lue
+#                                      comme une nouvelle réponse)
 # Les réponses sont lues sur l'entrée standard (terminal avec édition de
 # ligne, ou fichier/tube pour les tests). Le commit passe ensuite par les
 # hooks habituels. Couleurs désactivables : NO_COLOR=1.
@@ -11,11 +14,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
 source "$ROOT/hooks/lib/common.sh"
 
-DRY_RUN=""
-if [ "${1:-}" = --dry-run ]; then
-    DRY_RUN=1
+DRY_RUN="" STRICT=""
+while :; do
+    case "${1:-}" in
+        --dry-run) DRY_RUN=1 ;;
+        --strict) STRICT=1 ;;
+        *) break ;;
+    esac
     shift
-fi
+done
 
 # Charte visuelle commune (hooks/lib/ui.sh, chargée par common.sh)
 B="$UI_B" D="$UI_D" G="$UI_G" R="$UI_R" C="$UI_C" N="$UI_N"
@@ -24,6 +31,12 @@ STEPS=5
 etape() { printf '\n%s◇ %s/%s%s  %s%s%s\n' "$C" "$1" "$STEPS" "$N" "$B" "$2" "$N" >&2; }
 hint() { printf '  %s%s%s\n' "$D" "$*" "$N" >&2; }
 fail() { printf '  %s✖ %s%s\n' "$R" "$*" "$N" >&2; }
+# Réponse refusée : la question est reposée ; avec --strict, abandon (rien
+# n'est commité) plutôt que de lire la réponse suivante d'un script
+refuse() {
+    fail "$1"
+    [ -z "$STRICT" ] || { t cc.strict_abort; fail "$REPLY"; exit 1; }
+}
 
 # Réponse dans REPLY, nettoyée : séquences d'échappement (flèches, Échap) et
 # caractères de contrôle retirés, espaces de début et de fin supprimés.
@@ -55,7 +68,7 @@ ask_yn() {
             n | N | non | Non | NON | no | No | NO) YN=""; return 0 ;;
         esac
         t cc.yn_invalid
-        fail "$REPLY"
+        refuse "$REPLY"
     done
 }
 
@@ -111,7 +124,7 @@ while :; do
         break
     fi
     t cc.type_invalid "$answer" "${#TYPES[@]}"
-    fail "$REPLY"
+    refuse "$REPLY"
 done
 
 # 2. Scope (optionnel)
@@ -141,7 +154,7 @@ while :; do
     else
         t cc.scope_invalid
     fi
-    fail "$REPLY"
+    refuse "$REPLY"
 done
 
 # Branche protégée (main…) : le commit y serait refusé. On le dit tout de suite
@@ -182,7 +195,7 @@ if [ -z "$first_commit" ] && [ -z "$DRY_RUN" ] && ! skipped protect-branch &&
             suggestion="$(suggest_branch_name "$name")"
             t cc.branch_fixed "$name" "$suggestion"
         fi
-        fail "$REPLY"
+        refuse "$REPLY"
     done
 fi
 
@@ -213,7 +226,7 @@ else
                 break
             fi
             t cc.breaking_note_invalid
-            fail "$REPLY"
+            refuse "$REPLY"
         done
     fi
 fi
@@ -233,13 +246,13 @@ while :; do
     description="${description%.}"
     if [ -z "$description" ]; then
         t cc.desc_required
-        fail "$REPLY"
+        refuse "$REPLY"
         continue
     fi
     authored_length "$header_prefix$description"
     if [ "$REPLY" -gt 72 ]; then
         t cc.header_too_long "$REPLY"
-        fail "$REPLY"
+        refuse "$REPLY"
         continue
     fi
     break

@@ -15,6 +15,11 @@
 # ni fichier de version. Sur la branche d'intégration, une PR de livraison
 # develop → main est tenue à jour (titre « chore(release): vX.Y.Z », notes) ;
 # la merger (humain) publie : sur main, tag vX.Y.Z et release GitHub.
+# Mode « cycle » (flux develop → main avec fichiers de version) : le travail
+# s'intègre dans develop, une PR de livraison develop → main est tenue à jour ;
+# la merger (humain, merge commit) déclenche sur main la release du mode pr
+# (PR de release, changelog, fichiers de version, tag). Puis main est fusionnée
+# dans develop par une PR mergée automatiquement (fichiers de version à jour).
 # Les sorties (release_created, tag_name, version…) permettent au projet
 # d'enchaîner ses propres jobs de publication (registre, image, paquet…).
 name: release-auto
@@ -51,6 +56,8 @@ on:
         description: >-
           « pr » (défaut) : release-please, PR de release mergée automatiquement.
           « tag » : flux develop → main, version calculée et tag posé au merge sur main.
+          « cycle » : flux develop → main, release du mode pr au merge de la
+          livraison sur main, puis main fusionnée dans develop.
         type: string
         default: pr
       integration-branch:
@@ -111,7 +118,7 @@ permissions: {}
 
 jobs:
   release:
-    if: inputs.mode != 'tag'
+    if: inputs.mode == 'pr' || (inputs.mode == 'cycle' && github.ref_name == inputs.main-branch)
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
@@ -357,6 +364,38 @@ jobs:
           manifest-file: ${{ inputs.manifest-file }}
           skip-github-pull-request: true
 
+      # Mode cycle : la release (changelog, fichiers de version) revient dans
+      # la branche d'intégration par une PR mergée automatiquement dès que ses
+      # vérifications passent. Bot de release conseillé : ses PR déclenchent
+      # la CI (celles du jeton des Actions, non).
+      - name: Retour vers la branche d'intégration
+        if: >-
+          inputs.mode == 'cycle' &&
+          (steps.release.outputs.release_created == 'true' || steps.publish.outputs.release_created == 'true')
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
+          GH_REPO: ${{ github.repository }}
+          INTEGRATION: ${{ inputs.integration-branch }}
+          MAIN: ${{ inputs.main-branch }}
+          TAG: ${{ steps.release.outputs.tag_name || steps.publish.outputs.tag_name }}
+        run: |
+          if [ "$(gh api "repos/$GH_REPO/compare/$INTEGRATION...$MAIN" --jq .ahead_by)" = 0 ]; then
+            echo "$INTEGRATION contient déjà $MAIN : rien à fusionner."
+            exit 0
+          fi
+          pr="$(gh pr list --head "$MAIN" --base "$INTEGRATION" --state open --json number -q '.[0].number // empty')"
+          if [ -z "$pr" ]; then
+            url="$(gh pr create --head "$MAIN" --base "$INTEGRATION" \
+              --title "chore(release): $INTEGRATION à jour de $TAG" \
+              --body "Fusionne la release **$TAG** (changelog, fichiers de version) dans \`$INTEGRATION\`. Mergée automatiquement (merge commit) dès que les vérifications passent (repogarde).")"
+            pr="${url##*/}"
+          fi
+          if gh pr merge "$pr" --auto --merge; then
+            echo "::notice::PR #$pr : $MAIN fusionnée dans $INTEGRATION dès que ses vérifications passent."
+          else
+            echo "::warning::PR #$pr à merger (merge commit) : merge automatique indisponible (Settings → General → Allow auto-merge)."
+          fi
+
       - name: Aide
         if: failure()
         env:
@@ -395,7 +434,7 @@ jobs:
 
   # Mode tag : flux develop → main
   tag:
-    if: inputs.mode == 'tag'
+    if: inputs.mode == 'tag' || (inputs.mode == 'cycle' && github.ref_name == inputs.integration-branch)
     runs-on: ubuntu-latest
     permissions:
       contents: write # tag et release
@@ -440,6 +479,7 @@ jobs:
           INTEGRATION: ${{ inputs.integration-branch }}
           MAIN: ${{ inputs.main-branch }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
+          MODE: ${{ inputs.mode }}
         run: |
           git fetch -q origin "$MAIN"
           pr="$(gh pr list --head "$INTEGRATION" --base "$MAIN" --state open --json number -q '.[0].number // empty')"
@@ -450,7 +490,12 @@ jobs:
           version="$(bash .repogarde-ci/ci/version.sh next HEAD)"
           if [ -n "$version" ]; then
             title="chore(release): v$version"
-            body="$(printf 'Merger cette PR (merge commit) publie **v%s** : tag et release GitHub automatiques.\n\n%s\n\n---\n_Tenue à jour à chaque merge sur %s (repogarde)._\n' \
+            if [ "$MODE" = cycle ]; then
+              suite="lance la release **v%s** sur $MAIN : PR de release (changelog, fichiers de version), tag et publication automatiques"
+            else
+              suite="publie **v%s** : tag et release GitHub automatiques"
+            fi
+            body="$(printf "Merger cette PR (merge commit) $suite.\n\n%s\n\n---\n_Tenue à jour à chaque merge sur %s (repogarde)._\n" \
               "$version" "$(bash .repogarde-ci/ci/version.sh notes HEAD)" "$INTEGRATION")"
           else
             title="chore(release): livrer $INTEGRATION sur $MAIN"
@@ -466,7 +511,7 @@ jobs:
 
       - name: Tag et release
         id: publier
-        if: github.ref_name == inputs.main-branch
+        if: inputs.mode == 'tag' && github.ref_name == inputs.main-branch
         env:
           GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
