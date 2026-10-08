@@ -95,7 +95,8 @@ _msg_en() {
         hook.pre_push.5) _M="%s: no changed file, nothing to test." ;;
         hook.pre_push.6) _M="Nothing to test (branch deletion only)." ;;
         hook.pre_push.7) _M="Pre-push OK" ;;
-        hook.post_checkout.1) _M="Warning: commits and pushes will be refused on this branch." ;;
+        hook.branch_hint.1) _M="Branch name \"%s\" does not follow the convention: commits and pushes will be refused. Rename:" ;;
+        hook.branch_hint.2) _M="  Format <type>/<topic> (e.g. feat/signup); full help on the next commit." ;;
         hook.post_merge.1) _M="🧹 Local branch deleted (merged and deleted on the server): %s" ;;
         hook.post_merge.2) _M="🧹 Local branch deleted (squash-merged and deleted on the server): %s" ;;
         hook.post_merge.3) _M="%s: deleted on the server but some changes are missing here, kept." ;;
