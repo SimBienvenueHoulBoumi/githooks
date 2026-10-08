@@ -700,20 +700,55 @@ T
     [[ "$output" != *"Aucun nouveau code mort"* ]]
 }
 
-@test "bot-release : aide, et sur GitLab annonce du jeton d'acces de projet" {
-    run "$BATS_TEST_DIRNAME/../bin/bot-release" --help
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"GitHub App"* ]]
-    git config repogarde.forge gitlab
-    run "$BATS_TEST_DIRNAME/../bin/bot-release"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"REPOGARDE_RELEASE_TOKEN"* ]]
-}
-
 @test "code-mort : aucune modification -> message clair, pas aucun langage" {
     git update-ref refs/remotes/origin/main HEAD
     run "$BATS_TEST_DIRNAME/../bin/code-mort"
     [ "$status" -eq 0 ]
     [[ "$output" == *"Aucune modification par rapport à origin/main"* ]]
     [[ "$output" != *"langage analysable"* ]]
+}
+
+# --- ci/merger-pr.sh : validation par la CI puis merge (gh simulé) --------------
+
+fake_gh_merge() {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cat >"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
+#!/usr/bin/env bash
+echo "$*" >>"$GH_LOG"
+case "$*" in
+    "pr view "*"headRefName"*) echo main ;;
+    "pr view "*"headRefOid"*) echo abc123 ;;
+    "pr view "*"--json state"*) echo OPEN ;;
+    "pr view "*"mergeStateStatus"*) echo CLEAN ;;
+    "api repos/"*"/commits/"*) echo abc123 ;;
+    "api repos/"*"/rules/branches/"*) echo repogarde ;;
+    "run list "*) echo 101 ;;
+    "run view 101 --json jobs"*) echo success ;;
+    "run view 101 --json url"*) echo https://exemple/run/101 ;;
+esac
+exit 0
+GH
+    chmod +x "$BATS_TEST_TMPDIR/bin/gh"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH" GH_LOG="$BATS_TEST_TMPDIR/gh.log"
+    export GH_REPO=o/r WORKFLOWS=ci.yml BASE=develop GITHUB_OUTPUT="$BATS_TEST_TMPDIR/out"
+    : >"$GH_LOG"
+    : >"$GITHUB_OUTPUT"
+}
+
+@test "merger-pr : CI lancee, verifications reportees en statut, merge commit" {
+    fake_gh_merge
+    run bash "$BATS_TEST_DIRNAME/../ci/merger-pr.sh" 9 merge
+    [ "$status" -eq 0 ]
+    grep -qx "workflow run ci.yml --ref main" "$GH_LOG"
+    grep -q "api repos/o/r/statuses/abc123 -f state=success -f context=repogarde" "$GH_LOG"
+    grep -qx "pr merge 9 --merge --match-head-commit abc123" "$GH_LOG"
+    grep -qx "merged=true" "$GITHUB_OUTPUT"
+}
+
+@test "merger-pr : merge-auto false -> PR validee, laissee a un humain" {
+    fake_gh_merge
+    MERGE_AUTO=false run bash "$BATS_TEST_DIRNAME/../ci/merger-pr.sh" 9 squash
+    [ "$status" -eq 0 ]
+    ! grep -q "^pr merge" "$GH_LOG"
+    grep -qx "waiting_pr=9" "$GITHUB_OUTPUT"
 }

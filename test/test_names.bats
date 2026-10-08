@@ -48,7 +48,7 @@ marked = set(out.split()) - {"release-please-config.json", "test/test_names.bats
 for f in sorted(marked - listed): print("marqué mais jamais mis à jour :", f)
 for f in sorted(listed - marked): print("listé sans marqueur :", f)
 # Le jeton des Actions ne peut pas modifier .github/workflows/ : une release qui
-# y touche échoue (« Error adding to tree »), sauf avec un bot de release
+# y touche échoue (« Error adding to tree »)
 workflows = sorted(f for f in listed | marked if f.startswith(".github/workflows/"))
 for f in workflows: print("fichier de workflow modifié par la release :", f)
 sys.exit(1 if (marked ^ listed) or workflows else 0)
