@@ -56,6 +56,13 @@ brand "npm · $name · $REPO"
 step_t npm.step_login
 npm whoami >/dev/null 2>&1 || npm login
 ok_t npm.logged "$(npm whoami)"
+# Créer un jeton et configurer la publication de confiance exigent la 2FA du
+# compte (les codes envoyés par e-mail ne sont qu'une vérification de connexion)
+if [ "$(npm profile get --json 2>/dev/null | node -e 'try{const p=JSON.parse(require("fs").readFileSync(0,"utf8"));process.stdout.write(p.tfa&&p.tfa.mode?"1":"")}catch{}')" != 1 ]; then
+    err_t npm.no_2fa
+    dim_t npm.hint_2fa "$(npm whoami)"
+    exit 1
+fi
 
 publie() { [ -n "$(npm view "$name" name 2>/dev/null || true)" ]; }
 

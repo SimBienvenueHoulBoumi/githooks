@@ -299,6 +299,8 @@ _msg_en() {
         npm.old_npm) _M="npm %s is too old: 11.15 or later required (npm install -g npm@11)." ;;
         npm.step_login) _M="1/3 npm account" ;;
         npm.logged) _M="Logged in to npm: %s" ;;
+        npm.no_2fa) _M="Two-factor authentication (2FA) is not enabled on the npm account: npm requires it to create the token and configure tokenless publishing." ;;
+        npm.hint_2fa) _M="Enable it: npm profile enable-2fa auth-and-writes (QR code for an authenticator app), or https://www.npmjs.com/settings/%s/tfa; then run this command again." ;;
         npm.step_token) _M="2/3 First publication, by the pipeline (temporary token)" ;;
         npm.token_exists) _M="NPM_TOKEN secret already present: reused." ;;
         npm.ask_password) _M="npm password (hidden input, sent to npm only): " ;;

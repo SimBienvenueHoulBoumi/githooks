@@ -3,6 +3,7 @@
 [![CI](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/ci.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/ci.yml)
 [![e2e](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/e2e.yml/badge.svg)](https://github.com/SimBienvenueHoulBoumi/repogarde/actions/workflows/e2e.yml)
 [![Release](https://img.shields.io/github/v/release/SimBienvenueHoulBoumi/repogarde)](https://github.com/SimBienvenueHoulBoumi/repogarde/releases)
+[![npm](https://img.shields.io/npm/v/@simbie/repogarde)](https://www.npmjs.com/package/@simbie/repogarde)
 [![Documentation](https://img.shields.io/badge/docs-site-indigo)](https://simbienvenuehoulboumi.github.io/repogarde/)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SimBienvenueHoulBoumi/repogarde/badge)](https://scorecard.dev/viewer/?uri=github.com/SimBienvenueHoulBoumi/repogarde)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
@@ -18,7 +19,7 @@
 - **Secrets** : gitleaks avant le commit et en CI.
 - **Formatage** : seul le contenu stagé, avec l'outil du projet ; le travail en cours est préservé.
 - **Tests** : au push et en CI, seulement les projets touchés, sur le commit poussé.
-- **Code mort** : seul le nouveau code mort est signalé, prouvé (bloquant) ou candidat (à vérifier) ; `bin/code-mort` en local.
+- **Code mort** : seul le nouveau code mort est signalé, prouvé (bloquant) ou candidat (à vérifier) ; `repogarde code-mort` en local.
 - **Versions et releases** : les commits étant conventionnels, la version suivante (semver) et le changelog se déduisent de l'historique ; un workflow réutilisable en fait des releases automatiques (PR de release validée par la CI puis mergée, tag, release), sans jeton ni intervention.
 
 **Plus de 25 technologies** : Java (Maven, Gradle), JavaScript / TypeScript, Python, Go, Rust, PHP, Ruby, .NET, Dart / Flutter, Swift, Elixir, C / C++, Shell, Terraform, Packer, Ansible, Helm, Kubernetes, Docker, GitHub Actions — [détail](https://simbienvenuehoulboumi.github.io/repogarde/technologies/). Linux, macOS, Windows.
@@ -28,30 +29,27 @@
 ### 1. Sur ton poste, en une minute (tous tes dépôts)
 
 ```bash
-git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
-~/repogarde/install.sh --global      # demande la langue (fr / en) et installe git cc
+npm install -g @simbie/repogarde     # paquet npm (yarn global add, pnpm add -g : idem)
+repogarde install --global           # demande la langue (fr / en) et installe git cc
 ```
 
-C'est tout : dans **n'importe quel dépôt**, les hooks s'appliquent dès le prochain commit.
+C'est tout : dans **n'importe quel dépôt**, les hooks s'appliquent dès le prochain commit. Rien n'est ajouté aux projets ni à leur `package.json`.
 
 ```bash
 cd mon-projet
 git switch -c feat/panier            # nom de branche vérifié
 git add . && git cc                  # assistant : type, scope, description… puis commit
 git push -u origin feat/panier       # tests des projets touchés avant l'envoi
-~/repogarde/bin/code-mort            # nouveau code mort de ta branche
+repogarde code-mort                  # nouveau code mort de ta branche
 ```
 
-Mettre à jour : `git -C ~/repogarde pull` · Désinstaller : `~/repogarde/install.sh --uninstall --global`.
+| Action | Commande |
+|---|---|
+| Toutes les commandes | `repogarde --help` (`cc`, `code-mort`, `proteger`, `bot-release`, `npm-publication`…) |
+| Mettre à jour | `npm update -g @simbie/repogarde` (les hooks suivent) |
+| Désinstaller | `repogarde uninstall --global`, puis `npm uninstall -g @simbie/repogarde` |
 
-Avec npm (Node installé), en commande globale de la machine, sans clone ni ajout aux `package.json` des projets :
-
-```bash
-npm install -g @simbie/repogarde
-repogarde install --global           # mêmes hooks, git cc ; repogarde code-mort, repogarde proteger…
-```
-
-Mettre à jour : `npm update -g @simbie/repogarde` · Désinstaller : `repogarde uninstall --global`, puis `npm uninstall -g @simbie/repogarde`.
+Sans Node : `git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde && ~/repogarde/install.sh --global` (mise à jour : `git -C ~/repogarde pull`).
 
 ### 2. Dans un projet d'équipe (version figée, CI qui fait foi)
 
@@ -67,7 +65,7 @@ remotes:
 
 ```yaml
 # .github/workflows/repogarde.yml (extrait) — la CI fait foi
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
   with: { fetch-depth: 0 }
 - uses: SimBienvenueHoulBoumi/repogarde@v3 # x-release-please-major
   with: { strict: true }
