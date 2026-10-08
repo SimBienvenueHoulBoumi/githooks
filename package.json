@@ -1,6 +1,6 @@
 {
   "name": "@simbie/repogarde",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "description": "Hooks git et CI multi-langages : messages de commit, nommage des branches, secrets, formatage, tests ciblés, code mort, releases.",
   "keywords": [
     "git-hooks",
@@ -17,16 +17,14 @@
     "url": "git+https://github.com/SimBienvenueHoulBoumi/repogarde.git"
   },
   "license": "MIT",
+  "author": "SimBienvenueHoulBoumi (https://github.com/SimBienvenueHoulBoumi)",
   "bin": {
     "repogarde": "bin/repogarde"
   },
   "files": [
     "bin/",
-    "ci/",
     "hooks/",
-    "templates/",
-    "install.sh",
-    "lefthook-remote.yml"
+    "install.sh"
   ],
   "publishConfig": {
     "access": "public"
