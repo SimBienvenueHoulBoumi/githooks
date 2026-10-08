@@ -91,3 +91,7 @@ repogarde recognises the platform and adapts its vocabulary (PR or MR) and its e
 [repogarde]
     forge = gitlab        # github, gitlab, bitbucket, gitea
 ```
+
+## Internal sources (proxy, Nexus, Artifactory)
+
+Without direct Internet access, or to go through the company repositories: the projects' tools (Maven, Gradle, npm, pip, Go…) use their own configuration (`settings.xml`, `.npmrc`…), and repogarde can fetch its CI tools through a mirror (`REPOGARDE_DOWNLOAD_MIRROR`), checksums verified. Details: [In an organisation, internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory).
