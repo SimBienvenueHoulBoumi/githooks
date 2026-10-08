@@ -29,6 +29,7 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
     | Toutes les commandes | `repogarde --help` |
     | Vérifier | `git config --global core.hooksPath` → `…/repogarde/hooks` |
     | Mettre à jour | `npm update -g @simbie/repogarde` (les hooks suivent) |
+    | Tester la prochaine version | `npm install -g @simbie/repogarde@next` (retour : `@latest`) |
     | Changer de langue | `repogarde install --global --lang en` |
     | Un seul dépôt | `cd mon-projet && repogarde install` |
     | Désinstaller | `repogarde uninstall --global`, puis `npm uninstall -g @simbie/repogarde` ([désinstallation complète](desinstallation.md)) |

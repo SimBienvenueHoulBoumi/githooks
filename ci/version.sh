@@ -16,7 +16,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/common.sh"
 cmd="${1:-next}"
 ref="${2:-HEAD}"
 scope='(\([a-z0-9._-]+\))?'
-last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | sed -n 1p)"
+# Dernière version stable : les préversions (v3.5.0-next.2) ne comptent pas
+last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | awk '!/-/ && !f { print; f = 1 }')"
 range="${last:+$last..}$ref"
 
 next() {
