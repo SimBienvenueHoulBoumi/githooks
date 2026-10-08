@@ -42,35 +42,22 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
 
 === "Un projet d'équipe"
 
-    1. Installer [lefthook](https://lefthook.dev) sur le poste :
+    1. **Chaque personne** installe repogarde une fois sur son poste (onglet « Sur mon poste ») : `npm install -g @simbie/repogarde`, puis `repogarde install --global`.
 
-        ```bash
-        brew install lefthook          # macOS
-        winget install evilmartians.lefthook   # Windows
-        npm install -g lefthook        # tout système avec Node
-        ```
-
-    2. Ajouter au projet les modèles de [`templates/project/`](https://github.com/SimBienvenueHoulBoumi/repogarde/tree/main/templates/project) :
+    2. **Le projet** ajoute les modèles de [`templates/project/`](https://github.com/SimBienvenueHoulBoumi/repogarde/tree/main/templates/project) :
 
         | Fichier | Rôle |
         |---|---|
-        | `lefthook.yml` | hooks locaux, version de repogarde figée |
-        | `.github/workflows/repogarde.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
+        | `.github/workflows/repogarde.yml` | CI GitHub : refait les vérifications sur chaque PR, elle fait foi (ajouter les `setup-*` des outils du projet) |
+        | `.repogarde.conf` | réglages partagés, dont `version` : version minimale de repogarde attendue sur les postes |
         | `.github/workflows/release.yml` | [releases automatiques](releases.md) (optionnel) |
-        | `gitlab-ci.yml` | à fusionner dans `.gitlab-ci.yml` |
-        | `.repogarde.conf` | réglages partagés (optionnel) |
+        | `gitlab-ci.yml` | pour GitLab, à fusionner dans `.gitlab-ci.yml` |
 
-    3. Activer les hooks : `lefthook install`.
-    4. Protéger `main` et exiger le check `repogarde` : `bin/proteger` (voir [En organisation](industrialisation.md)).
+    3. **Rendre la CI obligatoire** pour merger : `repogarde proteger` (voir [En organisation](industrialisation.md)).
 
-    **Ensuite, chaque personne qui clone le projet** installe lefthook une fois, puis :
+    Un poste dont repogarde est plus ancien que la `version` du projet est prévenu à chaque commit, avec la commande de mise à jour. Sans hooks, la CI refait de toute façon toutes les vérifications.
 
-    ```bash
-    git clone <url-du-projet> && cd <projet>
-    lefthook install                     # hooks du projet, à la version figée dans lefthook.yml
-    ```
-
-    Rien d'autre : repogarde est récupéré par lefthook, à la version du projet. Avec l'installation « Sur mon poste », ce `lefthook install` est même inutile. Un projet Maven, Gradle ou npm peut l'installer au premier build ([En organisation](industrialisation.md)). Sans hooks, la CI refait toutes les vérifications.
+    **Version exacte par projet (avancé)** : avec [lefthook](https://lefthook.dev) et le modèle `lefthook.yml`, chaque projet télécharge repogarde à sa propre version, figée. Chaque personne installe alors lefthook une fois (`brew install lefthook`, `npm install -g lefthook`, `winget install evilmartians.lefthook`), puis `lefthook install` dans le projet ; les hooks repogarde du poste délèguent automatiquement au `lefthook.yml` du projet.
 
 === "Une organisation"
 
