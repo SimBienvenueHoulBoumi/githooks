@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.1...v3.3.2) (2026-10-08)
+
+
+### Documentation
+
+* commandes repogarde partout, désinstallation npm ([#125](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/125)) ([1a95fce](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/1a95fce4ec12c5a92c757a55462f0d43f748fefe))
+
 ## [3.3.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.0...v3.3.1) (2026-10-08)
 
 
