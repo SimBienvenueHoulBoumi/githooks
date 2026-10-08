@@ -17,14 +17,19 @@ PLUGINS=""
 
 register() {
     PLUGINS="$PLUGINS $1"
-    eval "PLUGIN_MARKERS_$1=\$2 PLUGIN_EXT_$1=\$3 PLUGIN_FLAGS_$1=\"\${*:4}\""
+    printf -v "PLUGIN_MARKERS_$1" '%s' "$2"
+    printf -v "PLUGIN_EXT_$1" '%s' "$3"
+    printf -v "PLUGIN_FLAGS_$1" '%s' "${*:4}"
 }
 
 # Les fonctions de détection sont appelées pour chaque fichier : elles évitent
 # tout sous-processus ($(…), dirname, git) et renvoient leur résultat dans REPLY.
 
 # REPLY = attribut $2 (MARKERS, EXT, FLAGS) du plugin $1
-plugin_get() { eval "REPLY=\${PLUGIN_$2_$1:-}"; }
+plugin_get() {
+    local var="PLUGIN_$2_$1"
+    REPLY="${!var:-}"
+}
 
 plugin_has_flag() {
     plugin_get "$1" FLAGS

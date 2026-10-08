@@ -17,16 +17,14 @@
     "url": "git+https://github.com/SimBienvenueHoulBoumi/repogarde.git"
   },
   "license": "MIT",
+  "author": "SimBienvenueHoulBoumi (https://github.com/SimBienvenueHoulBoumi)",
   "bin": {
     "repogarde": "bin/repogarde"
   },
   "files": [
     "bin/",
-    "ci/",
     "hooks/",
-    "templates/",
-    "install.sh",
-    "lefthook-remote.yml"
+    "install.sh"
   ],
   "publishConfig": {
     "access": "public"
