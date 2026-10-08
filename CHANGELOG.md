@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.4.0...v3.5.0) (2026-10-08)
+
+
+### Fonctionnalités
+
+* **release:** préversions next depuis develop, correctifs du cycle ([#133](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/133)) ([13492cb](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/13492cb023a9df59b46df1e154c6dd1cae557278))
+
 ## [3.4.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.2...v3.4.0) (2026-10-08)
 
 
