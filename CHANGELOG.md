@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.5.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.4.0...v3.5.0) (2026-10-08)
+
+
+### Fonctionnalités
+
+* **release:** préversions next depuis develop, correctifs du cycle ([#133](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/133)) ([13492cb](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/13492cb023a9df59b46df1e154c6dd1cae557278))
+* **release:** retour vers develop sans clé, bot de release retiré ([#136](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/136)) ([0d0ff80](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/0d0ff803fb1114bd992806ffbce4c989ba4bb4a8))
+
 ## [3.4.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.2...v3.4.0) (2026-10-08)
 
 
