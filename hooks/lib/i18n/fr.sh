@@ -214,6 +214,7 @@ _msg_fr() {
         ci.version.4) _M="%s depuis %s" ;;
         ci.version.5) _M="_Depuis %s._" ;;
         ci.install_tool.1) _M="%s déjà présent : %s" ;;
+        ci.install_tool.sha_required) _M="Miroir : aucune empreinte connue pour %s ; fournir l'empreinte SHA-256 attendue dans %s (elle ne vient jamais du miroir)." ;;
         ci.install_tool.2) _M="Téléchargement de %s" ;;
         ci.install_tool.3) _M="Somme SHA-256 invalide pour %s" ;;
         ci.install_tool.4) _M="%s %s installé dans %s" ;;

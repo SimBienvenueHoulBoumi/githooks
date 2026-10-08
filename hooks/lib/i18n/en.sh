@@ -214,6 +214,7 @@ _msg_en() {
         ci.version.4) _M="%s since %s" ;;
         ci.version.5) _M="_Since %s._" ;;
         ci.install_tool.1) _M="%s already present: %s" ;;
+        ci.install_tool.sha_required) _M="Mirror: no known checksum for %s; provide the expected SHA-256 in %s (it never comes from the mirror)." ;;
         ci.install_tool.2) _M="Downloading %s" ;;
         ci.install_tool.3) _M="Invalid SHA-256 checksum for %s" ;;
         ci.install_tool.4) _M="%s %s installed in %s" ;;

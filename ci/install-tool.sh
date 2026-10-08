@@ -8,6 +8,9 @@
 # Empreintes SHA-256 figées ici pour les versions par défaut : un binaire
 # modifié est refusé, même si sa source (ou son fichier de sommes) l'est aussi.
 # Autre version : empreinte attendue en variable (GITLEAKS_SHA256, ACTIONLINT_SHA256).
+# Miroir interne (Artifactory, Nexus… en proxy des releases GitHub) :
+# REPOGARDE_DOWNLOAD_MIRROR remplace https://github.com ; l'empreinte ne vient
+# alors jamais du miroir (figée ici, ou fournie en variable, sinon refus).
 set -euo pipefail
 # shellcheck source=../hooks/lib/ui.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/ui.sh"
@@ -16,6 +19,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/i18n.sh"
 
 TOOL="${1:?usage : install-tool.sh gitleaks|actionlint|pmd [version]}"
 BIN="${REPOGARDE_BIN:-$HOME/.local/bin}"
+MIRROR="${REPOGARDE_DOWNLOAD_MIRROR:-}"
+MIRROR="${MIRROR%/}"
+SOURCE="${MIRROR:-https://github.com}"
 
 if command -v "$TOOL" >/dev/null 2>&1; then
     info_t ci.install_tool.1 "$TOOL" "$(command -v "$TOOL")"
@@ -57,7 +63,7 @@ if [ "$TOOL" = pmd ]; then
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     step_t ci.install_tool.2 "$asset"
-    curl -fsSL -o "$tmp/$asset" "https://github.com/pmd/pmd/releases/download/pmd_releases%2F${version}/${asset}"
+    curl -fsSL -o "$tmp/$asset" "$SOURCE/pmd/pmd/releases/download/pmd_releases%2F${version}/${asset}"
     if [ "$(sha256 "$tmp/$asset")" != "$expected" ]; then
         err_t ci.install_tool.3 "$asset"
         exit 1
@@ -87,14 +93,14 @@ case "$TOOL" in
         version="${version#v}"
         [ "$arch" = amd64 ] && arch=x64 # nommage des releases gitleaks
         asset="gitleaks_${version}_${os}_${arch}.${ext}"
-        base="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
+        base="$SOURCE/gitleaks/gitleaks/releases/download/v${version}"
         checksums="gitleaks_${version}_checksums.txt"
         ;;
     actionlint)
         version="${2:-${ACTIONLINT_VERSION:-1.7.12}}"
         version="${version#v}"
         asset="actionlint_${version}_${os}_${arch}.${ext}"
-        base="https://github.com/rhysd/actionlint/releases/download/v${version}"
+        base="$SOURCE/rhysd/actionlint/releases/download/v${version}"
         checksums="actionlint_${version}_checksums.txt"
         ;;
     *) err_t ci.install_tool.unknown "$TOOL"; exit 1 ;;
@@ -111,6 +117,10 @@ case "$TOOL" in
     actionlint) expected="${ACTIONLINT_SHA256:-}" ;;
 esac
 [ -n "$expected" ] || expected="$(known_sha256 "$asset")"
+if [ -z "$expected" ] && [ -n "$MIRROR" ]; then
+    err_t ci.install_tool.sha_required "$asset" "$(echo "$TOOL" | tr '[:lower:]' '[:upper:]')_SHA256" >&2
+    exit 1
+fi
 if [ -z "$expected" ]; then
     # Version non figée ici : fichier de sommes de la release officielle
     # (protège d'un fichier abîmé, pas d'une source compromise)
