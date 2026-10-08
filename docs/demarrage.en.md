@@ -31,6 +31,8 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
 
     `npx` is refused for the global installation: its temporary folder can be deleted at any time. With nvm, each Node version has its own global packages: run `repogarde install --global` again after switching versions.
 
+    **Internal npm registry** (company, proxy): `npm install -g @simbie/repogarde --registry <url>`, or `registry=<url>` in `~/.npmrc`; see [internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory).
+
     **Without Node**: same result from a clone, updated with `git -C ~/repogarde pull` (the commands become `~/repogarde/install.sh`, `~/repogarde/bin/code-mort`…).
 
     ```bash

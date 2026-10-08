@@ -31,6 +31,8 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
 
     `npx` est refusé pour l'installation globale : son dossier temporaire peut être effacé à tout moment. Avec nvm, chaque version de Node a ses propres paquets globaux : relancer `repogarde install --global` après un changement de version.
 
+    **Registre npm interne** (entreprise, proxy) : `npm install -g @simbie/repogarde --registry <url>`, ou `registry=<url>` dans `~/.npmrc` ; voir [sources internes](industrialisation.md#8-sources-internes-reseau-ferme-nexus-artifactory).
+
     **Sans Node** : même résultat depuis un clone, mis à jour avec `git -C ~/repogarde pull` (les commandes deviennent `~/repogarde/install.sh`, `~/repogarde/bin/code-mort`…).
 
     ```bash
