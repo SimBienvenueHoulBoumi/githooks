@@ -25,7 +25,11 @@ brand "${version:-?} · $mode · $ROOT"
 
 # Hooks globaux : ceux de cette installation, d'une autre, ou d'un autre outil
 global="$(git config --global --get core.hooksPath 2>/dev/null || true)"
-if [ -z "$global" ]; then
+local_hooks="$(git config --local --get core.hooksPath 2>/dev/null || true)"
+if [ -z "$global" ] && [ -n "$local_hooks" ] && [ "$(reel "$local_hooks")" = "$ROOT/hooks" ]; then
+    # Installation locale (install.sh sans --global) : active dans ce dépôt
+    ok_t st.hooks_repo
+elif [ -z "$global" ]; then
     err_t st.hooks_off
     suivant="${suivant:-repogarde install --global}"
 elif [ "$(reel "$global")" = "$ROOT/hooks" ]; then
@@ -37,8 +41,8 @@ else
     info_t st.hooks_foreign "$global"
 fi
 
-# Assistant de commit (git cc)
-alias_cc="$(git config --global --get alias.cc 2>/dev/null || true)"
+# Assistant de commit (git cc) : valeur effective, installation locale comprise
+alias_cc="$(git config --get alias.cc 2>/dev/null || true)"
 if [[ "$alias_cc" == *"$ROOT/bin/commit"* ]]; then
     ok_t st.cc_on
 elif [[ "$alias_cc" == *"/bin/commit"* ]]; then

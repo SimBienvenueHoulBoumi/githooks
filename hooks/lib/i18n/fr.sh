@@ -85,7 +85,7 @@ _msg_fr() {
         hook.pre_commit.3) _M="  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" ;;
         hook.pre_commit.4) _M="Détection de secrets (gitleaks)" ;;
         hook.pre_commit.5) _M="Secret détecté : commit refusé." ;;
-        hook.pre_commit.6) _M="gitleaks absent, détection de secrets ignorée (brew install gitleaks)." ;;
+        hook.pre_commit.6) _M="gitleaks absent, détection de secrets ignorée (installation : %s)." ;;
         hook.pre_commit.7) _M="Pre-commit OK" ;;
         hook.commit_msg.1) _M="Première ligne trop longue (%s > 72 caractères)." ;;
         hook.pre_push.1) _M="Push refusé : nom de branche non conforme." ;;
@@ -313,6 +313,7 @@ _msg_fr() {
         st.hooks_other) _M="Hooks git d'une autre installation de repogarde : %s" ;;
         st.hooks_foreign) _M="Hooks git d'un autre outil (core.hooksPath = %s) : laissés tels quels" ;;
         st.cc_on) _M="Assistant de commit : git cc" ;;
+        st.hooks_repo) _M="Hooks git actifs dans ce dépôt seulement (installation locale ; tous les dépôts : repogarde install --global)" ;;
         st.cc_off) _M="Assistant de commit (git cc) non installé" ;;
         st.cc_other) _M="git cc pointe vers une autre installation de repogarde" ;;
         st.cc_foreign) _M="Alias git cc déjà pris par autre chose : %s" ;;

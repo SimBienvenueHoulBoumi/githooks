@@ -87,7 +87,7 @@ _msg_en() {
         hook.pre_commit.3) _M="  (disable for this repository: git config repogarde.skip protect-branch)" ;;
         hook.pre_commit.4) _M="Secret detection (gitleaks)" ;;
         hook.pre_commit.5) _M="Secret detected: commit refused." ;;
-        hook.pre_commit.6) _M="gitleaks not installed, secret detection skipped (brew install gitleaks)." ;;
+        hook.pre_commit.6) _M="gitleaks not installed, secret detection skipped (install: %s)." ;;
         hook.pre_commit.7) _M="Pre-commit OK" ;;
         hook.commit_msg.1) _M="First line too long (%s > 72 characters)." ;;
         hook.pre_push.1) _M="Push refused: branch name does not follow the convention." ;;
@@ -313,6 +313,7 @@ _msg_en() {
         st.hooks_other) _M="Git hooks from another repogarde installation: %s" ;;
         st.hooks_foreign) _M="Git hooks from another tool (core.hooksPath = %s): left as is" ;;
         st.cc_on) _M="Commit assistant: git cc" ;;
+        st.hooks_repo) _M="Git hooks active in this repository only (local install; all repositories: repogarde install --global)" ;;
         st.cc_off) _M="Commit assistant (git cc) not installed" ;;
         st.cc_other) _M="git cc points to another repogarde installation" ;;
         st.cc_foreign) _M="git cc alias already used by something else: %s" ;;
