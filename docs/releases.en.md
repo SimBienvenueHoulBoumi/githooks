@@ -171,9 +171,29 @@ jobs:
       app-key: ${{ secrets.REPOGARDE_APP_KEY }}
 ```
 
-1. On every merge into `develop`, the **delivery PR** `develop` → `main` is created or updated (upcoming version, notes);
+1. On every merge into `develop`, a test **pre-release** is published (`vX.Y.Z-next.N`, GitHub "pre-release", `preversion` input), and the **delivery PR** `develop` → `main` is created or updated (upcoming version, notes);
 2. merging it (human decision, **merge commit**: release-please must see every commit) starts the pr-mode release on `main`: release PR (changelog, version files) validated by the CI and merged, tag, release;
 3. `main` is then merged into `develop` by a PR merged automatically once its checks pass: the next cycle starts from up-to-date version files.
+
+| | `develop`: testing, community | `main`: production |
+|---|---|---|
+| When | on every merge into `develop` | when the delivery is merged (human decision) |
+| Version | pre-release `3.5.0-next.4` | stable `3.5.0`, changelog |
+| GitHub release | "pre-release" | release |
+| Package (e.g. npm) | `next` tag (job wired to the `prerelease_tag` output) | `latest` tag |
+
+The pre-release is published like a stable version, from the `prerelease_created` and `prerelease_tag` outputs; for npm:
+
+```yaml
+  npm-next:
+    needs: release
+    if: needs.release.outputs.prerelease_created == 'true'
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
+    permissions: { contents: read, id-token: write }
+    with:
+      tag: ${{ needs.release.outputs.prerelease_tag }}
+      dist-tag: next
+```
 
 Requirements:
 
