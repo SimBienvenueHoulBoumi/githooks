@@ -14,10 +14,13 @@ cd "$GIT_TOPLEVEL"
 REFS="$(cat)"
 printf '%s\n' "$REFS" | run_local_hook "$@"
 
-# Nommage des branches poussées (ligne : <ref locale> <sha> <ref distante> <sha>)
+# Nommage des branches poussées (ligne : <ref locale> <sha> <ref distante> <sha>).
+# Une suppression (sha local nul) n'est pas vérifiée : retirer une branche mal
+# nommée doit rester possible.
 if ! skipped branch-name; then
-    while read -r _ _ remote_ref _; do
+    while read -r _ local_sha remote_ref _; do
         [[ "$remote_ref" == refs/heads/* ]] || continue
+        [[ "$local_sha" =~ ^0+$ ]] && continue
         branch="${remote_ref#refs/heads/}"
         if ! branch_name_valid "$branch"; then
             err_t hook.pre_push.1 >&2
