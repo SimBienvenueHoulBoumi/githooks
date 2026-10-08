@@ -67,33 +67,7 @@ gh release create vX.Y.Z --target <merge commit of the PR> --title vX.Y.Z --note
 gh pr edit <PR number> --remove-label "autorelease: pending" --add-label "autorelease: tagged"
 ```
 
-then run the `release` workflow again. To never face it again: set up a [release bot](#release-bot).
-
-## Release bot
-
-So that releases are **never** blocked, even in the case above, the repository can have its own bot: a dedicated identity with limited permissions, used instead of the automatic token. Without a bot, nothing changes.
-
-| | GitHub | GitLab (coming) |
-|---|---|---|
-| Identity | private **GitHub App**: one-hour tokens generated on each run, no long-lived token stored | **project access token**: a bot user specific to the project, with an expiry date |
-| Permissions | contents, PRs, workflows, labels (write); metadata (read) | Maintainer role, `api` and `write_repository` scopes |
-| Stored in | `REPOGARDE_APP_ID`, `REPOGARDE_APP_KEY` secrets | masked and protected CI variable `REPOGARDE_RELEASE_TOKEN` |
-
-Guided setup, from the project repository (pre-filled creation form, installation on the repository, secrets stored without the key being displayed):
-
-```bash
-repogarde bot-release
-```
-
-Then, in `.github/workflows/release.yml`:
-
-```yaml
-  release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
-    secrets:
-      app-id: ${{ secrets.REPOGARDE_APP_ID }}
-      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
-```
+then run the `release` workflow again.
 
 ## Version file
 
@@ -166,9 +140,6 @@ jobs:
     permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
     with:
       mode: cycle
-    secrets:
-      app-id: ${{ secrets.REPOGARDE_APP_ID }}
-      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
 ```
 
 1. On every merge into `develop`, a test **pre-release** is published (`vX.Y.Z-next.N`, GitHub "pre-release", `preversion` input), and the **delivery PR** `develop` → `main` is created or updated (upcoming version, notes);
@@ -200,7 +171,7 @@ Requirements:
 - `.repogarde.conf`: `integrationBranch = develop` (mistargeted PRs retargeted to `develop`);
 - the CI also runs on pushes to `develop` (its checks apply to the delivery PR);
 - `repogarde proteger`: `develop` as the default branch, merge commits allowed into `main`, auto-merge enabled;
-- [release bot](#release-bot) recommended: its PRs (back into `develop`) trigger the CI, those of the Actions token do not.
+- no key or token: the merge back into `develop`, like the release PR, is validated by the CI (started by the workflow) then merged automatically.
 
 ## Publishing to npm
 
