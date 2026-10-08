@@ -66,6 +66,15 @@ setup() { setup_repo; initial_commit; }
     [ -z "$(git ls-remote --heads origin Bad)" ]
 }
 
+@test "pre-push : suppression d'une branche mal nommee permise" {
+    git switch -q -c Bad 2>/dev/null
+    git commit -q --no-verify --allow-empty -m "feat: x"
+    git push -q --no-verify origin Bad
+    run git push -q origin --delete Bad
+    [ "$status" -eq 0 ]
+    [ -z "$(git ls-remote --heads origin Bad)" ]
+}
+
 @test "main : commit direct refuse apres le commit initial" {
     run git commit -q --allow-empty -m "fix: x"
     [ "$status" -ne 0 ]
