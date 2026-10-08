@@ -21,7 +21,7 @@ helm_test() {
     fi
     rm -f "$rendered"
     [ "$rc" = 0 ] || return 1
-    if [ -d tests ] && helm plugin list 2>/dev/null | grep -q '^unittest'; then
+    if [ -d tests ] && grep -q '^unittest' <<<"$(helm plugin list 2>/dev/null)"; then
         step_t lang.helm.4
         helm unittest .
     fi

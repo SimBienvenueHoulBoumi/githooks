@@ -62,7 +62,7 @@ publie() { [ -n "$(npm view "$name" name 2>/dev/null || true)" ]; }
 # 2. Première publication, faite par la pipeline avec un jeton temporaire
 if ! publie; then
     step_t npm.step_token
-    if gh secret list --repo "$REPO" | grep -q '^NPM_TOKEN'; then
+    if grep -q '^NPM_TOKEN' <<<"$(gh secret list --repo "$REPO")"; then
         ok_t npm.token_exists
     else
         # npm écrit ses questions et le jeton au même endroit : les questions
@@ -91,7 +91,7 @@ if ! publie; then
             exit 1
         done
         mdp=""
-        jeton="$(grep -oE 'npm_[A-Za-z0-9]+' <<<"$sortie" | head -1 || true)"
+        jeton="$(grep -oE 'npm_[A-Za-z0-9]+' <<<"$sortie" | sed -n 1p || true)"
         sortie=""
         [ -n "$jeton" ] || { err_t npm.token_failed; exit 1; }
         printf '%s' "$jeton" | gh secret set NPM_TOKEN --repo "$REPO"
@@ -102,7 +102,7 @@ if ! publie; then
 
     # Release déjà publiée : la pipeline est lancée tout de suite (elle publie
     # la dernière release absente de npm) ; sinon, la prochaine release publie
-    if git ls-remote --tags origin 'v[0-9]*' | grep -q .; then
+    if [ -n "$(git ls-remote --tags origin 'v[0-9]*')" ]; then
         branche="$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)"
         gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$branche"
         info_t npm.dispatched "$WORKFLOW"
@@ -120,14 +120,14 @@ fi
 
 # 3. Publication de confiance, puis plus aucun jeton
 step_t npm.step_trust
-if npm trust list "$name" --json 2>/dev/null | grep -q '"id"'; then
+if grep -q '"id"' <<<"$(npm trust list "$name" --json 2>/dev/null || true)"; then
     ok_t npm.trust_exists
 else
     npm trust github "$name" --file "$WORKFLOW" --repo "$REPO" ${ENVIRONMENT:+--env "$ENVIRONMENT"} --allow-publish --yes
     ok_t npm.trust_set "$REPO" "$WORKFLOW"
 fi
 gh variable set REPOGARDE_NPM --repo "$REPO" --body true
-if gh secret list --repo "$REPO" | grep -q '^NPM_TOKEN'; then
+if grep -q '^NPM_TOKEN' <<<"$(gh secret list --repo "$REPO")"; then
     gh secret delete NPM_TOKEN --repo "$REPO"
     ok_t npm.token_removed
 fi

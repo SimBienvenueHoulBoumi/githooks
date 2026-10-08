@@ -35,7 +35,7 @@ else
     PREFIX="$TYPE: "
 fi
 
-SUBJECT="$(grep -v '^#' "$MSG_FILE" | head -n1 || true)"
+SUBJECT="$(grep -v '^#' "$MSG_FILE" | sed -n 1p || true)"
 [[ "$SUBJECT" =~ $CC_PATTERN ]] && exit 0
 [[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]] && exit 0
 
