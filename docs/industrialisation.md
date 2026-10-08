@@ -171,3 +171,26 @@ Les erreurs apparaissent en annotations sur GitHub et dans le log du job sur Git
 ## 7. Poste avec l'installation globale repogarde
 
 `install.sh --global` (usage personnel) et lefthook cohabitent : dans un dépôt contenant un `lefthook.yml`, les hooks globaux délèguent à lefthook (config du projet, version figée), sans `lefthook install` et sans conflit de `core.hooksPath`.
+
+## 8. Sources internes (réseau fermé, Nexus, Artifactory…)
+
+repogarde ne télécharge pas les dépendances des projets : il lance leurs outils (`mvn`, `gradle`, `npm`, `pip`, `go`…), qui utilisent leur configuration habituelle, sur le poste comme en CI.
+
+| Outil | Rediriger vers la source interne |
+|---|---|
+| Maven | `~/.m2/settings.xml` : `<mirrors>` |
+| Gradle | `repositories { maven { url = uri("…") } }`, ou un script d'init dans `~/.gradle/init.d/` (plugins : `pluginManagement` dans `settings.gradle.kts`) |
+| npm, yarn, pnpm | `.npmrc` : `registry=…` (y compris pour installer `@simbie/repogarde`) |
+| pip | `pip.conf` : `index-url` |
+| Go | `GOPROXY` |
+| MegaLinter (Docker) | miroir de registre configuré sur le runner |
+
+Ce que repogarde récupère lui-même :
+
+| Élément | Source interne |
+|---|---|
+| repogarde (installation par clone, lefthook) | miroir Git interne du dépôt : `git_url` du `lefthook.yml`, variable `REPOGARDE_URL` du modèle GitLab |
+| Action GitHub `repogarde@v3` (GitHub Enterprise Server) | dépôt synchronisé dans l'organisation ([actions-sync](https://docs.github.com/en/enterprise-server/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/manually-syncing-actions-from-githubcom)), puis `uses: <organisation>/repogarde@v3` |
+| Outils installés en CI (gitleaks, PMD, actionlint) | **recommandé** : déjà présents dans l'image du runner, rien n'est alors téléchargé ; sinon `REPOGARDE_DOWNLOAD_MIRROR` |
+
+`REPOGARDE_DOWNLOAD_MIRROR` remplace `https://github.com` dans les téléchargements, par exemple un dépôt « generic » Artifactory ou Nexus en proxy des releases GitHub (`https://artifactory.exemple.fr/artifactory/github`). L'empreinte SHA-256 ne vient **jamais** du miroir : celles des versions par défaut sont figées dans repogarde ; pour une autre version, la fournir dans `GITLEAKS_SHA256` ou `ACTIONLINT_SHA256`, sinon le téléchargement est refusé. Un miroir compromis ne peut donc pas faire installer un binaire modifié.
