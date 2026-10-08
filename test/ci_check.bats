@@ -497,6 +497,14 @@ c() { git commit -q --no-verify --allow-empty -m "$1"; }
     [ "$("$VERSION" next 2>/dev/null)" = 2.0.0 ]
 }
 
+@test "version : les preversions (v1.5.0-next.2) ne servent pas de base" {
+    git tag v1.4.2
+    c "feat: b"
+    git tag v1.5.0-next.2
+    c "fix: c"
+    [ "$("$VERSION" next 2>/dev/null)" = 1.5.0 ]
+}
+
 @test "version : BREAKING CHANGE en pied -> majeure" {
     git tag v1.0.0
     git commit -q --no-verify --allow-empty -m "fix: a" -m "BREAKING CHANGE: format change"
