@@ -158,6 +158,10 @@ if [ -n "$integration" ]; then
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)
     delete_on_merge=false
+    # Sans ce workflow, les branches mergées ne seraient plus supprimées
+    if ! grep -qs "nettoyage-branches.yml" "$GIT_TOPLEVEL"/.github/workflows/*.y*ml; then
+        attention_t ci.proteger.no_cleanup
+    fi
     t ci.proteger.methods_flow "$integration"
     methods="$REPLY"
 else
