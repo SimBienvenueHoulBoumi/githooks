@@ -44,7 +44,7 @@ remotes:
 ```
 
 ```yaml title=".github/workflows/repogarde.yml — CI (excerpt)"
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
   with: { fetch-depth: 0 }
 - uses: SimBienvenueHoulBoumi/repogarde@v3 # x-release-please-major
   with: { strict: true }

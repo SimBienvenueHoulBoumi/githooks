@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: { contents: write }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { ref: "${{ needs.release.outputs.tag_name }}" }
       - run: ./mvnw -B verify -Drevision="${{ needs.release.outputs.version }}"
       - run: gh release upload "${{ needs.release.outputs.tag_name }}" target/*.jar
@@ -212,7 +212,7 @@ Outputs: `release_created`, `tag_name`, `version`, `major`, `sha`, to chain the 
     if: needs.release.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { ref: "${{ needs.release.outputs.tag_name }}" }
       # mvn deploy, npm publish, docker push…
 ```
