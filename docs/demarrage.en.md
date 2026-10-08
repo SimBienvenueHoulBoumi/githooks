@@ -4,11 +4,11 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
 
 === "On my machine"
 
-    All your repositories, without adding anything to the projects:
+    All your repositories, without adding anything to the projects or their `package.json`:
 
     ```bash
-    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
-    ~/repogarde/install.sh --global      # asks for the language (fr / en), installs git cc
+    npm install -g @simbie/repogarde     # yarn global add, pnpm add -g: same
+    repogarde install --global           # asks for the language (fr / en), installs git cc
     ```
 
     Try it right away, in any repository:
@@ -17,33 +17,28 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
     git switch -c feat/cart              # branch name checked
     git add . && git cc                  # commit assistant (type, scope, description…)
     git push -u origin feat/cart         # tests of the affected projects before sending
-    ~/repogarde/bin/code-mort            # new dead code on the branch
+    repogarde code-mort                  # new dead code on the branch
     ```
 
     | Action | Command |
     |---|---|
+    | Every command | `repogarde --help` |
     | Check | `git config --global core.hooksPath` → `…/repogarde/hooks` |
-    | Update | `git -C ~/repogarde pull` |
-    | Change language | `~/repogarde/install.sh --global --lang fr` |
-    | A single repository | `cd my-project && ~/repogarde/install.sh` |
-    | Uninstall | `~/repogarde/install.sh --uninstall --global` ([full uninstall](desinstallation.md)) |
-
-    A repository that contains a `lefthook.yml` uses its own configuration (pinned version), if lefthook is installed.
-
-    **With npm** (Node installed): same result, as a machine-wide command. Nothing is added to the projects or their `package.json`.
-
-    ```bash
-    npm install -g @simbie/repogarde
-    repogarde install --global           # asks for the language, installs git cc
-    repogarde code-mort                  # every command: repogarde --help
-    ```
-
-    | Action | Command |
-    |---|---|
     | Update | `npm update -g @simbie/repogarde` (the hooks follow) |
-    | Uninstall | `repogarde uninstall --global`, then `npm uninstall -g @simbie/repogarde` |
+    | Change language | `repogarde install --global --lang fr` |
+    | A single repository | `cd my-project && repogarde install` |
+    | Uninstall | `repogarde uninstall --global`, then `npm uninstall -g @simbie/repogarde` ([full uninstall](desinstallation.md)) |
 
     `npx` is refused for the global installation: its temporary folder can be deleted at any time. With nvm, each Node version has its own global packages: run `repogarde install --global` again after switching versions.
+
+    **Without Node**: same result from a clone, updated with `git -C ~/repogarde pull` (the commands become `~/repogarde/install.sh`, `~/repogarde/bin/code-mort`…).
+
+    ```bash
+    git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde
+    ~/repogarde/install.sh --global
+    ```
+
+    A repository that contains a `lefthook.yml` uses its own configuration (pinned version), if lefthook is installed.
 
 === "A team project"
 
