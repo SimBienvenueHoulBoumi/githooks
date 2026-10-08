@@ -52,6 +52,7 @@ _msg_fr() {
         cc.branch_exists) _M="La branche « %s » existe déjà : choisis un autre nom." ;;
         cc.branch_fixed) _M="« %s » : nom attendu <type>/<sujet> en minuscules. Proposé : %s (Entrée pour l'accepter)." ;;
         cc.branch_created) _M="Branche %s créée, tes modifications y sont." ;;
+        cc.strict_abort) _M="Abandon (--strict) : réponse refusée, rien n'a été commité." ;;
         cc.kept) _M="Commit refusé : ton message est conservé. Après correction : git commit -F %s" ;;
         cc.created) _M="Commit créé." ;;
         cc.next_branch) _M="Prochains changements : sur une branche, ex. %s, puis une %s." ;;

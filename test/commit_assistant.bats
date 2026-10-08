@@ -188,3 +188,13 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     cles() { grep -oE '^        [a-z_.0-9]+\)' "$1" | tr -d ' )' | sort; }
     diff <(cles "$HOOKS/lib/i18n/fr.sh") <(cles "$HOOKS/lib/i18n/en.sh")
 }
+
+@test "assistant : --strict -> une reponse refusee arrete tout, rien n'est commite" {
+    long="$(printf 'a%.0s' {1..80})"
+    before="$(git rev-parse HEAD)"
+    run bash -c "printf '%s\n' '' '' '' '$long' 'description courte' '' '' '' | '$CC' --strict 2>&1"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"En-tête trop long"* ]]
+    [[ "$output" == *"Abandon (--strict)"* ]]
+    [ "$(git rev-parse HEAD)" = "$before" ]
+}
