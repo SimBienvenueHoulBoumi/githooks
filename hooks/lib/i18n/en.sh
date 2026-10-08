@@ -57,6 +57,7 @@ _msg_en() {
         cc.next_branch) _M="Next changes: on a branch, e.g. %s, then a %s." ;;
         cc.topic) _M="topic" ;;
         cc.next_push) _M="Push: %s" ;;
+        hook.version_old) _M="This project requires repogarde %s or later; installed on this machine: %s. Update: %s" ;;
         # Installation
         install.unknown_arg) _M="Unknown argument: %s" ;;
         install.not_repo) _M="Not in a git repository (use --global for all repositories)." ;;

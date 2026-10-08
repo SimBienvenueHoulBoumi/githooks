@@ -42,35 +42,22 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
 
 === "A team project"
 
-    1. Install [lefthook](https://lefthook.dev) on the developer machine:
+    1. **Everyone** installs repogarde once on their machine ("On my machine" tab): `npm install -g @simbie/repogarde`, then `repogarde install --global`.
 
-        ```bash
-        brew install lefthook          # macOS
-        winget install evilmartians.lefthook   # Windows
-        npm install -g lefthook        # any system with Node
-        ```
-
-    2. Add the templates from [`templates/project/`](https://github.com/SimBienvenueHoulBoumi/repogarde/tree/main/templates/project) to the project:
+    2. **The project** adds the templates from [`templates/project/`](https://github.com/SimBienvenueHoulBoumi/repogarde/tree/main/templates/project):
 
         | File | Role |
         |---|---|
-        | `lefthook.yml` | local hooks, pinned repogarde version |
-        | `.github/workflows/repogarde.yml` | GitHub CI (add the `setup-*` steps for the project's tools) |
+        | `.github/workflows/repogarde.yml` | GitHub CI: re-runs the checks on every PR, it is authoritative (add the `setup-*` steps for the project's tools) |
+        | `.repogarde.conf` | shared settings, including `version`: minimum repogarde version expected on developer machines |
         | `.github/workflows/release.yml` | [automatic releases](releases.md) (optional) |
-        | `gitlab-ci.yml` | to merge into `.gitlab-ci.yml` |
-        | `.repogarde.conf` | shared settings (optional) |
+        | `gitlab-ci.yml` | for GitLab, to merge into `.gitlab-ci.yml` |
 
-    3. Enable the hooks: `lefthook install`.
-    4. Protect `main` and require the `repogarde` check: `bin/proteger` (see [In an organisation](industrialisation.md)).
+    3. **Make the CI required** to merge: `repogarde proteger` (see [In an organisation](industrialisation.md)).
 
-    **Then, everyone who clones the project** installs lefthook once, then:
+    A machine whose repogarde is older than the project `version` is warned on every commit, with the update command. Without hooks, the CI re-runs every check anyway.
 
-    ```bash
-    git clone <project-url> && cd <project>
-    lefthook install                     # project hooks, at the version pinned in lefthook.yml
-    ```
-
-    Nothing else: lefthook fetches repogarde at the project's version. With the "On my machine" installation, even this `lefthook install` is unnecessary. A Maven, Gradle or npm project can install it on the first build ([In an organisation](industrialisation.md)). Without hooks, the CI runs every check again.
+    **Exact version per project (advanced)**: with [lefthook](https://lefthook.dev) and the `lefthook.yml` template, each project downloads repogarde at its own pinned version. Everyone then installs lefthook once (`brew install lefthook`, `npm install -g lefthook`, `winget install evilmartians.lefthook`), then runs `lefthook install` in the project; the machine's repogarde hooks automatically delegate to the project's `lefthook.yml`.
 
 === "An organisation"
 

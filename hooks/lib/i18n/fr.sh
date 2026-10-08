@@ -57,6 +57,7 @@ _msg_fr() {
         cc.next_branch) _M="Prochains changements : sur une branche, ex. %s, puis une %s." ;;
         cc.topic) _M="sujet" ;;
         cc.next_push) _M="Envoyer : %s" ;;
+        hook.version_old) _M="Ce projet demande repogarde %s ou plus récent ; installé sur ce poste : %s. Mettre à jour : %s" ;;
         # Installation
         install.unknown_arg) _M="Argument inconnu : %s" ;;
         install.not_repo) _M="Pas dans un dépôt git (utilise --global pour tous les dépôts)." ;;

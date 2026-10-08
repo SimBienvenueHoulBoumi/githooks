@@ -325,6 +325,33 @@ delegate_to_lefthook() {
     done
 }
 
+# Version minimale de repogarde demandée par le projet (repogarde.version,
+# ex. 3.1.4 ou 3) : le poste prévenu s'il est en retard, avec la commande de
+# mise à jour. Avertissement seulement : la CI, à sa propre version, fait foi.
+check_version() {
+    local wanted installed root w i n
+    cfg_r version ""
+    wanted="${REPLY#v}"
+    [ -n "$wanted" ] || return 0
+    root="${HOOKS_DIR%/hooks}"
+    installed="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$root/package.json" 2>/dev/null | sed -n 1p)"
+    [ -n "$installed" ] || return 0
+    local IFS=.
+    # shellcheck disable=SC2206 # découpage voulu sur les points
+    w=($wanted) i=($installed)
+    for n in 0 1 2; do
+        [ "${i[$n]:-0}" -gt "${w[$n]:-0}" ] 2>/dev/null && return 0
+        [ "${i[$n]:-0}" -lt "${w[$n]:-0}" ] 2>/dev/null && break
+        [ "$n" = 2 ] && return 0
+    done
+    unset IFS
+    if [[ "$root" == */node_modules/* ]]; then REPLY="npm update -g @simbie/repogarde"
+    elif [ -d "$root/.git" ]; then REPLY="git -C $root pull"
+    else REPLY="$root"
+    fi
+    attention_t hook.version_old "$wanted" "$installed" "$REPLY" >&2
+}
+
 # Exécute les hooks propres au projet (.repogarde/<hook> ou .git/hooks/<hook>),
 # ignorés par git dès que core.hooksPath pointe ici.
 # Désactivé sous lefthook : .git/hooks contient ses propres hooks (boucle infinie)

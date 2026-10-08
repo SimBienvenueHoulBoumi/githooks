@@ -8,6 +8,7 @@ Versioned at the project root, in `git config` format, read **by the hooks and b
 
 ```ini
 [repogarde]
+    version = 3.1                       # minimum repogarde version expected on developer machines
     # Custom commands: replace automatic detection
     format = npm run lint:fix --        # receives the staged files as arguments
     test = make ci                      # run at the root; modified files on standard input
@@ -17,6 +18,9 @@ Versioned at the project root, in `git config` format, read **by the hooks and b
     allowedBranches = main develop release/*
     exclude = vendor/* generated/*      # paths neither formatted nor tested
 ```
+
+
+`version`: if repogarde is older on a machine, the hooks say so with the update command (`npm update -g @simbie/repogarde`, or `git pull` for a clone). It is a warning only: the CI checks every PR at its own version.
 
 ## Integration branch flow (`develop`)
 

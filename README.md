@@ -51,36 +51,38 @@ repogarde code-mort                  # nouveau code mort de ta branche
 
 Sans Node : `git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde && ~/repogarde/install.sh --global` (mise à jour : `git -C ~/repogarde pull`).
 
-### 2. Dans un projet d'équipe (version figée, CI qui fait foi)
+### 2. Dans un projet d'équipe : les mêmes règles pour tous
 
-Ajouter au projet les modèles de [`templates/project/`](templates/project) :
+Chaque personne de l'équipe installe repogarde une fois sur son poste (partie 1). Le projet, lui, ajoute deux fichiers, à copier depuis [`templates/project/`](templates/project) :
 
+| Fichier | Rôle |
+|---|---|
+| [`.github/workflows/repogarde.yml`](templates/project/.github/workflows/repogarde.yml) | la CI refait toutes les vérifications sur chaque PR : c'est elle qui fait foi, même si quelqu'un contourne les hooks (`git commit --no-verify`) |
+| [`.repogarde.conf`](templates/project/.repogarde.conf) | réglages communs à toute l'équipe, dont la version minimale de repogarde attendue sur les postes |
+
+L'essentiel des deux fichiers :
+
+<!-- x-release-please-start-major -->
 ```yaml
-# lefthook.yml — hooks du projet (version figée)
-remotes:
-  - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v3.1.5 # x-release-please-version
-    configs: [lefthook-remote.yml]
+# .github/workflows/repogarde.yml : vérifications de la PR (dernière version 3.x)
+- uses: SimBienvenueHoulBoumi/repogarde@v3
+  with: { strict: true }      # un outil manquant fait échouer la CI
 ```
+<!-- x-release-please-end -->
 
-```yaml
-# .github/workflows/repogarde.yml (extrait) — la CI fait foi
-- uses: actions/checkout@v7
-  with: { fetch-depth: 0 }
-- uses: SimBienvenueHoulBoumi/repogarde@v3 # x-release-please-major
-  with: { strict: true }
+<!-- x-release-please-start-version -->
+```ini
+# .repogarde.conf : un poste en retard est prévenu, avec la commande de mise à jour
+[repogarde]
+    version = 3.1.5
 ```
+<!-- x-release-please-end -->
 
-**Chaque personne qui clone ensuite le projet** installe [lefthook](https://lefthook.dev) une fois (`brew install lefthook`, `npm i -g lefthook`, `winget install evilmartians.lefthook`), puis :
+Puis rendre la CI obligatoire pour merger : `repogarde proteger` (protection de `main`, check `repogarde` exigé).
 
-```bash
-git clone <url-du-projet> && cd <projet>
-lefthook install                     # hooks du projet, à la version figée dans lefthook.yml
-```
+Version exacte par projet (avancé) : avec [lefthook](https://lefthook.dev) et le modèle [`lefthook.yml`](templates/project/lefthook.yml), chaque projet télécharge repogarde à sa propre version ([En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/)).
 
-Avec l'installation de la partie 1, ce `lefthook install` est inutile : les hooks globaux délèguent au `lefthook.yml` du projet (lefthook doit être installé ; sinon, ce sont les règles repogarde par défaut qui s'appliquent, sans la version figée du projet). Un projet Maven, Gradle ou npm peut aussi l'installer au premier build ([En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/)). Sans hooks, la CI refait toutes les vérifications.
-
-Exemple complet : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Releases automatiques, protection de `main` : [documentation](https://simbienvenuehoulboumi.github.io/repogarde/releases/).
+Exemple complet : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Releases automatiques : [documentation](https://simbienvenuehoulboumi.github.io/repogarde/releases/).
 
 ### 3. Contribuer à repogarde
 
