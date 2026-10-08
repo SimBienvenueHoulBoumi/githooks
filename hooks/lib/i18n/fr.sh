@@ -250,6 +250,7 @@ _msg_fr() {
         ci.install_tool.arch) _M="Architecture non supportée : %s" ;;
         ci.install_tool.unknown) _M="Outil inconnu : %s" ;;
         # Code mort et sections de la CI
+        dc.no_changes) _M="Aucune modification par rapport à %s : lancer depuis une branche de travail (seul le code ajouté par la branche est analysé)." ;;
         dc.section) _M="Code mort (nouveau code uniquement)" ;;
         dc.no_base) _M="Pas de base : analyse du code mort ignorée." ;;
         dc.proven) _M="%s : %s (code mort prouvé)" ;;

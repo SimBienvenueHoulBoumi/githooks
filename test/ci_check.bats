@@ -699,3 +699,11 @@ T
     [ "$status" -eq 0 ]
     [[ "$output" == *"REPOGARDE_RELEASE_TOKEN"* ]]
 }
+
+@test "code-mort : aucune modification -> message clair, pas aucun langage" {
+    git update-ref refs/remotes/origin/main HEAD
+    run "$BATS_TEST_DIRNAME/../bin/code-mort"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Aucune modification par rapport à origin/main"* ]]
+    [[ "$output" != *"langage analysable"* ]]
+}
