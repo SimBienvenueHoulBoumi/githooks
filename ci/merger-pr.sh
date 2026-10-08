@@ -142,4 +142,9 @@ if [ "$MERGE_AUTO" != true ]; then
 fi
 reessayer gh pr merge "$pr" "--$METHOD" --match-head-commit "$sha"
 echo "merged=true" >>"${GITHUB_OUTPUT:-/dev/null}"
+# Branche de la PR de release supprimée (un merge du jeton des Actions ne
+# déclenche pas le workflow de nettoyage) ; jamais main ni develop (retour)
+case "$branch" in
+    release-please--*) gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$branch" >/dev/null 2>&1 || true ;;
+esac
 exit 0
