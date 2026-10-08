@@ -116,7 +116,7 @@ One PR = one commit on `main`, whose message is the **PR title**: a clean change
 ### Merged branches: deleted automatically
 
 - Server — GitHub: *Settings → General → Automatically delete head branches*; GitLab: *Settings → Merge requests → Enable "Delete source branch" option by default*.
-- `develop` flow: a `release/…` or `hotfix/…` branch is merged twice (into `main` and `develop`); GitHub's automatic deletion would delete it after the first merge. The reusable workflow `nettoyage-branches.yml` keeps it as long as another open PR uses it (`bin/proteger` then disables automatic deletion):
+- `develop` flow: a `release/…` or `hotfix/…` branch is merged twice (into `main` and `develop`); GitHub's automatic deletion would delete it after the first merge. The reusable workflow `nettoyage-branches.yml` keeps it as long as another open PR uses it (`repogarde proteger` then disables automatic deletion):
 
   ```yaml
   on:
@@ -135,7 +135,7 @@ One PR = one commit on `main`, whose message is the **PR title**: a clean change
 **In one command**, based on `.repogarde.conf` (protected branches, `develop` flow) — safe to re-run, `--dry-run` to preview before applying:
 
 ```bash
-bin/proteger --checks "repogarde,build"   # comma-separated checks; gh logged in (admin)
+repogarde proteger --checks "repogarde,build"   # comma-separated checks; gh logged in (admin)
 ```
 
 The script sets up the "repogarde" ruleset (PR required, required checks up to date, no deletion and no force push), the merge methods (squash; with a `develop` flow: merge commit on `main`, squash or merge commit on `develop`, which becomes the default branch), reserves `v*` tags for workflows ("repogarde (tags)" ruleset), uses the PR title as the commit message and allows GitHub Actions to create PRs (automatic releases).

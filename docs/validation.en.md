@@ -19,9 +19,9 @@ The risk is not the machine. It is human approval that is too light. This page d
 
 | Decision | GitHub mechanism | repogarde |
 |---|---|---|
-| Review code before it gets in | required approvals; approval dismissed by a new commit; the last pusher cannot approve their own push | `bin/proteger --relecteurs N` |
-| Have sensitive areas reviewed by their owners | `CODEOWNERS` file + required code owner review | `bin/proteger --codeowners` |
-| Decide to publish | deployment environment: the job waits for approval from a designated person | `bin/proteger --environnement production` |
+| Review code before it gets in | required approvals; approval dismissed by a new commit; the last pusher cannot approve their own push | `repogarde proteger --relecteurs N` |
+| Have sensitive areas reviewed by their owners | `CODEOWNERS` file + required code owner review | `repogarde proteger --codeowners` |
+| Decide to publish | deployment environment: the job waits for approval from a designated person | `repogarde proteger --environnement production` |
 | Decide to deliver (`develop` flow) | `develop` → `main` delivery PR, always merged by a human | `tag` mode |
 | Keep control over the release PR (`pr` mode) | human merge | `release-auto` with `merge-auto: false` |
 
@@ -29,7 +29,7 @@ With a required review, the release PR is never merged by the bot. The bot prepa
 
 ## Setup
 
-Settings versioned in `.repogarde.conf`, applied by `bin/proteger` (can be re-run):
+Settings versioned in `.repogarde.conf`, applied by `repogarde proteger` (can be re-run):
 
 ```ini
 [repogarde]

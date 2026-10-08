@@ -82,7 +82,7 @@ So that releases are **never** blocked, even in the case above, the repository c
 Guided setup, from the project repository (pre-filled creation form, installation on the repository, secrets stored without the key being displayed):
 
 ```bash
-~/repogarde/bin/bot-release
+repogarde bot-release
 ```
 
 Then, in `.github/workflows/release.yml`:
@@ -167,7 +167,7 @@ One-command setup, from the project repository. Everything is published by the p
 If interrupted (Ctrl+C), the command resumes where it left off when run again.
 
 ```bash
-~/repogarde/bin/npm-publication      # or: repogarde npm-publication
+repogarde npm-publication
 ```
 
 Then, in `.github/workflows/release.yml`:

@@ -34,7 +34,7 @@ In CI, the action installs PMD for a Java project (pinned version and checksum).
 ## Usage
 
 - **CI**: the `deadcode` check, included by default in the action (`checks:`).
-- **Developer machine**: `bin/code-mort [base]` analyses your branch like the CI: commits, pending changes and new files.
+- **Developer machine**: `repogarde code-mort [base]` analyses your branch like the CI: commits, pending changes and new files. Default base: `origin/main`; on a branch with no changes, nothing is analysed.
 
 ## Settings
 
