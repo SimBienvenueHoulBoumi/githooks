@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.5](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.4...v3.1.5) (2026-10-08)
+
+
+### Corrections
+
+* **npm:** paquet réduit à l'utile, plus d'eval ([#115](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/115)) ([b3374dd](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/b3374ddbd30f3a6d805f2e13cbf23f965a4aaf0b))
+
 ## [3.1.4](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.3...v3.1.4) (2026-10-08)
 
 
