@@ -19,9 +19,9 @@ Le risque n'est pas la machine. C'est une validation humaine trop légère. Cett
 
 | Décision | Mécanisme GitHub | repogarde |
 |---|---|---|
-| Relire le code avant qu'il n'entre | approbations obligatoires ; approbation annulée par un nouveau commit ; le dernier à pousser ne peut pas approuver son propre push | `bin/proteger --relecteurs N` |
-| Faire relire les zones sensibles par leurs responsables | fichier `CODEOWNERS` + revue du propriétaire obligatoire | `bin/proteger --codeowners` |
-| Décider de publier | environnement de déploiement : le job attend l'approbation d'une personne désignée | `bin/proteger --environnement production` |
+| Relire le code avant qu'il n'entre | approbations obligatoires ; approbation annulée par un nouveau commit ; le dernier à pousser ne peut pas approuver son propre push | `repogarde proteger --relecteurs N` |
+| Faire relire les zones sensibles par leurs responsables | fichier `CODEOWNERS` + revue du propriétaire obligatoire | `repogarde proteger --codeowners` |
+| Décider de publier | environnement de déploiement : le job attend l'approbation d'une personne désignée | `repogarde proteger --environnement production` |
 | Décider de livrer (flux `develop`) | PR de livraison `develop` → `main`, toujours mergée par un humain | mode `tag` |
 | Garder la main sur la PR de release (mode `pr`) | merge humain | `release-auto` avec `merge-auto: false` |
 
@@ -29,7 +29,7 @@ Avec une relecture exigée, la PR de release n'est jamais mergée par le bot. Il
 
 ## Mise en place
 
-Réglages versionnés dans `.repogarde.conf`, appliqués par `bin/proteger` (relançable) :
+Réglages versionnés dans `.repogarde.conf`, appliqués par `repogarde proteger` (relançable) :
 
 ```ini
 [repogarde]

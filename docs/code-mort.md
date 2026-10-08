@@ -34,7 +34,7 @@ En CI, l'action installe PMD pour un projet Java (version et empreinte figées).
 ## Utilisation
 
 - **CI** : vérification `deadcode`, incluse par défaut dans l'action (`checks:`).
-- **Poste** : `bin/code-mort [base]` analyse ta branche comme la CI : commits, modifications en cours et nouveaux fichiers.
+- **Poste** : `repogarde code-mort [base]` analyse ta branche comme la CI : commits, modifications en cours et nouveaux fichiers. Base par défaut : `origin/main` ; sur une branche sans modification, rien n'est analysé.
 
 ## Réglages
 

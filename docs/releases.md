@@ -82,7 +82,7 @@ Pour que les releases ne soient **jamais** bloquées, même dans le cas ci-dessu
 Configuration guidée, depuis le dépôt du projet (formulaire de création pré-rempli, installation sur le dépôt, secrets enregistrés sans que la clé apparaisse) :
 
 ```bash
-~/repogarde/bin/bot-release
+repogarde bot-release
 ```
 
 Puis, dans `.github/workflows/release.yml` :
@@ -167,7 +167,7 @@ Mise en place en une commande, depuis le dépôt du projet. Tout est publié par
 Interrompue (Ctrl+C), la commande reprend où elle en était quand on la relance.
 
 ```bash
-~/repogarde/bin/npm-publication      # ou : repogarde npm-publication
+repogarde npm-publication
 ```
 
 Puis, dans `.github/workflows/release.yml` :

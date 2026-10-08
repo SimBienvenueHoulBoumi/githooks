@@ -1,32 +1,35 @@
 # Uninstalling
 
-`install.sh --uninstall` only removes **repogarde's** hooks: a `core.hooksPath` pointing to another tool (husky…) is left untouched, with a warning.
+`repogarde uninstall` only removes **repogarde's** hooks: a `core.hooksPath` pointing to another tool (husky…) is left untouched, with a warning.
 
 ## Global installation (all repositories on the machine)
 
 ```bash
-~/repogarde/install.sh --uninstall --global
+repogarde uninstall --global
+npm uninstall -g @simbie/repogarde
 ```
 
 Full uninstall, removing the caches (`~/.cache/repogarde`) and listing the repositories still wired to repogarde:
 
 ```bash
-~/repogarde/install.sh --uninstall --global --purge --scan ~/projets
+repogarde uninstall --global --purge --scan ~/projets
 ```
 
-The script **lists** the affected repositories and the command to run for each one, without modifying them. At the end, it prints the command to delete the repogarde directory, for you to run yourself.
+The command **lists** the affected repositories and the command to run for each one, without modifying them. At the end, it prints the last command to run yourself: `npm uninstall -g @simbie/repogarde`, or deleting the directory for a clone installation.
+
+Clone installation: same commands with `~/repogarde/install.sh --uninstall` instead of `repogarde uninstall`.
 
 ## A single repository
 
 ```bash
-cd mon-projet
-~/repogarde/install.sh --uninstall
+cd my-project
+repogarde uninstall
 ```
 
 ## Project configured with lefthook
 
 ```bash
-cd mon-projet
+cd my-project
 lefthook uninstall
 ```
 

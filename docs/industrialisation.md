@@ -116,7 +116,7 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
 ### Branches mergées : supprimées automatiquement
 
 - Serveur — GitHub : *Settings → General → Automatically delete head branches* ; GitLab : *Settings → Merge requests → Enable "Delete source branch" option by default*.
-- Flux `develop` : une branche `release/…` ou `hotfix/…` est mergée deux fois (vers `main` et `develop`) ; la suppression automatique de GitHub la supprimerait après le premier merge. Le workflow réutilisable `nettoyage-branches.yml` la conserve tant qu'une autre PR ouverte l'utilise (`bin/proteger` désactive alors la suppression automatique) :
+- Flux `develop` : une branche `release/…` ou `hotfix/…` est mergée deux fois (vers `main` et `develop`) ; la suppression automatique de GitHub la supprimerait après le premier merge. Le workflow réutilisable `nettoyage-branches.yml` la conserve tant qu'une autre PR ouverte l'utilise (`repogarde proteger` désactive alors la suppression automatique) :
 
   ```yaml
   on:
@@ -135,7 +135,7 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
 **En une commande**, d'après `.repogarde.conf` (branches protégées, flux `develop`) — relançable sans risque, `--dry-run` pour voir avant d'appliquer :
 
 ```bash
-bin/proteger --checks "repogarde,build"   # vérifications séparées par des virgules ; gh connecté (admin)
+repogarde proteger --checks "repogarde,build"   # vérifications séparées par des virgules ; gh connecté (admin)
 ```
 
 Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigées à jour, ni suppression ni push forcé), les modes de merge (squash ; avec un flux `develop` : merge commit sur `main`, squash ou merge commit sur `develop`, qui devient la branche par défaut), réserve les tags `v*` aux workflows (ruleset « repogarde (tags) »), prend le titre de PR comme message de commit et autorise GitHub Actions à créer des PR (releases automatiques).
