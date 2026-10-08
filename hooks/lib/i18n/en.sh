@@ -279,25 +279,8 @@ _msg_en() {
         ci.notify.released) _M="🚀 %s %s released: %s" ;;
         ci.notify.waiting) _M="⏳ %s: release PR #%s is waiting for approval: %s" ;;
         ci.notify.failure) _M="❌ %s: release workflow failed: %s" ;;
-        # Release bot
-        bot.gitlab_soon) _M="GitLab: the release bot (project access token → REPOGARDE_RELEASE_TOKEN variable) comes with the GitLab work." ;;
+        # GitHub CLI
         bot.no_gh) _M="GitHub CLI (gh) required: https://cli.github.com" ;;
-        bot.press_enter) _M="Press Enter when done… " ;;
-        bot.step_create) _M="1/4 Create the App (pre-filled form: private, no webhook, minimal permissions)" ;;
-        bot.hint_create) _M="At the bottom of the page: \"Create GitHub App\". Suggested name: %s (can be changed)." ;;
-        bot.step_id) _M="2/4 App ID" ;;
-        bot.ask_id) _M="App ID (shown at the top of the App page): " ;;
-        bot.bad_id) _M="A number is expected (e.g. 1234567)." ;;
-        bot.step_key) _M="3/4 Private key" ;;
-        bot.hint_key) _M="App page → \"Generate a private key\": a .pem file is downloaded." ;;
-        bot.ask_key) _M="Path to the .pem file: " ;;
-        bot.bad_key) _M="File not found, or not a PEM private key." ;;
-        bot.step_install) _M="4/4 Install the App on the repository" ;;
-        bot.hint_install) _M="Choose \"Only select repositories\" → %s, then \"Install\"." ;;
-        bot.done) _M="Release bot configured for %s (secrets REPOGARDE_APP_ID and REPOGARDE_APP_KEY)." ;;
-        bot.hint_workflow) _M="In release.yml: secrets: { app-id: \${{ secrets.REPOGARDE_APP_ID }}, app-key: \${{ secrets.REPOGARDE_APP_KEY }} }" ;;
-        bot.ask_delete) _M="Delete the local copy of the key (%s), no longer needed? [y/N] " ;;
-        bot.deleted) _M="Local key deleted." ;;
         # npm package
         npm.npx_global) _M="npx uses a temporary folder: global hooks would point to a deleted folder. Install the package first: npm install -g @simbie/repogarde, then repogarde install --global." ;;
         npm.no_npm) _M="npm required: https://nodejs.org" ;;

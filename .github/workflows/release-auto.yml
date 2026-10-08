@@ -101,15 +101,10 @@ on:
         description: Adresse du webhook entrant du canal de l'équipe (Slack, Teams, Discord…)
         required: false
       app-id:
-        description: >-
-          Bot de release (optionnel) : identifiant d'une GitHub App installée sur
-          le dépôt (Contents, Pull requests, Workflows, Issues en écriture). Ses
-          jetons d'une heure remplacent le jeton des Actions pour créer la PR de
-          release et la release : aucun blocage si des workflows ont changé.
-          Configuration guidée : repogarde/bin/bot-release.
+        description: Obsolète, ignoré (ancien bot de release ; refusé en v4)
         required: false
       app-key:
-        description: Clé privée (PEM) de cette GitHub App
+        description: Obsolète, ignoré (ancien bot de release ; refusé en v4)
         required: false
     outputs:
       release_created:
@@ -153,20 +148,19 @@ jobs:
     env:
       HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
     steps:
-      # Identité de release : bot GitHub App si configuré (jeton d'une heure),
-      # sinon jeton des Actions
-      - name: Bot de release
-        id: bot
+      # Ancien bot de release (GitHub App) : entrées obsolètes, ignorées
+      - name: Entrées obsolètes
         if: env.HAS_APP == 'true'
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        run: |
+          echo "::warning::Secrets app-id / app-key ignorés : le bot de release n'existe plus (aucune clé nécessaire). Les retirer de release.yml ; ils seront refusés en v4."
+      # Aucun code du projet n'est exécuté : seuls les scripts de repogarde, à
+      # la version repogarde-ref (validation et merge des PR : ci/merger-pr.sh)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          app-id: ${{ secrets.app-id }}
-          private-key: ${{ secrets.app-key }}
-          permission-contents: write
-          permission-pull-requests: write
-          permission-workflows: write
-          permission-issues: write
-      # Tout est lu par l'API : pas de checkout, aucun code du projet exécuté
+          repository: SimBienvenueHoulBoumi/repogarde
+          ref: ${{ inputs.repogarde-ref }}
+          path: .repogarde-ci
+          persist-credentials: false
       - name: Configuration
         id: config
         env:
@@ -220,7 +214,7 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ steps.bot.outputs.token || github.token }}
+          token: ${{ github.token }}
           release-type: ${{ steps.config.outputs.type }}
           release-as: ${{ steps.config.outputs.release_as }}
           config-file: ${{ inputs.config-file }}
@@ -237,143 +231,23 @@ jobs:
           PR_JSON: ${{ steps.release.outputs.pr }}
           WORKFLOWS: ${{ steps.config.outputs.workflows }}
           MERGE_AUTO: ${{ inputs.merge-auto }}
+          BASE: ${{ github.ref_name }}
         run: |
-          # Erreurs 5xx passagères de l'API GitHub : nouvelles tentatives espacées
-          reessayer() {
-            for i in 1 2 3 4 5; do
-              "$@" && return 0
-              echo "↻ échec ($i/5) : $*"
-              sleep $((i * 15))
-            done
-            return 1
-          }
-          # Runs « pull_request » de la PR de release mis en attente d'approbation
-          # (GitHub traite le bot comme un contributeur externe) : approuvés,
-          # uniquement pour le commit exact de la branche de release
-          approuver_runs() {
-            gh api "repos/$GH_REPO/actions/runs?status=action_required&head_sha=$sha" \
-              --jq '.workflow_runs[].id' | while IFS= read -r id; do
-                gh api -X POST "repos/$GH_REPO/actions/runs/$id/approve" >/dev/null &&
-                  echo "✔ run $id approuvé"
-              done || true
-          }
           if [ -n "$PR_JSON" ]; then
             pr="$(jq -r .number <<<"$PR_JSON")"
           else
-            pr="$(gh pr list --state open --base "$GITHUB_REF_NAME" --label 'autorelease: pending' \
+            pr="$(gh pr list --state open --base "$BASE" --label 'autorelease: pending' \
               --json number -q '.[0].number')"
           fi
           [ -n "$pr" ] || { echo "Aucune PR de release en attente"; exit 0; }
-          branch="$(gh pr view "$pr" --json headRefName -q .headRefName)"
-          # Commit lu sur la branche ; la PR peut l'afficher avec un léger
-          # retard : on attend qu'elle suive (sinon --match-head-commit échoue)
-          sha="$(gh api "repos/$GH_REPO/commits/$branch" --jq .sha)"
-          for _ in $(seq 1 30); do
-            [ "$(gh pr view "$pr" --json headRefOid -q .headRefOid)" = "$sha" ] && break
-            sleep 5
-          done
-          echo "PR #$pr ($branch @ ${sha:0:7}) : CI"
-          runs=""
-          for wf in $WORKFLOWS; do
-            reessayer gh workflow run "$wf" --ref "$branch"
-          done
-          for wf in $WORKFLOWS; do
-            run_id=""
-            for _ in $(seq 1 30); do
-              run_id="$(gh run list --workflow "$wf" --branch "$branch" --event workflow_dispatch \
-                --commit "$sha" --limit 1 --json databaseId -q '.[0].databaseId')"
-              [ -n "$run_id" ] && break
-              sleep 5
-            done
-            [ -n "$run_id" ] || { echo "✖ Run de $wf introuvable"; exit 1; }
-            runs="$runs $run_id"
-          done
-          for id in $runs; do
-            if ! gh run watch "$id" --exit-status --interval 30 >/dev/null; then
-              # CI interrompue par un merge manuel (branche de release supprimée)
-              [ "$(gh pr view "$pr" --json state -q .state)" != MERGED ] ||
-                { echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0; }
-              echo "✖ CI en échec : $(gh run view "$id" --json url -q .url)"
-              exit 1
-            fi
-          done
-          # Vérifications exigées par la protection de la branche : résultat
-          # réel de chacune (cherché dans les runs lancés), reporté en statut
-          gh api "repos/$GH_REPO/rules/branches/$GITHUB_REF_NAME" \
-            --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context' |
-            while IFS= read -r ctx; do
-              conclusion="" url=""
-              for id in $runs; do
-                conclusion="$(gh run view "$id" --json jobs \
-                  -q ".jobs[] | select(.name==\"$ctx\") | .conclusion")"
-                [ -n "$conclusion" ] && { url="$(gh run view "$id" --json url -q .url)"; break; }
-              done
-              if [ "$conclusion" != success ]; then
-                echo "✖ $ctx : ${conclusion:-absent des workflows lancés (entrée « workflows »)}"
-                exit 1
-              fi
-              gh api "repos/$GH_REPO/statuses/$sha" -f state=success -f context="$ctx" \
-                -f target_url="$url" -f description="CI de la PR de release" >/dev/null
-              echo "✔ $ctx"
-            done
-          # D'autres vérifications peuvent aussi tourner sur la PR (workflows
-          # pull_request) : on attend que GitHub la déclare mergeable (toutes
-          # les vérifications terminées et vertes) ; sinon, pas de merge.
-          for _ in $(seq 1 90); do
-            # Mergée (ou fermée) par une personne entre-temps : son merge
-            # relance ce workflow, qui publie la release ; rien d'autre à faire
-            case "$(gh pr view "$pr" --json state -q .state)" in
-              MERGED) echo "✔ PR #$pr mergée manuellement : la release est publiée par le run de ce merge"; exit 0 ;;
-              CLOSED) echo "PR #$pr fermée sans merge : pas de release"; exit 0 ;;
-            esac
-            state="$(gh pr view "$pr" --json mergeStateStatus -q .mergeStateStatus)"
-            case "$state" in
-              CLEAN | BEHIND) break ;;
-              BLOCKED | UNKNOWN | UNSTABLE)
-                # Relecture humaine exigée : la PR attend son approbation
-                case "$(gh pr view "$pr" --json reviewDecision -q .reviewDecision)" in
-                  REVIEW_REQUIRED | CHANGES_REQUESTED)
-                    echo "::notice::PR #$pr validée par la CI, en attente d'approbation humaine : son merge publiera la release."
-                    echo "waiting_pr=$pr" >>"$GITHUB_OUTPUT"
-                    exit 0
-                    ;;
-                esac
-                approuver_runs
-                sleep 30
-                ;;
-              *) echo "✖ PR #$pr non mergeable : $state"; exit 1 ;;
-            esac
-          done
-          # La branche a avancé pendant la CI : version et changelog sont à
-          # recalculer (un simple « update branch » publierait les nouveaux
-          # commits sous l'ancienne version). Le run déclenché par ce push
-          # régénère la PR ; s'il n'y en a pas (push du jeton des Actions), on
-          # le lance.
-          if [ "$state" = BEHIND ]; then
-            wf="${GITHUB_WORKFLOW_REF#*/.github/workflows/}"
-            wf="${wf%%@*}"
-            suivant="$(gh run list --workflow "$wf" --branch "$GITHUB_REF_NAME" --limit 20 --json databaseId,status \
-              -q "[.[] | select(.databaseId != $GITHUB_RUN_ID and .status != \"completed\")] | length")"
-            [ "${suivant:-0}" != 0 ] || reessayer gh workflow run "$wf" --ref "$GITHUB_REF_NAME"
-            echo "::notice::$GITHUB_REF_NAME a avancé pendant la CI : la PR #$pr est recalculée par le run suivant."
-            exit 0
-          fi
-          [ "$state" = CLEAN ] || { echo "✖ PR #$pr toujours $state après 45 min"; exit 1; }
-          if [ "$MERGE_AUTO" != true ]; then
-            echo "::notice::PR #$pr validée par la CI, à merger par un humain (merge-auto: false) : son merge publiera la release."
-            echo "waiting_pr=$pr" >>"$GITHUB_OUTPUT"
-            exit 0
-          fi
-          reessayer gh pr merge "$pr" --squash --match-head-commit "$sha"
-          echo "merged=true" >>"$GITHUB_OUTPUT"
-          exit 0
+          bash .repogarde-ci/ci/merger-pr.sh "$pr" squash
 
       # Le merge fait par GITHUB_TOKEN ne relance pas le workflow : on publie ici
       - id: publish
         if: steps.merge.outputs.merged == 'true'
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ steps.bot.outputs.token || github.token }}
+          token: ${{ github.token }}
           release-type: ${{ steps.config.outputs.type }}
           release-as: ${{ steps.config.outputs.release_as }}
           config-file: ${{ inputs.config-file }}
@@ -381,18 +255,20 @@ jobs:
           skip-github-pull-request: true
 
       # Mode cycle : la release (changelog, fichiers de version) revient dans
-      # la branche d'intégration par une PR mergée automatiquement dès que ses
-      # vérifications passent. Bot de release conseillé : ses PR déclenchent
-      # la CI (celles du jeton des Actions, non).
+      # la branche d'intégration par une PR validée par la CI puis mergée
+      # (merge commit), comme la PR de release : aucune clé ni jeton à fournir
       - name: Retour vers la branche d'intégration
         if: >-
           inputs.mode == 'cycle' &&
           (steps.release.outputs.release_created == 'true' || steps.publish.outputs.release_created == 'true')
         env:
-          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
+          GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          WORKFLOWS: ${{ steps.config.outputs.workflows }}
           INTEGRATION: ${{ inputs.integration-branch }}
           MAIN: ${{ inputs.main-branch }}
+          BASE: ${{ inputs.integration-branch }}
+          MERGE_AUTO: "true"
           TAG: ${{ steps.release.outputs.tag_name || steps.publish.outputs.tag_name }}
         run: |
           if [ "$(gh api "repos/$GH_REPO/compare/$INTEGRATION...$MAIN" --jq .ahead_by)" = 0 ]; then
@@ -403,14 +279,10 @@ jobs:
           if [ -z "$pr" ]; then
             url="$(gh pr create --head "$MAIN" --base "$INTEGRATION" \
               --title "chore(release): $INTEGRATION à jour de $TAG" \
-              --body "Fusionne la release **$TAG** (changelog, fichiers de version) dans \`$INTEGRATION\`. Mergée automatiquement (merge commit) dès que les vérifications passent (repogarde).")"
+              --body "Fusionne la release **$TAG** (changelog, fichiers de version) dans \`$INTEGRATION\`. Validée par la CI puis mergée automatiquement (merge commit) par le workflow de release (repogarde).")"
             pr="${url##*/}"
           fi
-          if gh pr merge "$pr" --auto --merge; then
-            echo "::notice::PR #$pr : $MAIN fusionnée dans $INTEGRATION dès que ses vérifications passent."
-          else
-            echo "::warning::PR #$pr à merger (merge commit) : merge automatique indisponible (Settings → General → Allow auto-merge)."
-          fi
+          bash .repogarde-ci/ci/merger-pr.sh "$pr" merge
 
       - name: Aide
         if: failure()
@@ -444,8 +316,8 @@ jobs:
             gh pr view $num -R $GH_REPO --json body -q .body > notes.md   # notes de version
             gh release create v$version -R $GH_REPO --target $sha --title v$version --notes-file notes.md
             gh pr edit $num -R $GH_REPO --remove-label "autorelease: pending" --add-label "autorelease: tagged"
-          puis relancer ce workflow. Pour l'éviter : laisser le bot merger la PR de release (il publie aussitôt),
-          ou configurer un bot de release (GitHub App, jamais bloqué) : repogarde/bin/bot-release
+          puis relancer ce workflow. Pour l'éviter : laisser le workflow merger la PR de release (il publie
+          aussitôt), sans merger de changement de .github/workflows/ pendant la publication.
           EOF
 
   # Mode tag : flux develop → main
@@ -467,19 +339,11 @@ jobs:
     env:
       HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
     steps:
-      # Identité de release : bot GitHub App si configuré (jeton d'une heure),
-      # sinon jeton des Actions
-      - name: Bot de release
-        id: bot
+      # Ancien bot de release (GitHub App) : entrées obsolètes, ignorées
+      - name: Entrées obsolètes
         if: env.HAS_APP == 'true'
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.app-id }}
-          private-key: ${{ secrets.app-key }}
-          permission-contents: write
-          permission-pull-requests: write
-          permission-workflows: write
-          permission-issues: write
+        run: |
+          echo "::warning::Secrets app-id / app-key ignorés : le bot de release n'existe plus (aucune clé nécessaire). Les retirer de release.yml ; ils seront refusés en v4."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # tags et historique : calcul de version
@@ -494,7 +358,7 @@ jobs:
       - name: PR de livraison
         if: github.ref_name == inputs.integration-branch
         env:
-          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
+          GH_TOKEN: ${{ github.token }}
           INTEGRATION: ${{ inputs.integration-branch }}
           MAIN: ${{ inputs.main-branch }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
@@ -534,7 +398,7 @@ jobs:
         id: preversion
         if: inputs.mode == 'cycle' && inputs.preversion != '' && github.ref_name == inputs.integration-branch
         env:
-          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
+          GH_TOKEN: ${{ github.token }}
           MAIN: ${{ inputs.main-branch }}
           ID: ${{ inputs.preversion }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
@@ -568,7 +432,7 @@ jobs:
         id: publier
         if: inputs.mode == 'tag' && github.ref_name == inputs.main-branch
         env:
-          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
+          GH_TOKEN: ${{ github.token }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
         run: |
           version="$(bash .repogarde-ci/ci/version.sh next HEAD)"

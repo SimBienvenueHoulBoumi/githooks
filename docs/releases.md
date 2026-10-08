@@ -67,33 +67,7 @@ gh release create vX.Y.Z --target <commit de merge de la PR> --title vX.Y.Z --no
 gh pr edit <n° de la PR> --remove-label "autorelease: pending" --add-label "autorelease: tagged"
 ```
 
-puis relancer le workflow `release`. Pour ne plus y être confronté : configurer un [bot de release](#bot-de-release).
-
-## Bot de release
-
-Pour que les releases ne soient **jamais** bloquées, même dans le cas ci-dessus, le dépôt peut avoir son propre bot : une identité dédiée, aux droits limités, utilisée à la place du jeton automatique. Sans bot, rien ne change.
-
-| | GitHub | GitLab (à venir) |
-|---|---|---|
-| Identité | **GitHub App** privée : jetons d'une heure générés à chaque run, aucun jeton long terme stocké | **jeton d'accès de projet** : utilisateur bot propre au projet, avec expiration |
-| Droits | contenu, PR, workflows, étiquettes (écriture) ; métadonnées (lecture) | rôle Maintainer, portées `api` et `write_repository` |
-| Rangé dans | secrets `REPOGARDE_APP_ID`, `REPOGARDE_APP_KEY` | variable CI masquée et protégée `REPOGARDE_RELEASE_TOKEN` |
-
-Configuration guidée, depuis le dépôt du projet (formulaire de création pré-rempli, installation sur le dépôt, secrets enregistrés sans que la clé apparaisse) :
-
-```bash
-repogarde bot-release
-```
-
-Puis, dans `.github/workflows/release.yml` :
-
-```yaml
-  release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
-    secrets:
-      app-id: ${{ secrets.REPOGARDE_APP_ID }}
-      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
-```
+puis relancer le workflow `release`.
 
 ## Fichier de version
 
@@ -166,9 +140,6 @@ jobs:
     permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
     with:
       mode: cycle
-    secrets:
-      app-id: ${{ secrets.REPOGARDE_APP_ID }}
-      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
 ```
 
 1. À chaque merge sur `develop`, une **préversion** de test est publiée (`vX.Y.Z-next.N`, release GitHub « pre-release », entrée `preversion`), et la **PR de livraison** `develop` → `main` est créée ou mise à jour (version à venir, notes) ;
@@ -200,7 +171,7 @@ Prérequis :
 - `.repogarde.conf` : `integrationBranch = develop` (PR mal ciblées reciblées vers `develop`) ;
 - la CI tourne aussi sur les pushs vers `develop` (ses vérifications valent pour la PR de livraison) ;
 - `repogarde proteger` : `develop` en branche par défaut, merge commit autorisé vers `main`, merge automatique activé ;
-- [bot de release](#bot-de-release) conseillé : ses PR (retour vers `develop`) déclenchent la CI, celles du jeton des Actions non.
+- aucune clé ni jeton : le retour vers `develop`, comme la PR de release, est validé par la CI (lancée par le workflow) puis mergé automatiquement.
 
 ## Publier sur npm
 

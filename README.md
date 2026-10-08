@@ -47,7 +47,7 @@ repogarde code-mort                  # nouveau code mort de ta branche
 | Action | Commande |
 |---|---|
 | État du poste, étape suivante | `repogarde` (ou `repogarde statut`) |
-| Toutes les commandes | `repogarde --help` (`cc`, `code-mort`, `proteger`, `bot-release`, `npm-publication`…) |
+| Toutes les commandes | `repogarde --help` (`cc`, `code-mort`, `proteger`, `npm-publication`…) |
 | Mettre à jour | `npm update -g @simbie/repogarde` (les hooks suivent) |
 | Désinstaller | `repogarde uninstall --global`, **puis** `npm uninstall -g @simbie/repogarde` (dans cet ordre : npm n'exécute rien à la désinstallation, les hooks resteraient branchés sur un dossier supprimé) |
 
