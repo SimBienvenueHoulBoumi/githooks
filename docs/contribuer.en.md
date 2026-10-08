@@ -34,6 +34,8 @@ The CI re-runs everything on Linux, macOS and Windows, plus one e2e job per lang
 3. Add `<name>` to the matrix in `.github/workflows/e2e.yml` with the installation of its tooling.
 4. Update the table in `docs/technologies.md`.
 
-## Releases
+## Branches and releases
 
-Automatic: release-please computes the version from the commits on `main` and publishes (see `docs/industrialisation.md`).
+- PRs target **`develop`** (default branch); a PR opened against `main` is retargeted automatically. Only urgent fixes (`hotfix/…`) may target `main`.
+- A **delivery PR** `develop` → `main` is kept up to date on every merge (upcoming version, notes). Merging it, as a merge commit, starts the release: release PR (changelog, version files), tag, npm, site. `main` then flows back into `develop` automatically.
+- Details: [Versions and releases, cycle mode](releases.md#develop-main-cycle-with-version-files-cycle-mode).

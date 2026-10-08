@@ -1,13 +1,16 @@
-# Releases entièrement automatiques, sans jeton personnel : le job « release »
-# (workflow réutilisable release-auto.yml, le même que pour les projets) tient
-# à jour la PR de release, la fait valider par la CI, la merge et crée le tag ;
+# Releases rythmées, sans jeton personnel : le travail s'intègre dans develop,
+# où le job « release » (workflow réutilisable release-auto.yml, mode cycle,
+# le même que pour les projets) tient à jour la PR de livraison develop → main.
+# La merger (décision humaine) lance sur main la PR de release, validée par la
+# CI puis mergée, le tag, et le retour de la release dans develop ;
 # les jobs suivants déplacent le tag majeur, signent l'archive, attestent sa
 # provenance et republient la documentation.
 name: release
 
 on:
   push:
-    branches: [main]
+    # Cycle develop → main : livraison tenue à jour sur develop, release sur main
+    branches: [main, develop]
   workflow_dispatch:
 
 # Une release à la fois ; un nouveau push attend la fin de la précédente
@@ -30,6 +33,10 @@ jobs:
       checks: read
       statuses: write
     with:
+      # Cycle : le travail s'intègre dans develop ; merger la PR de livraison
+      # develop → main déclenche la release, puis main revient dans develop
+      mode: cycle
+      integration-branch: develop
       # docs.yml déploierait le site depuis la branche de release : exclu
       workflows: ci.yml codeql.yml
       # repogarde s'utilise lui-même au commit publié, pas au tag v2
