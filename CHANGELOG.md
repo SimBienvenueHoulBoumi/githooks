@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.4](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.3...v3.1.4) (2026-10-08)
+
+
+### Corrections
+
+* **npm:** 2FA vérifiée, installation par npm en premier dans la doc ([#113](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/113)) ([680ff4d](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/680ff4d356e0d8e3da3aee64ac357562c2c26c58))
+
 ## [3.1.3](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.2...v3.1.3) (2026-10-08)
 
 
