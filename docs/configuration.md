@@ -8,6 +8,7 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
 
 ```ini
 [repogarde]
+    version = 3.1                       # version minimale de repogarde attendue sur les postes
     # Commandes personnalisées : remplacent la détection automatique
     format = npm run lint:fix --        # reçoit les fichiers stagés en arguments
     test = make ci                      # lancée à la racine ; fichiers modifiés sur l'entrée standard
@@ -17,6 +18,8 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
     allowedBranches = main develop release/*
     exclude = vendor/* generated/*      # chemins ni formatés ni testés
 ```
+
+`version` : si repogarde est plus ancien sur un poste, les hooks le signalent avec la commande de mise à jour (`npm update -g @simbie/repogarde`, ou `git pull` pour un clone). C'est un avertissement seulement : la CI vérifie chaque PR à sa propre version.
 
 ## Flux avec branche d'intégration (`develop`)
 

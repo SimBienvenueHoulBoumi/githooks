@@ -75,3 +75,26 @@ setup() {
     run "$BATS_TEST_DIRNAME/../install.sh" --lang de
     [ "$status" -ne 0 ]
 }
+
+@test "version : projet qui demande une version plus recente -> avertissement et commande de mise a jour" {
+    initial_commit
+    git switch -q -c feat/version
+    git config repogarde.version 99.0.0
+    echo a >a.txt && git add a.txt
+    run git commit -m "feat: a"
+    [ "$status" -eq 0 ] # avertissement seulement : la CI fait foi
+    [[ "$output" == *"demande repogarde 99.0.0 ou plus récent"* ]]
+}
+
+@test "version : version installee suffisante -> aucun message" {
+    initial_commit
+    git switch -q -c feat/version
+    installed="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$HOOKS/../package.json")"
+    for v in 1 "$installed" "v${installed%%.*}"; do
+        git config repogarde.version "$v"
+        echo "$v" >>a.txt && git add a.txt
+        run git commit -m "feat: a"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"demande repogarde"* ]]
+    done
+}

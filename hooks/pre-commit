@@ -8,6 +8,7 @@ source "$(dirname "$0")/lib/lang.sh"
 source "$(dirname "$0")/lib/safety.sh"
 exit_if_skipped
 delegate_to_lefthook "$@"
+check_version
 cd "$GIT_TOPLEVEL"
 
 run_local_hook "$@"
