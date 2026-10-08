@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.3](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.2...v3.1.3) (2026-10-08)
+
+
+### Corrections
+
+* plus de tube vers grep -q ou head (échecs aléatoires) ([#111](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/111)) ([9dd4354](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/9dd4354ae2a9f1ffd784881eac67b77136da2e74))
+
 ## [3.1.2](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.1...v3.1.2) (2026-10-07)
 
 
