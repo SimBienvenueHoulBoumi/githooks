@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.3.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.2.0...v3.3.0) (2026-10-08)
+
+
+### Fonctionnalités
+
+* **ci:** sources internes et empreintes des outils figées ([#119](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/119)) ([44a74ab](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/44a74ab7c385e8f76622bfecaf19032074efa8f5))
+
+
+### Documentation
+
+* sources internes accessibles depuis configuration et démarrage ([#122](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/122)) ([f515d23](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/f515d2377156e617a393b24006ecc46c91c81b01))
+
 ## [3.2.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.1.5...v3.2.0) (2026-10-08)
 
 
