@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.1](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.3.0...v3.3.1) (2026-10-08)
+
+
+### Corrections
+
+* **code-mort:** message clair quand la branche ne modifie rien ([#123](https://github.com/SimBienvenueHoulBoumi/repogarde/issues/123)) ([60b8f50](https://github.com/SimBienvenueHoulBoumi/repogarde/commit/60b8f505457f8830e055759ab69c43e2d74b6c13))
+
 ## [3.3.0](https://github.com/SimBienvenueHoulBoumi/repogarde/compare/v3.2.0...v3.3.0) (2026-10-08)
 
 
