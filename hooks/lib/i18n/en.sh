@@ -64,6 +64,7 @@ _msg_en() {
         install.alias_taken) _M="git cc alias already used ('%s'): commit assistant not installed." ;;
         install.alias_ok) _M="Commit assistant: git cc" ;;
         install.alias_removed) _M="git cc alias removed (%s)." ;;
+        install.npm_remove) _M="The package stays installed; to remove it too: %s" ;;
         install.nothing) _M="No core.hooksPath (%s): nothing to remove." ;;
         install.removed) _M="repogarde hooks removed (%s)." ;;
         install.foreign) _M="core.hooksPath (%s) = '%s' is not repogarde: left untouched." ;;
@@ -321,6 +322,27 @@ _msg_en() {
         npm.token_removed) _M="NPM_TOKEN secret removed from the repository." ;;
         npm.token_revoked) _M="Temporary token revoked on npm." ;;
         npm.done) _M="Done: every release publishes %s to npm, without a token." ;;
+        # Status (repogarde statut)
+        st.hooks_on) _M="Git hooks active for all repositories (this installation)" ;;
+        st.hooks_off) _M="Git hooks not enabled: no checks on commit or push" ;;
+        st.hooks_other) _M="Git hooks from another repogarde installation: %s" ;;
+        st.hooks_foreign) _M="Git hooks from another tool (core.hooksPath = %s): left as is" ;;
+        st.cc_on) _M="Commit assistant: git cc" ;;
+        st.cc_off) _M="Commit assistant (git cc) not installed" ;;
+        st.cc_other) _M="git cc points to another repogarde installation" ;;
+        st.cc_foreign) _M="git cc alias already used by something else: %s" ;;
+        st.lang) _M="Message language: %s" ;;
+        st.repo) _M="Repository: %s" ;;
+        st.repo_local) _M="Repository-specific hooks (local core.hooksPath = %s), take precedence" ;;
+        st.repo_lefthook) _M="%s present: hooks delegate to lefthook (project pinned version)" ;;
+        st.repo_lefthook_missing) _M="%s present but lefthook missing: default rules, without the project version" ;;
+        st.repo_version_old) _M="The project requires repogarde %s; installed: %s" ;;
+        st.repo_version_ok) _M="Version required by the project (%s): met" ;;
+        st.repo_forge) _M="Platform: %s" ;;
+        st.tools) _M="Tools present: %s · missing: %s (depending on the projects' languages)" ;;
+        st.next) _M="Next step:" ;;
+        st.ready) _M="All set: git cc to commit, repogarde code-mort on a branch." ;;
+        st.help) _M="Every command: repogarde --help" ;;
         *) _M="" ;;
     esac
 }

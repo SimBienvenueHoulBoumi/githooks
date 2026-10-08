@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# État de repogarde sur ce poste et dans le dépôt courant, puis la commande
+# suivante à lancer (l'équivalent de « gh auth status » ou « brew doctor ») :
+#   repogarde statut        (ou repogarde, sans argument)
+# Lecture seule : rien n'est modifié.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../hooks/lib/common.sh
+source "$ROOT/hooks/lib/common.sh"
+exec 2>&1 # une seule sortie, dans l'ordre (avertissements compris)
+# shellcheck disable=SC2034 # lu par check_version (common.sh)
+HOOKS_DIR="$ROOT/hooks"
+
+version="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$ROOT/package.json" 2>/dev/null | sed -n 1p)"
+case "$ROOT" in
+    */node_modules/*) mode=npm ;;
+    *) mode=clone ;;
+esac
+suivant="" # première action à faire, affichée à la fin
+
+reel() { [ -d "$1" ] && (cd "$1" && pwd -P); }
+
+brand "${version:-?} · $mode · $ROOT"
+
+# Hooks globaux : ceux de cette installation, d'une autre, ou d'un autre outil
+global="$(git config --global --get core.hooksPath 2>/dev/null || true)"
+if [ -z "$global" ]; then
+    err_t st.hooks_off
+    suivant="${suivant:-repogarde install --global}"
+elif [ "$(reel "$global")" = "$ROOT/hooks" ]; then
+    ok_t st.hooks_on
+elif [ -f "$global/lib/common.sh" ] && grep -qs repogarde "$global/lib/common.sh"; then
+    attention_t st.hooks_other "$global"
+    suivant="${suivant:-repogarde install --global}"
+else
+    info_t st.hooks_foreign "$global"
+fi
+
+# Assistant de commit (git cc)
+alias_cc="$(git config --global --get alias.cc 2>/dev/null || true)"
+if [[ "$alias_cc" == *"$ROOT/bin/commit"* ]]; then
+    ok_t st.cc_on
+elif [[ "$alias_cc" == *"/bin/commit"* ]]; then
+    attention_t st.cc_other
+    suivant="${suivant:-repogarde install --global}"
+elif [ -n "$alias_cc" ]; then
+    info_t st.cc_foreign "$alias_cc"
+else
+    err_t st.cc_off
+    suivant="${suivant:-repogarde install --global}"
+fi
+
+info_t st.lang "$REPOGARDE_LANG"
+
+# Dépôt courant
+if [ -n "$GIT_TOPLEVEL" ]; then
+    step_t st.repo "$GIT_TOPLEVEL"
+    local_path="$(git config --local --get core.hooksPath 2>/dev/null || true)"
+    if [ -n "$local_path" ]; then
+        info_t st.repo_local "$local_path"
+    fi
+    for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
+        [ -f "$GIT_TOPLEVEL/$f" ] || continue
+        if has lefthook; then info_t st.repo_lefthook "$f"
+        else attention_t st.repo_lefthook_missing "$f"
+        fi
+        break
+    done
+    cfg_r version ""
+    if [ -n "$REPLY" ]; then
+        attendue="${REPLY#v}"
+        if [ -n "$(check_version 2>&1)" ]; then
+            attention_t st.repo_version_old "$attendue" "${version:-?}"
+            [ "$mode" = npm ] && suivant="${suivant:-npm update -g @simbie/repogarde}"
+        else
+            ok_t st.repo_version_ok "$attendue"
+        fi
+    fi
+    info_t st.repo_forge "$FORGE"
+fi
+
+# Outils : secrets, code mort (selon les langages)
+presents="" absents=""
+for outil in gitleaks ruff vulture staticcheck pmd lefthook; do
+    if has "$outil"; then presents="$presents $outil"; else absents="$absents $outil"; fi
+done
+info_t st.tools "${presents# }" "${absents# }"
+
+echo
+if [ -n "$suivant" ]; then
+    t st.next
+    printf '%s %s%s%s\n' "$REPLY" "$UI_B" "$suivant" "$UI_N"
+else
+    ok_t st.ready
+fi
+dim_t st.help

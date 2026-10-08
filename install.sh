@@ -181,6 +181,10 @@ if [ "$ACTION" = uninstall ]; then
             */node_modules/*) echo "  npm uninstall -g $(sed -n 's/^  "name": *"\([^"]*\)".*/\1/p' "$ROOT/package.json")" ;;
             *) echo "  rm -rf \"$ROOT\"" ;;
         esac
+    elif [ "$SCOPE" = --global ] && [[ "$ROOT" == */node_modules/* ]]; then
+        # Paquet npm : hooks retirés, le paquet reste installé
+        t install.npm_remove "npm uninstall -g $(sed -n 's/^  "name": *"\([^"]*\)".*/\1/p' "$ROOT/package.json")"
+        dim "$REPLY"
     fi
     exit 0
 fi

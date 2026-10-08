@@ -71,3 +71,36 @@ setup() {
     [[ "$output" == *"npm uninstall -g @simbie/repogarde"* ]]
     [[ "$output" != *"rm -rf"* ]]
 }
+
+@test "statut : sans argument -> etat et etape suivante, puis tout est pret apres installation" {
+    git config --unset core.hooksPath
+    run "$PKG/bin/repogarde"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Hooks git non activés"* ]]
+    [[ "$output" == *"Étape suivante : repogarde install --global"* ]]
+    "$PKG/bin/repogarde" install --global --lang fr >/dev/null
+    run "$PKG/bin/repogarde" statut
+    [[ "$output" == *"Hooks git actifs pour tous les dépôts"* ]]
+    [[ "$output" == *"Assistant de commit : git cc"* ]]
+    [[ "$output" == *"Tout est prêt"* ]]
+}
+
+@test "statut : autre installation de repogarde -> signalee, reinstallation proposee" {
+    autre="$BATS_TEST_TMPDIR/autre"
+    mkdir -p "$autre"
+    cp -R "$PKG/hooks" "$autre/"
+    git config --global core.hooksPath "$autre/hooks"
+    run "$PKG/bin/repogarde" statut
+    [[ "$output" == *"Hooks git d'une autre installation de repogarde"* ]]
+    [[ "$output" == *"Étape suivante : repogarde install --global"* ]]
+}
+
+@test "npm : uninstall --global rappelle npm uninstall -g (le paquet reste installe)" {
+    pkg="$BATS_TEST_TMPDIR/prefix/lib/node_modules/@simbie/repogarde"
+    mkdir -p "$pkg"
+    cp -R "$PKG/bin" "$PKG/hooks" "$PKG/install.sh" "$PKG/package.json" "$pkg/"
+    "$pkg/bin/repogarde" install --global --lang fr >/dev/null
+    run "$pkg/bin/repogarde" uninstall --global
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Le paquet reste installé ; pour le retirer aussi : npm uninstall -g @simbie/repogarde"* ]]
+}
