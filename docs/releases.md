@@ -151,6 +151,37 @@ jobs:
 
 La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications portent sur le commit de tête, et valent donc pour la PR de livraison.
 
+## Cycle develop → main avec fichiers de version (mode cycle)
+
+Pour livrer à un rythme choisi, tout en gardant changelog et fichiers de version à jour (mode pr) : le travail s'intègre dans `develop`, `main` ne reçoit que les livraisons. repogarde lui-même fonctionne ainsi.
+
+```yaml title=".github/workflows/release.yml"
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
+    with:
+      mode: cycle
+    secrets:
+      app-id: ${{ secrets.REPOGARDE_APP_ID }}
+      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
+```
+
+1. À chaque merge sur `develop`, la **PR de livraison** `develop` → `main` est créée ou mise à jour (version à venir, notes) ;
+2. la merger (décision humaine, **merge commit** : release-please doit voir chaque commit) déclenche sur `main` la release du mode pr : PR de release (changelog, fichiers de version) validée par la CI et mergée, tag, release ;
+3. `main` est ensuite fusionnée dans `develop` par une PR mergée automatiquement dès que ses vérifications passent : le cycle suivant repart des fichiers de version à jour.
+
+Prérequis :
+
+- `.repogarde.conf` : `integrationBranch = develop` (PR mal ciblées reciblées vers `develop`) ;
+- la CI tourne aussi sur les pushs vers `develop` (ses vérifications valent pour la PR de livraison) ;
+- `repogarde proteger` : `develop` en branche par défaut, merge commit autorisé vers `main`, merge automatique activé ;
+- [bot de release](#bot-de-release) conseillé : ses PR (retour vers `develop`) déclenchent la CI, celles du jeton des Actions non.
+
 ## Publier sur npm
 
 Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbie/repogarde`).

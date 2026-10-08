@@ -94,7 +94,7 @@ git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git && cd repogarde
 bats test/                           # tests (bats-core), aussi lancés au push
 ```
 
-Voir [CONTRIBUTING.md](CONTRIBUTING.md).
+Les PR visent `develop` ; `main` ne reçoit que les livraisons, qui déclenchent les releases. Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Dans VS Code** : l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) guide la rédaction des commits, signale une branche mal nommée et des hooks inactifs. En attendant sa publication sur le Marketplace : `.vsix` dans ses [releases](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode/releases), puis `code --install-extension repogarde-X.Y.Z.vsix`.
 

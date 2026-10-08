@@ -151,6 +151,37 @@ jobs:
 
 The project's CI must run on pushes to `develop`: its checks apply to the head commit, and therefore count for the delivery PR.
 
+## develop → main cycle with version files (cycle mode)
+
+To deliver at a chosen pace while keeping the changelog and version files up to date (pr mode): work is integrated into `develop`, `main` only receives deliveries. repogarde itself works this way.
+
+```yaml title=".github/workflows/release.yml"
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  release:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
+    with:
+      mode: cycle
+    secrets:
+      app-id: ${{ secrets.REPOGARDE_APP_ID }}
+      app-key: ${{ secrets.REPOGARDE_APP_KEY }}
+```
+
+1. On every merge into `develop`, the **delivery PR** `develop` → `main` is created or updated (upcoming version, notes);
+2. merging it (human decision, **merge commit**: release-please must see every commit) starts the pr-mode release on `main`: release PR (changelog, version files) validated by the CI and merged, tag, release;
+3. `main` is then merged into `develop` by a PR merged automatically once its checks pass: the next cycle starts from up-to-date version files.
+
+Requirements:
+
+- `.repogarde.conf`: `integrationBranch = develop` (mistargeted PRs retargeted to `develop`);
+- the CI also runs on pushes to `develop` (its checks apply to the delivery PR);
+- `repogarde proteger`: `develop` as the default branch, merge commits allowed into `main`, auto-merge enabled;
+- [release bot](#release-bot) recommended: its PRs (back into `develop`) trigger the CI, those of the Actions token do not.
+
 ## Publishing to npm
 
 A Node project can publish its package on every release, **without a token**: npm checks that the publication comes from the repository and its `release.yml` (trusted publishing) and shows the package provenance. yarn, pnpm and bun install from the same registry. repogarde itself is published this way (`@simbie/repogarde`).
