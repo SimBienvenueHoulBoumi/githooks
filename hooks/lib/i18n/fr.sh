@@ -93,7 +93,8 @@ _msg_fr() {
         hook.pre_push.5) _M="%s : aucun fichier modifié, rien à tester." ;;
         hook.pre_push.6) _M="Rien à tester (suppression de branche uniquement)." ;;
         hook.pre_push.7) _M="Pre-push OK" ;;
-        hook.post_checkout.1) _M="Attention : commits et push seront refusés sur cette branche." ;;
+        hook.branch_hint.1) _M="Nom de branche « %s » non conforme : commits et push seront refusés. Renommer :" ;;
+        hook.branch_hint.2) _M="  Format <type>/<sujet> (ex. feat/inscription) ; aide complète au prochain commit." ;;
         hook.post_merge.1) _M="🧹 Branche locale supprimée (mergée et supprimée sur le serveur) : %s" ;;
         hook.post_merge.2) _M="🧹 Branche locale supprimée (mergée en squash et supprimée sur le serveur) : %s" ;;
         hook.post_merge.3) _M="%s : supprimée sur le serveur mais des modifications manquent ici, conservée." ;;

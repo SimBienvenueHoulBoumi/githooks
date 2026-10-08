@@ -206,6 +206,18 @@ suggest_branch_name() {
 }
 
 # Message d'aide complet pour une branche invalide
+# Aide courte (création de la branche, non bloquant) : le problème, la commande
+# pour renommer, et où trouver le détail. L'aide complète vient au commit refusé.
+branch_hint() {
+    local branch="$1" suggested
+    suggested="$(suggest_branch_name "$branch")"
+    attention_t hook.branch_hint.1 "$branch" >&2
+    printf '  %s%s%s\n' "$UI_B" "git branch -m $suggested" "$UI_N" >&2
+    dim_t hook.branch_hint.2 >&2
+}
+
+# Aide complète (commit ou push refusé) : la commande pour renommer d'abord,
+# puis le format attendu, les types et les exceptions
 branch_help() {
     local branch="$1" suggested allowed
     suggested="$(suggest_branch_name "$branch")"
@@ -214,6 +226,11 @@ branch_help() {
         cat >&2 <<EOF
 
 Invalid branch name: "$branch"
+
+👉 Rename the current branch:
+     ${UI_B}git branch -m $suggested${UI_N}
+   Already pushed? Rename the remote one too:
+     git push origin -u $suggested && git push origin --delete $branch
 
 Expected format: <type>/<topic>
   topic: lowercase letters, digits, . _ - (and / to split further)
@@ -224,12 +241,6 @@ EOF
         types_help
         cat >&2 <<EOF
 
-👉 Rename the current branch:
-     git branch -m $suggested
-
-   If it is already pushed, rename the remote one too:
-     git push origin -u $suggested && git push origin --delete $branch
-
 Allowed exceptions: $allowed
   (change: git config repogarde.allowedBranches "main develop release/*")
 Disable for this repository: git config repogarde.skip branch-name
@@ -239,6 +250,11 @@ EOF
 
 Nom de branche invalide : "$branch"
 
+👉 Renommer la branche courante :
+     ${UI_B}git branch -m $suggested${UI_N}
+   Déjà poussée ? Renomme aussi le distant :
+     git push origin -u $suggested && git push origin --delete $branch
+
 Format attendu : <type>/<sujet>
   sujet : minuscules, chiffres, . _ - (et / pour sous-découper)
   ex.   : feat/inscription, fix/user/login, hotfix/timeout-db
@@ -247,12 +263,6 @@ Types :
 EOF
         types_help
         cat >&2 <<EOF
-
-👉 Renommer la branche courante :
-     git branch -m $suggested
-
-   Si elle est déjà poussée, renomme aussi le distant :
-     git push origin -u $suggested && git push origin --delete $branch
 
 Exceptions autorisées : $allowed
   (modifier : git config repogarde.allowedBranches "main develop release/*")

@@ -43,8 +43,11 @@ setup() { setup_repo; initial_commit; }
 @test "post-checkout : avertit sans bloquer" {
     run git switch -c Mon_Truc
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Nom de branche invalide"* ]]
+    [[ "$output" == *"Nom de branche « Mon_Truc » non conforme"* ]]
     [[ "$output" == *"git branch -m feat/mon-truc"* ]]
+    # aide courte : ni la liste des types, ni les exceptions (elles viennent au commit)
+    [[ "$output" != *"Types"* ]]
+    [ "$(printf '%s\n' "$output" | wc -l)" -le 5 ]
 }
 
 @test "pre-commit : refuse une branche mal nommee" {
