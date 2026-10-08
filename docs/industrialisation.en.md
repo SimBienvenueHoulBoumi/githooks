@@ -171,3 +171,26 @@ Errors appear as annotations on GitHub and in the job log on GitLab, with the co
 ## 7. Machine with the global repogarde installation
 
 `install.sh --global` (personal use) and lefthook coexist: in a repository containing a `lefthook.yml`, the global hooks delegate to lefthook (project config, pinned version), without `lefthook install` and without a `core.hooksPath` conflict.
+
+## 8. Internal sources (closed network, Nexus, Artifactory…)
+
+repogarde does not download project dependencies: it runs the projects' tools (`mvn`, `gradle`, `npm`, `pip`, `go`…), which use their usual configuration, on developer machines and in CI alike.
+
+| Tool | Point to the internal source |
+|---|---|
+| Maven | `~/.m2/settings.xml`: `<mirrors>` |
+| Gradle | `repositories { maven { url = uri("…") } }`, or an init script in `~/.gradle/init.d/` (plugins: `pluginManagement` in `settings.gradle.kts`) |
+| npm, yarn, pnpm | `.npmrc`: `registry=…` (including to install `@simbie/repogarde`) |
+| pip | `pip.conf`: `index-url` |
+| Go | `GOPROXY` |
+| MegaLinter (Docker) | registry mirror configured on the runner |
+
+What repogarde fetches itself:
+
+| Item | Internal source |
+|---|---|
+| repogarde (clone installation, lefthook) | internal Git mirror of the repository: `git_url` in `lefthook.yml`, `REPOGARDE_URL` variable of the GitLab template |
+| GitHub Action `repogarde@v3` (GitHub Enterprise Server) | repository synced into the organisation ([actions-sync](https://docs.github.com/en/enterprise-server/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/manually-syncing-actions-from-githubcom)), then `uses: <organisation>/repogarde@v3` |
+| Tools installed in CI (gitleaks, PMD, actionlint) | **recommended**: already present in the runner image, nothing is downloaded then; otherwise `REPOGARDE_DOWNLOAD_MIRROR` |
+
+`REPOGARDE_DOWNLOAD_MIRROR` replaces `https://github.com` in downloads, for example an Artifactory or Nexus "generic" repository proxying GitHub releases (`https://artifactory.example.com/artifactory/github`). The SHA-256 checksum **never** comes from the mirror: the default versions' checksums are pinned in repogarde; for another version, provide it in `GITLEAKS_SHA256` or `ACTIONLINT_SHA256`, otherwise the download is refused. A compromised mirror therefore cannot get a modified binary installed.

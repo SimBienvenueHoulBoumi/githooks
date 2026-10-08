@@ -66,7 +66,7 @@ repogarde:
     - pip install ruff pytest
 ```
 
-Variables: `REPOGARDE_CHECKS`, `REPOGARDE_STRICT`, `REPOGARDE_MEGALINTER`, `REPOGARDE_URL`, `REPOGARDE_REF`, `GITLEAKS_VERSION`.
+Variables: `REPOGARDE_CHECKS`, `REPOGARDE_STRICT`, `REPOGARDE_MEGALINTER`, `REPOGARDE_URL`, `REPOGARDE_REF`, `GITLEAKS_VERSION`, `GITLEAKS_SHA256`, `REPOGARDE_DOWNLOAD_MIRROR` ([internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory)).
 
 ## Strict mode
 
