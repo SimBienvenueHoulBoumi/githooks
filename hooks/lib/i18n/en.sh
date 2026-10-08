@@ -20,6 +20,10 @@ _msg_en() {
         cc.type.chore) _M="other maintenance" ;;
         cc.type.revert) _M="reverting a commit" ;;
         cc.type_prompt) _M="Number or name [%s]: " ;;
+        cc.type_prompt_required) _M="Number or name: " ;;
+        cc.type_required) _M="Type required: the branch does not start with a type (e.g. feat/…, fix/…)." ;;
+        cc.option_value) _M="Option %s expects a value." ;;
+        cc.batch_message_required) _M="Without questions, the description is required: git cc -m \"<description>\" [--type T] [--scope S] [--body …] [--refs …] [--breaking …]." ;;
         cc.type_invalid) _M="\"%s\": pick a number (1 to %s) or a name from the list." ;;
         cc.step2) _M="Scope (optional)" ;;
         cc.scope_hint) _M="Part of the project affected, e.g. api, auth, chart; Enter for none." ;;
@@ -309,11 +313,11 @@ _msg_en() {
         npm.done) _M="Done: every release publishes %s to npm, without a token." ;;
         # Status (repogarde statut)
         st.hooks_on) _M="Git hooks active for all repositories (this installation)" ;;
+        st.hooks_repo) _M="Git hooks active in this repository only (local install; all repositories: repogarde install --global)" ;;
         st.hooks_off) _M="Git hooks not enabled: no checks on commit or push" ;;
         st.hooks_other) _M="Git hooks from another repogarde installation: %s" ;;
         st.hooks_foreign) _M="Git hooks from another tool (core.hooksPath = %s): left as is" ;;
         st.cc_on) _M="Commit assistant: git cc" ;;
-        st.hooks_repo) _M="Git hooks active in this repository only (local install; all repositories: repogarde install --global)" ;;
         st.cc_off) _M="Commit assistant (git cc) not installed" ;;
         st.cc_other) _M="git cc points to another repogarde installation" ;;
         st.cc_foreign) _M="git cc alias already used by something else: %s" ;;

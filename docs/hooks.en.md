@@ -69,7 +69,7 @@ Commit? [Y/n]:
 
 | Step | Required | Help |
 |---|---|---|
-| Type | yes | menu (number or name), suggested from the branch |
+| Type | yes | menu (number or name), suggested from the branch; nothing is suggested on a branch outside the convention (`wip/…`): the type must be chosen |
 | Scope | no | suggested from the branch; an invalid scope is fixed and suggested ("doc test" → `doc-test`) |
 | Breaking change | no | adds `!` and the `BREAKING CHANGE: …` footer, described right away (at least 10 characters); skipped on the repository's first commit |
 | Description | yes | header length checked (72 characters); final period removed |
@@ -81,6 +81,26 @@ Commit? [Y/n]:
 **Robust input**: arrow keys and deletion in a terminal, stray keys ignored; an invalid yes/no answer is asked again; Ctrl+D cancels. If a hook refuses the commit, the message is kept (`git commit -F .git/repogarde-message` once fixed).
 
 `git commit` options are passed through (`git cc --no-verify`…); `git cc --dry-run` shows the message without committing. Answers supplied by a script (one per line on standard input): `git cc --strict`, so that a refused answer stops everything instead of reading the next line as a new answer. With lefthook and no `install.sh`: `git config --global alias.cc '!bash /path/to/repogarde/bin/commit'`.
+
+**Without questions** (scripts, agents, CI): answers are passed as options, with the same checks, and any refused value stops everything without committing. An omitted type and scope are inferred from the branch, as with Enter; on a protected branch, no branch is created.
+
+```bash
+git cc -m "add the cart"                                      # on feat/cart → feat(cart): add the cart
+git cc --type fix --scope - -m "fix the total" \
+       --body "The total ignored the discount." --refs "Closes #12"
+git cc --type feat --breaking "the total is in cents" -m "change the cart API"
+```
+
+| Option | Purpose |
+|---|---|
+| `-m`, `--message` | description (required without questions) |
+| `--type` | type (name or menu number) |
+| `--scope` | scope; `-` for none |
+| `--breaking` | breaking change: `!` and `BREAKING CHANGE: <text>` footer |
+| `--body` | body (several lines allowed) |
+| `--refs` | references (`Closes #12`) |
+
+Other options are passed to `git commit`; `--` ends the assistant's options.
 
 ## Branch naming
 

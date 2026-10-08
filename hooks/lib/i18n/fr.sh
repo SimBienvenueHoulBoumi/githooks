@@ -20,6 +20,10 @@ _msg_fr() {
         cc.type.chore) _M="maintenance diverse" ;;
         cc.type.revert) _M="annulation d'un commit" ;;
         cc.type_prompt) _M="Numéro ou nom [%s] : " ;;
+        cc.type_prompt_required) _M="Numéro ou nom : " ;;
+        cc.type_required) _M="Type obligatoire : la branche ne commence pas par un type (ex. feat/…, fix/…)." ;;
+        cc.option_value) _M="L'option %s attend une valeur." ;;
+        cc.batch_message_required) _M="Sans question, la description est obligatoire : git cc -m \"<description>\" [--type T] [--scope S] [--body …] [--refs …] [--breaking …]." ;;
         cc.type_invalid) _M="« %s » : choisis un numéro (1 à %s) ou un nom de la liste." ;;
         cc.step2) _M="Scope (optionnel)" ;;
         cc.scope_hint) _M="Partie du projet concernée, ex. api, auth, chart ; Entrée pour aucun." ;;
@@ -309,11 +313,11 @@ _msg_fr() {
         npm.done) _M="Terminé : chaque release publie %s sur npm, sans jeton." ;;
         # Statut (repogarde statut)
         st.hooks_on) _M="Hooks git actifs pour tous les dépôts (cette installation)" ;;
+        st.hooks_repo) _M="Hooks git actifs dans ce dépôt seulement (installation locale ; tous les dépôts : repogarde install --global)" ;;
         st.hooks_off) _M="Hooks git non activés : aucun contrôle au commit ni au push" ;;
         st.hooks_other) _M="Hooks git d'une autre installation de repogarde : %s" ;;
         st.hooks_foreign) _M="Hooks git d'un autre outil (core.hooksPath = %s) : laissés tels quels" ;;
         st.cc_on) _M="Assistant de commit : git cc" ;;
-        st.hooks_repo) _M="Hooks git actifs dans ce dépôt seulement (installation locale ; tous les dépôts : repogarde install --global)" ;;
         st.cc_off) _M="Assistant de commit (git cc) non installé" ;;
         st.cc_other) _M="git cc pointe vers une autre installation de repogarde" ;;
         st.cc_foreign) _M="Alias git cc déjà pris par autre chose : %s" ;;
