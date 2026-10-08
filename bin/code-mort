@@ -13,13 +13,21 @@ source "$ROOT/hooks/lib/lang.sh"
 cd "$GIT_TOPLEVEL"
 
 base="${1:-}"
+label="$base"
 if [ -z "$base" ]; then
     default="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)"
+    label="$default"
     base="$(git merge-base HEAD "$default" 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)"
 fi
 t dc.section
 printf "\n%s━━ %s ━━%s\n" "$UI_B" "$REPLY" "$UI_N"
-{
+changed="$({
     git diff --name-only --diff-filter=ACMR "$base"
     git ls-files --others --exclude-standard
-} | sort -u | without_excluded | deadcode_projects "$base"
+} | sort -u | without_excluded)"
+# Rien de modifié (ex. sur main à jour) : le dire, plutôt que « aucun langage »
+if [ -z "$changed" ]; then
+    info_t dc.no_changes "$label"
+    exit 0
+fi
+deadcode_projects "$base" <<<"$changed"

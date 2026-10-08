@@ -250,6 +250,7 @@ _msg_en() {
         ci.install_tool.arch) _M="Unsupported architecture: %s" ;;
         ci.install_tool.unknown) _M="Unknown tool: %s" ;;
         # Dead code and CI sections
+        dc.no_changes) _M="No changes compared with %s: run it from a working branch (only the code added by the branch is analysed)." ;;
         dc.section) _M="Dead code (new code only)" ;;
         dc.no_base) _M="No base: dead code analysis skipped." ;;
         dc.proven) _M="%s: %s (proven dead code)" ;;
