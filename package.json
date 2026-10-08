@@ -1,6 +1,6 @@
 {
   "name": "@simbie/repogarde",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "description": "Hooks git et CI multi-langages : messages de commit, nommage des branches, secrets, formatage, tests ciblés, code mort, releases.",
   "keywords": [
     "git-hooks",
