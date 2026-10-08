@@ -48,12 +48,15 @@ setup() {
     [[ "$output" == *"repogarde install"* ]]
 }
 
-@test "npm : le paquet contient les hooks et rien des tests" {
+@test "npm : le paquet contient les hooks, ni tests, ni CI, ni modeles" {
     require npm
     run bash -c "cd '$PKG' && npm pack --dry-run --json 2>/dev/null"
     [ "$status" -eq 0 ]
-    for f in bin/repogarde bin/commit install.sh hooks/lib/common.sh hooks/pre-commit ci/check.sh; do
+    for f in bin/repogarde bin/commit install.sh hooks/lib/common.sh hooks/pre-commit; do
         [[ "$output" == *"\"$f\""* ]]
     done
-    [[ "$output" != *'"test/'* ]]
+    # Rien d'inutile sur une machine : tests, scripts de CI (accès réseau), modèles
+    for d in test/ ci/ templates/; do
+        [[ "$output" != *"\"$d"* ]]
+    done
 }
