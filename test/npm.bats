@@ -85,6 +85,17 @@ setup() {
     [[ "$output" == *"Tout est prêt"* ]]
 }
 
+@test "statut : installation locale (sans --global) -> hooks et git cc reconnus" {
+    git config --unset core.hooksPath
+    "$PKG/install.sh" --lang fr >/dev/null
+    run "$PKG/bin/repogarde" statut
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Hooks git actifs dans ce dépôt seulement"* ]]
+    [[ "$output" == *"Assistant de commit : git cc"* ]]
+    [[ "$output" != *"non activés"* ]]
+    [[ "$output" == *"Tout est prêt"* ]]
+}
+
 @test "statut : autre installation de repogarde -> signalee, reinstallation proposee" {
     autre="$BATS_TEST_TMPDIR/autre"
     mkdir -p "$autre"

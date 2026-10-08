@@ -20,6 +20,10 @@ _msg_fr() {
         cc.type.chore) _M="maintenance diverse" ;;
         cc.type.revert) _M="annulation d'un commit" ;;
         cc.type_prompt) _M="Numéro ou nom [%s] : " ;;
+        cc.type_prompt_required) _M="Numéro ou nom : " ;;
+        cc.type_required) _M="Type obligatoire : la branche ne commence pas par un type (ex. feat/…, fix/…)." ;;
+        cc.option_value) _M="L'option %s attend une valeur." ;;
+        cc.batch_message_required) _M="Sans question, la description est obligatoire : git cc -m \"<description>\" [--type T] [--scope S] [--body …] [--refs …] [--breaking …]." ;;
         cc.type_invalid) _M="« %s » : choisis un numéro (1 à %s) ou un nom de la liste." ;;
         cc.step2) _M="Scope (optionnel)" ;;
         cc.scope_hint) _M="Partie du projet concernée, ex. api, auth, chart ; Entrée pour aucun." ;;
@@ -85,7 +89,7 @@ _msg_fr() {
         hook.pre_commit.3) _M="  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" ;;
         hook.pre_commit.4) _M="Détection de secrets (gitleaks)" ;;
         hook.pre_commit.5) _M="Secret détecté : commit refusé." ;;
-        hook.pre_commit.6) _M="gitleaks absent, détection de secrets ignorée (brew install gitleaks)." ;;
+        hook.pre_commit.6) _M="gitleaks absent, détection de secrets ignorée (installation : %s)." ;;
         hook.pre_commit.7) _M="Pre-commit OK" ;;
         hook.commit_msg.1) _M="Première ligne trop longue (%s > 72 caractères)." ;;
         hook.pre_push.1) _M="Push refusé : nom de branche non conforme." ;;
@@ -309,6 +313,7 @@ _msg_fr() {
         npm.done) _M="Terminé : chaque release publie %s sur npm, sans jeton." ;;
         # Statut (repogarde statut)
         st.hooks_on) _M="Hooks git actifs pour tous les dépôts (cette installation)" ;;
+        st.hooks_repo) _M="Hooks git actifs dans ce dépôt seulement (installation locale ; tous les dépôts : repogarde install --global)" ;;
         st.hooks_off) _M="Hooks git non activés : aucun contrôle au commit ni au push" ;;
         st.hooks_other) _M="Hooks git d'une autre installation de repogarde : %s" ;;
         st.hooks_foreign) _M="Hooks git d'un autre outil (core.hooksPath = %s) : laissés tels quels" ;;
