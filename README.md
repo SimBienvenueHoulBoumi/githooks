@@ -29,11 +29,12 @@
 ### 1. Sur ton poste, en une minute (tous tes dépôts)
 
 ```bash
-npm install -g @simbie/repogarde     # paquet npm (yarn global add, pnpm add -g : idem)
-repogarde install --global           # demande la langue (fr / en) et installe git cc
+npm install -g @simbie/repogarde     # 1. le paquet (yarn global add, pnpm add -g : idem)
+repogarde install --global           # 2. active les hooks : demande la langue, installe git cc
+repogarde                            # 3. vérifie : état du poste et étape suivante
 ```
 
-C'est tout : dans **n'importe quel dépôt**, les hooks s'appliquent dès le prochain commit. Rien n'est ajouté aux projets ni à leur `package.json`.
+L'étape 2 est indispensable : par sécurité, le paquet n'exécute rien à l'installation (aucun script `postinstall`, que npm 12 bloque d'ailleurs). Ensuite, dans **n'importe quel dépôt**, les hooks s'appliquent dès le prochain commit. Rien n'est ajouté aux projets ni à leur `package.json`.
 
 ```bash
 cd mon-projet
@@ -45,9 +46,10 @@ repogarde code-mort                  # nouveau code mort de ta branche
 
 | Action | Commande |
 |---|---|
+| État du poste, étape suivante | `repogarde` (ou `repogarde statut`) |
 | Toutes les commandes | `repogarde --help` (`cc`, `code-mort`, `proteger`, `bot-release`, `npm-publication`…) |
 | Mettre à jour | `npm update -g @simbie/repogarde` (les hooks suivent) |
-| Désinstaller | `repogarde uninstall --global`, puis `npm uninstall -g @simbie/repogarde` |
+| Désinstaller | `repogarde uninstall --global`, **puis** `npm uninstall -g @simbie/repogarde` (dans cet ordre : npm n'exécute rien à la désinstallation, les hooks resteraient branchés sur un dossier supprimé) |
 
 Sans Node : `git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde && ~/repogarde/install.sh --global` (mise à jour : `git -C ~/repogarde pull`).
 
