@@ -76,7 +76,7 @@ L'essentiel des deux fichiers :
 ```ini
 # .repogarde.conf : un poste en retard est prévenu, avec la commande de mise à jour
 [repogarde]
-    version = 3.3.2
+    version = 3.4.0
 ```
 <!-- x-release-please-end -->
 
