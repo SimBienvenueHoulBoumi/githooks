@@ -78,6 +78,19 @@ jobs:
     secrets:
       npm-token: ${{ secrets.NPM_TOKEN }}
 
+  # Préversion de test (develop) sur npm, étiquette « next » :
+  # npm install -g @simbie/repogarde@next
+  npm-next:
+    needs: release
+    if: vars.REPOGARDE_NPM == 'true' && needs.release.outputs.prerelease_created == 'true'
+    uses: ./.github/workflows/npm-publish.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      tag: ${{ needs.release.outputs.prerelease_tag }}
+      dist-tag: next
+
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repogarde@v1`
   tag-major:
     needs: release

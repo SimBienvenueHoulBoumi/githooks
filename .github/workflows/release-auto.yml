@@ -20,6 +20,8 @@
 # la merger (humain, merge commit) déclenche sur main la release du mode pr
 # (PR de release, changelog, fichiers de version, tag). Puis main est fusionnée
 # dans develop par une PR mergée automatiquement (fichiers de version à jour).
+# À chaque merge sur develop, une préversion (vX.Y.Z-next.N, release GitHub
+# « pre-release ») est publiée pour que la communauté teste avant la prod.
 # Les sorties (release_created, tag_name, version…) permettent au projet
 # d'enchaîner ses propres jobs de publication (registre, image, paquet…).
 name: release-auto
@@ -60,8 +62,15 @@ on:
           livraison sur main, puis main fusionnée dans develop.
         type: string
         default: pr
+      preversion:
+        description: >-
+          Mode cycle : identifiant des préversions publiées à chaque merge sur
+          la branche d'intégration (vX.Y.Z-next.N, release « pre-release »).
+          Vide : aucune préversion.
+        type: string
+        default: next
       integration-branch:
-        description: "Mode tag : branche d'intégration"
+        description: "Modes tag et cycle : branche d'intégration"
         type: string
         default: develop
       main-branch:
@@ -113,6 +122,13 @@ on:
         value: ${{ jobs.release.outputs.major || jobs.tag.outputs.major }}
       sha:
         value: ${{ jobs.release.outputs.sha || jobs.tag.outputs.sha }}
+      prerelease_created:
+        description: "Mode cycle : préversion publiée sur la branche d'intégration"
+        value: ${{ jobs.tag.outputs.prerelease_created }}
+      prerelease_tag:
+        value: ${{ jobs.tag.outputs.prerelease_tag }}
+      prerelease_version:
+        value: ${{ jobs.tag.outputs.prerelease_version }}
 
 permissions: {}
 
@@ -445,6 +461,9 @@ jobs:
       version: ${{ steps.publier.outputs.version }}
       major: ${{ steps.publier.outputs.major }}
       sha: ${{ steps.publier.outputs.sha }}
+      prerelease_created: ${{ steps.preversion.outputs.created }}
+      prerelease_tag: ${{ steps.preversion.outputs.tag }}
+      prerelease_version: ${{ steps.preversion.outputs.version }}
     env:
       HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
     steps:
@@ -508,6 +527,42 @@ jobs:
             gh pr create --head "$INTEGRATION" --base "$MAIN" --title "$title" --body "$body"
             echo "::notice::PR de livraison créée : $title"
           fi
+
+      # Mode cycle : préversion de test à chaque merge sur la branche
+      # d'intégration ; numéro = commits depuis la branche principale
+      - name: Préversion
+        id: preversion
+        if: inputs.mode == 'cycle' && inputs.preversion != '' && github.ref_name == inputs.integration-branch
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
+          MAIN: ${{ inputs.main-branch }}
+          ID: ${{ inputs.preversion }}
+          INITIAL_VERSION: ${{ inputs.initial-version }}
+        run: |
+          git fetch -q origin "$MAIN"
+          base="$(bash .repogarde-ci/ci/version.sh next HEAD)"
+          if [ -z "$base" ]; then
+            echo "Aucune nouvelle version (ci, chore, docs…) : pas de préversion."
+            exit 0
+          fi
+          version="$base-$ID.$(git rev-list --count "origin/$MAIN..HEAD")"
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag existe déjà : rien à faire."
+            exit 0
+          fi
+          {
+            echo "> ⚠️ Préversion de test, à ne pas utiliser en production : la version stable sortira au merge de la livraison."
+            echo
+            bash .repogarde-ci/ci/version.sh notes HEAD
+          } >"$RUNNER_TEMP/notes.md"
+          gh release create "$tag" --target "$GITHUB_SHA" --prerelease --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
+          {
+            echo "created=true"
+            echo "tag=$tag"
+            echo "version=$version"
+          } >>"$GITHUB_OUTPUT"
+          echo "::notice::Préversion $tag publiée"
 
       - name: Tag et release
         id: publier

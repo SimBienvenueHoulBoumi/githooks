@@ -380,6 +380,8 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert d["name"]=="repogarde (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
         assert d["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
         assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","tests (ubuntu-latest)"]; \
+        assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is True; \
+        assert d["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]
@@ -495,6 +497,14 @@ c() { git commit -q --no-verify --allow-empty -m "$1"; }
     [ "$("$VERSION" next 2>/dev/null)" = 1.5.0 ]
     c "refactor!: c"
     [ "$("$VERSION" next 2>/dev/null)" = 2.0.0 ]
+}
+
+@test "version : les preversions (v1.5.0-next.2) ne servent pas de base" {
+    git tag v1.4.2
+    c "feat: b"
+    git tag v1.5.0-next.2
+    c "fix: c"
+    [ "$("$VERSION" next 2>/dev/null)" = 1.5.0 ]
 }
 
 @test "version : BREAKING CHANGE en pied -> majeure" {

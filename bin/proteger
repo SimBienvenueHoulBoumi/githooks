@@ -85,7 +85,8 @@ refs_json() { # branches → "refs/heads/a", "refs/heads/b"
     echo "${out%,}"
 }
 
-# Ruleset de branches : $1 nom, $2 branches (liste), $3 méthodes de merge (JSON)
+# Ruleset de branches : $1 nom, $2 branches (liste), $3 méthodes de merge (JSON),
+# $4 PR à jour exigée (défaut true)
 branch_ruleset() {
     # shellcheck disable=SC2086 # liste de branches volontairement découpée
     cat <<JSON
@@ -106,7 +107,7 @@ branch_ruleset() {
       "required_approving_review_count": $REVIEWS,
       "required_review_thread_resolution": true}},
     {"type": "required_status_checks", "parameters": {
-      "strict_required_status_checks_policy": true,
+      "strict_required_status_checks_policy": ${4:-true},
       "do_not_enforce_on_create": false,
       "required_status_checks": [$contexts]}}
   ]
@@ -147,8 +148,12 @@ if [ -n "$integration" ]; then
     others=""
     for b in $existing; do [ "$b" = "$integration" ] || others="$others $b"; done
     [ -z "$others" ] || rulesets+=("$(branch_ruleset repogarde "$others" '"merge"')")
+    # Branche d'intégration : PR à jour non exigée. Le retour de main (après
+    # une release) serait sinon presque toujours en retard, et « mettre à jour »
+    # fusionnerait develop dans main en contournant la livraison ; la CI
+    # vérifie de toute façon chaque push sur develop.
     [[ " $existing " != *" $integration "* ]] ||
-        rulesets+=("$(branch_ruleset "repogarde ($integration)" "$integration" '"squash", "merge"')")
+        rulesets+=("$(branch_ruleset "repogarde ($integration)" "$integration" '"squash", "merge"' false)")
     merge_commit=true
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)

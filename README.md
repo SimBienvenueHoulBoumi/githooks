@@ -53,6 +53,8 @@ repogarde code-mort                  # nouveau code mort de ta branche
 
 Sans Node : `git clone https://github.com/SimBienvenueHoulBoumi/repogarde.git ~/repogarde && ~/repogarde/install.sh --global` (mise à jour : `git -C ~/repogarde pull`).
 
+**Tester la prochaine version** (avant sa sortie en production) : `npm install -g @simbie/repogarde@next`, ou `uses: SimBienvenueHoulBoumi/repogarde@develop` en CI. Retour à la version stable : `npm install -g @simbie/repogarde@latest`. Les problèmes se signalent en [issue](https://github.com/SimBienvenueHoulBoumi/repogarde/issues).
+
 ### 2. Dans un projet d'équipe : les mêmes règles pour tous
 
 Chaque personne de l'équipe installe repogarde une fois sur son poste (partie 1). Le projet, lui, ajoute deux fichiers, à copier depuis [`templates/project/`](templates/project) :

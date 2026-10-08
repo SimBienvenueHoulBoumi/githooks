@@ -29,6 +29,7 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
     | Every command | `repogarde --help` |
     | Check | `git config --global core.hooksPath` → `…/repogarde/hooks` |
     | Update | `npm update -g @simbie/repogarde` (the hooks follow) |
+    | Try the next version | `npm install -g @simbie/repogarde@next` (back: `@latest`) |
     | Change language | `repogarde install --global --lang fr` |
     | A single repository | `cd my-project && repogarde install` |
     | Uninstall | `repogarde uninstall --global`, then `npm uninstall -g @simbie/repogarde` ([full uninstall](desinstallation.md)) |
