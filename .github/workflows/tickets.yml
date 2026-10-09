@@ -50,6 +50,10 @@ on:
         description: Version de repowarden dont les scripts sont utilisés
         type: string
         default: v4
+      repowarden-repository:
+        description: Dépôt d'où viennent les scripts (repowarden lui-même passe le sien, à son propre commit)
+        type: string
+        default: SimBienvenueHoulBoumi/repowarden
 
 permissions: {}
 
@@ -65,7 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: SimBienvenueHoulBoumi/repowarden
+          repository: ${{ inputs.repowarden-repository }}
           ref: ${{ inputs.repowarden-ref }}
           path: .repowarden-ci
           persist-credentials: false

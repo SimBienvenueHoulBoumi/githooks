@@ -99,7 +99,8 @@ jobs:
     permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
     with:
       tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
-      repowarden-ref: develop
+      repowarden-repository: ${{ github.repository }}
+      repowarden-ref: ${{ github.sha }}
 
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repowarden@v1`
   tag-major:
