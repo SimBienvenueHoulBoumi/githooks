@@ -1,29 +1,43 @@
 # Tickets
 
-Every change is tied to a **ticket** (GitHub issue): you know why it exists, who validated it, and where it stands, from the idea to production.
+Every change starts from a **ticket** (GitHub issue): **the branch derives from the ticket**, and each step of the ticket's life moves the branch and the PR forward, from idea to production, without manual tracking.
 
-## A ticket's life cycle
+## A ticket's lifecycle
 
-| Status (label) | When | Trigger |
+| Status (label) | When | Automatic effect |
 |---|---|---|
-| `statut: à valider` | ticket created, by hand or automatically | creation |
-| `statut: backlog` | ticket accepted | a maintainer adds the **`validé`** label |
-| `statut: en cours` | work started | draft PR citing the ticket |
-| `statut: en relecture` | PR ready | PR "Ready for review" |
-| `statut: préprod` | merged into `develop`, testable | PR merged; comment on each `vX.Y.Z-next.N` pre-release |
-| `statut: done` | in production | release on `main`: ticket **closed**, with the version |
+| `statut: à valider` | ticket created (by hand, or `repowarden ticket nouveau`) | — |
+| `statut: backlog` | a maintainer adds the **`validé`** label | **branch `<type>/<n>-<title>` created** from `develop` and **linked to the ticket** (*Development* panel); comment with the command to fetch it |
+| `statut: en cours` | someone assigns themselves the ticket, or pushes a first commit to its branch | on the first push: **draft PR** opened to `develop`, `Ticket : #n`, assigned |
+| `statut: en relecture` | PR "Ready for review" | CI runs; a "Request changes" review moves the ticket back to in progress |
+| `statut: préprod` | PR merged into `develop` | branch deleted; comment on each pre-release `vX.Y.Z-next.N` |
+| `statut: done` | release on `main` | ticket **closed**, with the version |
 
-Everything is automatic except validation: it is the only human decision, and GitHub only lets people with rights on the repository add the `validé` label.
+Ticket closed as **abandoned** (*not planned*): its PR is closed and its branch deleted.
+
+Everything is automatic except validation: it is the only human decision, and GitHub only lets people with rights on the repository add the `validé` label. The branch type comes from the ticket's `type: …` label (`feat` by default), its name from the title (lowercase, no accents).
+
+## On the developer machine
+
+```bash
+repowarden ticket 12                          # switch to ticket #12's branch
+repowarden ticket nouveau "Add the cart"       # create a ticket (awaiting validation)
+repowarden ticket                             # ticket of the current branch
+```
+
+- `repowarden ticket <n>` fetches the branch created on validation. If it does not exist yet (ticket tracking not installed), it is created and linked to the ticket with `gh issue develop`.
+- **Branch without a ticket**: `repowarden` warns (when arriving on the branch and in `git cc`), **never blocking**: not everyone works with tickets. If the project's tickets are managed by repowarden, it **offers to create one** (`git cc` creates and references it on "yes"); otherwise it shows how to silence it: `git config repowarden.skip tickets`.
+- `git cc` references `Ticket : #12` on a `feat/12-…` branch.
 
 ## The rules
 
-- **No PR without a ticket**: a PR cites its ticket in its description (`Ticket: #12`), or its branch carries it (`feat/12-cart`). Otherwise the ticket is **created automatically** from the PR, linked in its description, and "to be validated".
-- **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, nothing to re-run.
-- **`git cc`** suggests `Ticket : #12` as a reference on a `feat/12-…` branch.
-- Dependency bots, release PRs and `develop` → `main` deliveries need no ticket.
+- **No PR without a ticket**: a PR references its ticket in its description (`Ticket : #12`), or its branch carries it (`feat/12-cart`). Otherwise, the ticket is **created automatically** from the PR, linked to its description, and "à valider".
+- **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, without re-running anything.
+- Dependency bots, release PRs and `develop` → `main` deliveries do not need a ticket.
+- The draft PR is opened by the Actions token, which does not trigger other workflows: CI runs on the next push, or when marked "Ready for review" (`ready_for_review` in the CI triggers, as in the project template).
 
-!!! note "Why `Ticket: #12` and not `Closes #12`"
-    `Closes #12` closes the ticket as soon as it is merged into the default branch, that is `develop`: it would be "done" before reaching production. Here, the release on `main` closes it.
+!!! note "Why `Ticket : #12` and not `Closes #12`"
+    `Closes #12` closes the ticket as soon as it is merged into the default branch, i.e. `develop`: it would be "done" before reaching production. Here, the release on `main` closes it.
 
 ## Setup
 
@@ -40,10 +54,12 @@ In `.github/workflows/release.yml`, tickets move to pre-production on each pre-r
     needs: release
     if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
     uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
-    permissions: { issues: write, pull-requests: write, statuses: write }
+    permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
     with:
       tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
 ```
+
+An existing `tickets.yml` is never overwritten: for the branch created on validation and the draft PR, add the `pull_request_review`, `issues` (`assigned`, `closed`) and `push` events to it, and the `contents: write` permission (see the template written by `repowarden tickets init`).
 
 No key or token: everything goes through the Actions token. The workflow uses `pull_request_target` without ever fetching the PR's code: PRs from forks are handled safely.
 

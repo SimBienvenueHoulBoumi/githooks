@@ -23,12 +23,33 @@ case "$1 $2" in
         esac ;;
     "pr edit")
         while [ $# -gt 0 ]; do [ "$1" = --body ] && printf '%s' "$2" >"$F/pr_body"; shift; done ;;
-    "pr list") printf '%s\n' "${FAKE_PRS:-}" ;;
+    "pr list")
+        case "$*" in
+            *--head*) printf '%s\n' "${FAKE_PR_HEAD:-}" ;;
+            *) printf '%s\n' "${FAKE_PRS:-}" ;;
+        esac ;;
+    "pr create")
+        echo "pr-creee $*" >>"$F/events"
+        echo "https://github.com/o/r/pull/9" ;;
+    "pr close") echo "pr-fermee $3" >>"$F/events" ;;
+    "api graphql")
+        for a in "$@"; do case "$a" in name=*) echo "branche-creee ${a#name=}" >>"$F/events" ;; esac; done ;;
+    "api -X")
+        echo "branche-supprimee ${4#repos/o/r/git/refs/heads/}" >>"$F/events" ;;
+    "api repos/o/r/git/matching-refs/heads/") cat "$F/refs" 2>/dev/null || true ;;
+    "api repos/o/r") echo R_1 ;;
+    "api repos/o/r/git/ref/heads/develop") echo sha0 ;;
+    "api repos/o/r/compare/"*) echo "${FAKE_AHEAD:-1}" ;;
     "issue create")
         n=42
         while [ $# -gt 0 ]; do [ "$1" = --label ] && echo "$2" >>"$F/issues/$n.labels"; shift; done
         echo "https://github.com/o/r/issues/$n" ;;
-    "issue view") etiquettes "$3" ;;
+    "issue view")
+        case "$*" in
+            *"-q .title"*) cat "$F/issues/$3.title" 2>/dev/null || echo "Ajoute le panier" ;;
+            *"-q .id"*) echo "I_$3" ;;
+            *) etiquettes "$3" ;;
+        esac ;;
     "issue edit")
         n="$3"; shift 3
         while [ $# -gt 0 ]; do
@@ -117,4 +138,66 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     ACTION=opened HEAD=develop run "$TICKETS" pr
     [ "$status" -eq 0 ]
     [ ! -e "$F/issues/42.labels" ]
+}
+
+@test "tickets : ticket valide -> sa branche cree depuis develop, liee au ticket, une seule fois" {
+    N=12 ticket "statut: à valider" "validé" "type: fix"
+    echo "Corrige le total à payer" >"$F/issues/12.title"
+    ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
+    [ "$status" -eq 0 ]
+    grep -qx "branche-creee fix/12-corrige-le-total-a-payer" "$F/events"
+    grep -q "commentaire 12" "$F/events"
+    [ "$(labels 12 | grep statut)" = "statut: backlog" ]
+    # Branche deja la : rien de plus
+    : >"$F/events"
+    echo "refs/heads/fix/12-corrige-le-total-a-payer" >"$F/refs"
+    ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
+    ! grep -q "branche-creee" "$F/events"
+}
+
+@test "tickets : premier push sur la branche du ticket -> PR brouillon, en cours" {
+    N=12 ticket "validé" "statut: backlog"
+    PUSH_BRANCH=feat/12-panier SHA=def PUSHER=dev run "$TICKETS" push
+    [ "$status" -eq 0 ]
+    grep -q "pr-creee pr create --draft --base develop --head feat/12-panier --title feat: ajoute le panier --body Ticket : #12 --assignee dev" "$F/events"
+    [ "$(labels 12 | grep statut)" = "statut: en cours" ]
+    grep -qx "statut-pr success" "$F/events"
+    # PR deja ouverte, branche sans ticket, ou rien de nouveau : aucune PR
+    : >"$F/events"
+    FAKE_PR_HEAD=9 PUSH_BRANCH=feat/12-panier SHA=def run "$TICKETS" push
+    PUSH_BRANCH=feat/panier SHA=def run "$TICKETS" push
+    FAKE_AHEAD=0 PUSH_BRANCH=feat/12-panier SHA=def run "$TICKETS" push
+    ! grep -q "pr-creee" "$F/events"
+}
+
+@test "tickets : assigne -> en cours ; corrections demandees -> en cours" {
+    N=12 ticket "validé" "statut: backlog"
+    ISSUE=12 ACTION=assigned run "$TICKETS" issue
+    [ "$(labels 12 | grep statut)" = "statut: en cours" ]
+    N=12 ticket "validé" "statut: en relecture"
+    printf 'Ticket : #12' >"$F/pr_body"
+    REVIEW_STATE=approved run "$TICKETS" revue
+    [ "$(labels 12 | grep statut)" = "statut: en relecture" ]
+    REVIEW_STATE=changes_requested run "$TICKETS" revue
+    [ "$(labels 12 | grep statut)" = "statut: en cours" ]
+}
+
+@test "tickets : ticket abandonne -> PR fermee, branche supprimee" {
+    echo "refs/heads/feat/12-panier" >"$F/refs"
+    FAKE_PR_HEAD=9 ISSUE=12 ACTION=closed STATE_REASON=completed run "$TICKETS" issue
+    ! grep -q "branche-supprimee" "$F/events" 2>/dev/null
+    FAKE_PR_HEAD=9 ISSUE=12 ACTION=closed STATE_REASON=not_planned run "$TICKETS" issue
+    [ "$status" -eq 0 ]
+    grep -qx "pr-fermee 9" "$F/events"
+    grep -qx "branche-supprimee feat/12-panier" "$F/events"
+}
+
+@test "tickets : nom de branche du ticket (type, numero, titre sans accents, tronque)" {
+    source "$BATS_TEST_DIRNAME/../hooks/lib/tickets.sh"
+    ticket_branch_r 12 "Élargir l'accès à la façade : ÉTAPE 2" fix
+    [ "$REPLY" = "fix/12-elargir-l-acces-a-la-facade-etape-2" ]
+    ticket_branch_r 7 "Un titre vraiment très long qui dépasse largement la limite fixée"
+    [ "$REPLY" = "feat/7-un-titre-vraiment-tres-long-qui-depasse" ]
+    ticket_type_r $'statut: backlog\nbug'
+    [ "$REPLY" = fix ]
 }

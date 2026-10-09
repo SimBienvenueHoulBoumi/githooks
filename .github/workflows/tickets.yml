@@ -3,12 +3,16 @@
 #   on:
 #     pull_request_target:
 #       types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft, closed]
+#     pull_request_review:
+#       types: [submitted]
 #     issues:
-#       types: [opened, labeled]
+#       types: [opened, labeled, assigned, closed]
+#     push:
+#       branches-ignore: [main, master, develop]
 #   jobs:
 #     tickets:
 #       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
-#       permissions: { issues: write, pull-requests: write, statuses: write }
+#       permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
 #
 # et, dans release.yml, après une release ou une préversion :
 #
@@ -20,6 +24,9 @@
 #       with:
 #         tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
 #
+# Le ticket d'abord, la branche en découle : à la validation (étiquette
+# « validé »), la branche type/12-titre est créée depuis la branche
+# d'intégration et liée au ticket ; le premier push ouvre la PR en brouillon.
 # Chaque PR doit citer un ticket validé (« Ticket : #12 », ou branche feat/12-…),
 # sinon le ticket est créé « à valider » et la vérification « ticket » échoue
 # jusqu'à ce qu'un mainteneur pose l'étiquette « validé ». Statuts suivis :
@@ -51,6 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: write # branche du ticket : création à la validation, suppression à l'abandon
       issues: write # tickets : création, statuts, commentaires, fermeture
       pull-requests: write # lien du ticket dans la description de la PR
       statuses: write # vérification « ticket » de la PR
@@ -78,11 +86,21 @@ jobs:
           AUTHOR: ${{ github.event.pull_request.user.login }}
           ISSUE: ${{ github.event.issue.number }}
           LABEL: ${{ github.event.label.name }}
+          STATE_REASON: ${{ github.event.issue.state_reason }}
+          PUSH_BRANCH: ${{ github.ref_name }}
+          DELETED: ${{ github.event.deleted }}
+          PUSHER: ${{ github.actor }}
+          SHA: ${{ github.sha }}
+          REVIEW_STATE: ${{ github.event.review.state }}
         run: |
           if [ -n "$TAG" ]; then
             bash .repowarden-ci/ci/tickets.sh release
           elif [ "$EVENT" = issues ]; then
             bash .repowarden-ci/ci/tickets.sh issue
+          elif [ "$EVENT" = push ]; then
+            bash .repowarden-ci/ci/tickets.sh push
+          elif [ "$EVENT" = pull_request_review ]; then
+            bash .repowarden-ci/ci/tickets.sh revue
           else
             bash .repowarden-ci/ci/tickets.sh pr
           fi
