@@ -48,6 +48,7 @@ nav:
   - CI (GitHub, GitLab): ci.md
   - Versions et releases: releases.md
   - Validation humaine: validation.md
+  - Tickets: tickets.md
   - Code mort: code-mort.md
   - En organisation: industrialisation.md
   - Désinstallation: desinstallation.md

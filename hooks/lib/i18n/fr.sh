@@ -45,6 +45,7 @@ _msg_fr() {
         cc.header_too_long) _M="En-tête trop long : %s caractères (72 max). Raccourcis la description." ;;
         cc.step5) _M="Détails (optionnels)" ;;
         cc.body_hint) _M="Corps : explique le pourquoi, sur plusieurs lignes ; Entrée sur une ligne vide pour terminer." ;;
+        cc.refs_prompt_ticket) _M="Références (« - » pour aucune) [%s] : " ;;
         cc.refs_prompt) _M="Références (ex. %s ; Entrée pour aucune) : " ;;
         cc.preview) _M="Message" ;;
         cc.confirm) _M="Commiter ? [O/n] : " ;;
@@ -334,6 +335,21 @@ _msg_fr() {
         st.next) _M="Étape suivante :" ;;
         st.ready) _M="Tout est prêt : git cc pour commiter, repogarde code-mort sur une branche." ;;
         st.help) _M="Toutes les commandes : repogarde --help" ;;
+        # Tickets
+        tk.none) _M="Aucun ticket relié : ajouter « Ticket : #12 » à la description de la PR, ou nommer la branche feat/12-sujet." ;;
+        tk.waiting) _M="Ticket %s à valider : un mainteneur pose l'étiquette « %s » sur le ticket." ;;
+        tk.ok) _M="Ticket %s validé." ;;
+        tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
+        tk.created_body) _M="Ticket créé automatiquement pour la PR #%s, qui n'en citait aucun. À valider par un mainteneur (étiquette « validé »)." ;;
+        tk.created) _M="Ticket #%s créé pour la PR #%s et relié à sa description : à valider par un mainteneur." ;;
+        tk.init_labels) _M="Étiquettes (statuts et validation)" ;;
+        tk.init_files) _M="Modèle de ticket et workflow" ;;
+        tk.init_exists) _M="%s existe déjà : laissé tel quel." ;;
+        tk.init_written) _M="%s créé." ;;
+        tk.init_done) _M="Suivi des tickets prêt." ;;
+        tk.init_next) _M="Ensuite : committer ces fichiers ; exiger la vérification « ticket » (repogarde proteger --checks \"…,ticket\") ; dans release.yml, brancher le job tickets (voir la doc Tickets)." ;;
+        tk.prerelease) _M="Disponible en préversion **%s** : à tester avant la production." ;;
+        tk.released) _M="Publié dans **%s**." ;;
         *) _M="" ;;
     esac
 }

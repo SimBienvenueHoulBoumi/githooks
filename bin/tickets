@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# Prépare le suivi des tickets d'un dépôt GitHub (relançable sans risque) :
+#   repogarde tickets init [--repo propriétaire/nom]
+#   - étiquettes : « validé » et les statuts (à valider, backlog, en cours,
+#     en relecture, préprod, done) ;
+#   - modèle de ticket .github/ISSUE_TEMPLATE/ticket.yml (créé « à valider ») ;
+#   - workflow .github/workflows/tickets.yml (s'ils n'existent pas déjà).
+# Ensuite : committer ces fichiers, exiger la vérification « ticket »
+# (repogarde proteger --checks "…,ticket") et brancher le job tickets de release.yml.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../hooks/lib/common.sh
+source "$ROOT/hooks/lib/common.sh"
+
+REPO=""
+commande="${1:-}"
+[ $# -eq 0 ] || shift
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
+        *) err_t install.unknown_arg "$1"; exit 1 ;;
+    esac
+    shift
+done
+if [ "$commande" != init ]; then
+    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    [ "$commande" = "" ] || [ "$commande" = -h ] || [ "$commande" = --help ]
+    exit
+fi
+
+command -v gh >/dev/null || { err_t bot.no_gh; exit 1; }
+[ -n "$GIT_TOPLEVEL" ] || { err_t install.not_repo; exit 1; }
+cd "$GIT_TOPLEVEL"
+[ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+brand "tickets · $REPO"
+
+# 1. Étiquettes (créées ou mises à jour)
+step_t tk.init_labels
+while IFS='|' read -r nom couleur description; do
+    gh label create "$nom" --repo "$REPO" --color "$couleur" --description "$description" --force >/dev/null
+    echo "  $nom"
+done <<'ETIQUETTES'
+validé|0e8a16|Ticket accepté par un mainteneur (débloque ses PR)
+statut: à valider|fbca04|Ticket créé, en attente de validation
+statut: backlog|c5def5|Validé, pas encore commencé
+statut: en cours|1d76db|Travail commencé (PR en brouillon)
+statut: en relecture|5319e7|PR prête, en relecture
+statut: préprod|d93f0b|Mergé dans develop : en préversion de test
+statut: done|0e8a16|Publié en production
+ETIQUETTES
+
+# 2. Modèle de ticket et workflow (jamais écrasés)
+ecrire() { # $1 chemin ; contenu sur l'entrée standard
+    if [ -e "$1" ]; then
+        info_t tk.init_exists "$1"
+        cat >/dev/null
+    else
+        mkdir -p "$(dirname "$1")"
+        cat >"$1"
+        ok_t tk.init_written "$1"
+    fi
+}
+step_t tk.init_files
+ecrire .github/ISSUE_TEMPLATE/ticket.yml <<'YAML'
+name: Ticket
+description: Une tâche à réaliser (fonctionnalité, correction, maintenance)
+labels: ["statut: à valider"]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Besoin
+      description: Le problème à résoudre, pas seulement la solution imaginée
+    validations:
+      required: true
+  - type: textarea
+    id: termine
+    attributes:
+      label: Terminé quand…
+      description: Critères d'acceptation, vérifiables
+YAML
+ecrire .github/workflows/tickets.yml <<'YAML'
+# Suivi des tickets : chaque PR cite un ticket validé (« Ticket : #12 », ou
+# branche feat/12-sujet) ; statuts tenus à jour jusqu'à la production.
+name: tickets
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft, closed]
+  issues:
+    types: [opened, labeled]
+
+permissions: {}
+
+jobs:
+  tickets:
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+    permissions: { issues: write, pull-requests: write, statuses: write }
+YAML
+
+echo
+ok_t tk.init_done
+dim_t tk.init_next

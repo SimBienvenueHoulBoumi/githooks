@@ -48,6 +48,16 @@ jobs:
   #   secrets:
   #     npm-token: ${{ secrets.NPM_TOKEN }} # première publication seulement
 
+  # Tickets passés en préprod à chaque préversion, en done à chaque release
+  # (mise en place : repogarde tickets init, voir la doc Tickets) :
+  # tickets:
+  #   needs: release
+  #   if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
+  #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+  #   permissions: { issues: write, pull-requests: write, statuses: write }
+  #   with:
+  #     tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
+
   # Publication propre au projet, après une release (exemple). L'environnement
   # « production » (bin/proteger --environnement production) fait attendre
   # l'approbation d'une personne désignée avant de publier :
