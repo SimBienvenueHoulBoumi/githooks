@@ -251,7 +251,11 @@ gh api -X PUT "repos/$REPO/actions/permissions/workflow" --silent \
 
 for ruleset in "${rulesets[@]}"; do
     name="$(sed -n 's/^  "name": "\(.*\)",$/\1/p' <<<"$ruleset")"
-    id="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name == \"$name\") | .id")"
+    # Ruleset posé sous l'ancien nom (repogarde, v3) : repris et renommé, sinon
+    # il resterait à côté et exigerait une vérification « repogarde » disparue
+    old="${name/repowarden/repogarde}"
+    id="$(gh api "repos/$REPO/rulesets" \
+        --jq "([.[] | select(.name == \"$name\")] + [.[] | select(.name == \"$old\")]) | .[0].id // empty")"
     if [ -n "$id" ]; then
         gh api -X PUT "repos/$REPO/rulesets/$id" --input - <<<"$ruleset" >/dev/null
         ok_t ci.proteger.10 "$name"

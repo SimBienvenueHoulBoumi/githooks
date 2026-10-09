@@ -345,6 +345,8 @@ case "$*" in
     # branche renommée : GitHub redirige master vers main
     "api repos/moi/projet/branches/master"*) echo main ;;
     "api repos/moi/projet/branches/"*) [[ " $GH_BRANCHES " == *" ${2##*/} "* ]] && echo "${2##*/}" ;;
+    # rulesets existants = $GH_RULESETS (JSON), filtrés comme le ferait gh
+    "api repos/moi/projet/rulesets --jq "*) jq -r "$4" <<<"${GH_RULESETS:-[]}" ;;
 esac
 GH
     chmod +x "$BATS_TEST_TMPDIR/bin/gh"
@@ -464,6 +466,22 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     [[ "$output" == *"compte personnel"* ]]
     GH_BRANCHES="main" run "$PROTEGER" --dry-run --sans-tags
     python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert all(x["target"]=="branch" for x in r)' "$(rulesets_json "$output")"
+}
+
+@test "proteger : rulesets de l'ancien nom (repogarde) repris et renommes, pas doubles" {
+    require jq
+    fake_gh_repo
+    GH_BRANCHES="main" GH_RULESETS='[{"id":7,"name":"repogarde"},{"id":8,"name":"repogarde (tags)"}]' \
+        run "$PROTEGER"
+    [ "$status" -eq 0 ]
+    grep -q "^api -X PUT repos/moi/projet/rulesets/7 " "$GH_LOG"
+    grep -q "^api -X PUT repos/moi/projet/rulesets/8 " "$GH_LOG"
+    ! grep -q "^api -X POST repos/moi/projet/rulesets" "$GH_LOG"
+    # nouveau nom deja present : c'est lui qui est mis a jour
+    : >"$GH_LOG"
+    GH_BRANCHES="main" GH_RULESETS='[{"id":7,"name":"repogarde"},{"id":9,"name":"repowarden"}]' \
+        run "$PROTEGER"
+    grep -q "^api -X PUT repos/moi/projet/rulesets/9 " "$GH_LOG"
 }
 
 @test "proteger : aucune branche protegee existante -> erreur" {
