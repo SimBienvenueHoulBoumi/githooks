@@ -328,10 +328,18 @@ while [ -z "$BATCH" ]; do
     [[ -n "$REPLY" && ! "$REPLY" =~ ^[[:punct:]]+$ ]] || break
     body="$body$REPLY"$'\n'
 done
-t cc.refs_prompt "$FORGE_REFS"
+# Branche type/12-sujet : ticket #12 proposé (Entrée l'accepte, « - » : aucun)
+ticket=""
+[[ "$branch" =~ ^[a-z]+/([0-9]+)(-|$) ]] && ticket="Ticket : #${BASH_REMATCH[1]}"
+if [ -n "$ticket" ]; then
+    t cc.refs_prompt_ticket "$ticket"
+else
+    t cc.refs_prompt "$FORGE_REFS"
+fi
 ANSWER="$OPT_REFS"
 ask "$REPLY"
-refs="$REPLY"
+refs="${REPLY:-$ticket}"
+[ "$refs" != - ] || refs=""
 
 # Message final : en-tête, puis corps et pied séparés par une ligne vide
 footer=""
