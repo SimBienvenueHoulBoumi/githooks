@@ -60,7 +60,8 @@ statut() {
     while IFS= read -r l; do
         [[ "$l" == "statut: "* && "$l" != "$s" ]] && retirer+=(--remove-label "$l")
     done < <(gh issue view "$n" --json labels -q '.labels[].name' 2>/dev/null || true)
-    gh issue edit "$n" --add-label "$s" "${retirer[@]}" >/dev/null
+    # ${a[@]+…} : tableau vide accepté sous set -u par le bash 3.2 de macOS
+    gh issue edit "$n" --add-label "$s" ${retirer[@]+"${retirer[@]}"} >/dev/null
 }
 
 etiquettes() { gh issue view "$1" --json labels -q '.labels[].name' 2>/dev/null || true; }
