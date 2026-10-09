@@ -7,7 +7,7 @@ Chaque changement part d'un **ticket** (issue GitHub) : **la branche découle du
 | Statut (étiquette) | Quand | Effet automatique |
 |---|---|---|
 | `statut: à valider` | ticket créé (à la main, ou `repowarden ticket nouveau`) | — |
-| `statut: backlog` | un mainteneur pose l'étiquette **`validé`** | **branche `<type>/<n°>-<titre>` créée** depuis `develop` et **liée au ticket** (panneau *Development*) ; commentaire avec la commande pour la récupérer |
+| `statut: backlog` | un mainteneur pose l'étiquette **`validé`**, ou ouvre lui-même le ticket (validé d'office) | **branche `<type>/<n°>-<titre>` créée** depuis `develop` et **liée au ticket** (panneau *Development*) ; commentaire avec la commande pour la récupérer |
 | `statut: en cours` | quelqu'un s'assigne le ticket, ou pousse un premier commit sur sa branche | au premier push : **PR en brouillon** ouverte vers `develop`, `Ticket : #n`, assignée |
 | `statut: en relecture` | PR « Ready for review » | la CI tourne ; une revue « Request changes » ramène le ticket en cours |
 | `statut: préprod` | PR mergée dans `develop` | branche supprimée ; commentaire à chaque préversion `vX.Y.Z-next.N` |
@@ -15,7 +15,7 @@ Chaque changement part d'un **ticket** (issue GitHub) : **la branche découle du
 
 Ticket fermé comme **abandonné** (*not planned*) : sa PR est fermée et sa branche supprimée.
 
-Tout est automatique, sauf la validation : c'est la seule décision humaine, et GitHub ne laisse poser l'étiquette `validé` qu'aux personnes ayant les droits sur le dépôt. Le type de la branche vient de l'étiquette `type: …` du ticket (`feat` par défaut), son nom du titre (minuscules, sans accents).
+Tout est automatique, sauf la validation : c'est la seule décision humaine, et GitHub ne laisse poser l'étiquette `validé` qu'aux personnes ayant les droits sur le dépôt. Un ticket **ouvert par un mainteneur** (droits d'écriture : propriétaire, membre, collaborateur) est **validé d'office** : l'ouvrir est déjà sa décision. Seuls les tickets de la communauté attendent l'étiquette. Pour une validation toujours séparée : entrée `auto-validate: never` du workflow `tickets.yml`. Le type de la branche vient de l'étiquette `type: …` du ticket (`feat` par défaut), son nom du titre (minuscules, sans accents).
 
 ## Sur le poste
 
@@ -32,7 +32,7 @@ repowarden ticket                             # ticket de la branche courante
 ## Les règles
 
 - **Pas de PR sans ticket** : une PR cite son ticket dans sa description (`Ticket : #12`), ou sa branche le porte (`feat/12-panier`). Sinon, le ticket est **créé automatiquement** à partir de la PR, relié à sa description, et « à valider ».
-- **Pas de merge sans ticket validé** : la vérification `ticket` de la PR échoue tant que son ticket n'a pas l'étiquette `validé`. Elle passe dès que l'étiquette est posée, sans rien relancer.
+- **Pas de merge sans ticket validé** : la vérification `ticket` de la PR échoue tant que son ticket n'a pas l'étiquette `validé`. Elle passe dès que l'étiquette est posée, sans rien relancer. Le job `tickets` reste vert pendant l'attente : un job rouge signale une vraie panne.
 - Les bots de dépendances, les PR de release et les livraisons `develop` → `main` n'ont pas besoin de ticket.
 - La PR en brouillon est ouverte par le jeton des Actions, qui ne déclenche pas d'autre workflow : la CI tourne au push suivant, ou au passage « Ready for review » (`ready_for_review` dans les déclencheurs de la CI, comme dans le modèle de projet).
 

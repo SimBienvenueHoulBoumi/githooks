@@ -165,31 +165,48 @@ cmd_pr() {
         est_valide "$n" || continue
         if [ "${DRAFT:-false}" = true ]; then statut "$n" "$S_ENCOURS"; else statut "$n" "$S_RELECTURE"; fi
     done
-    verifier "$PR" "$HEAD_SHA" "$tickets"
+    # Le blocage est porté par le statut « ticket » (exigé par la protection) :
+    # le job reste vert, un rouge signale une vraie panne
+    verifier "$PR" "$HEAD_SHA" "$tickets" || true
+}
+
+# Ticket $1 validé : backlog s'il attendait la validation, sa branche, et
+# vérification relancée sur les PR ouvertes qui l'attendaient
+accepter() {
+    local n="$1" pr head sha body
+    if grep -qxF "$S_AVALIDER" <<<"$(etiquettes "$n")"; then
+        statut "$n" "$S_BACKLOG"
+    fi
+    creer_branche "$n"
+    while IFS=$'\t' read -r pr head sha; do
+        [ -n "$pr" ] || continue
+        body="$(gh pr view "$pr" --json body -q .body)"
+        pr_tickets_r "$body" "$head"
+        [[ " $REPLY " == *" $n "* ]] || continue
+        verifier "$pr" "$sha" "$REPLY" || true
+    done < <(gh pr list --state open --json number,headRefName,headRefOid \
+        -q '.[] | [.number, .headRefName, .headRefOid] | @tsv')
 }
 
 cmd_issue() {
     local pr sha head body
     case "$ACTION" in
         opened)
-            est_valide "$ISSUE" || statut "$ISSUE" "$S_AVALIDER"
+            est_valide "$ISSUE" && return 0
+            # Ouvert par un mainteneur (droits d'écriture) : c'est déjà sa
+            # décision, validé d'office ; sinon, un mainteneur pose « validé »
+            if [ "${AUTO_VALIDATE:-maintainers}" = maintainers ] &&
+                [[ "${ISSUE_ASSOCIATION:-}" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
+                gh issue edit "$ISSUE" --add-label "$VALIDE" >/dev/null
+                statut "$ISSUE" "$S_AVALIDER"
+                accepter "$ISSUE"
+            else
+                statut "$ISSUE" "$S_AVALIDER"
+            fi
             ;;
         labeled)
             [ "${LABEL:-}" = "$VALIDE" ] || return 0
-            # Accepté : backlog s'il attendait la validation, et sa branche
-            if grep -qxF "$S_AVALIDER" <<<"$(etiquettes "$ISSUE")"; then
-                statut "$ISSUE" "$S_BACKLOG"
-            fi
-            creer_branche "$ISSUE"
-            # PR ouvertes qui attendaient ce ticket : vérification relancée
-            while IFS=$'\t' read -r pr head sha; do
-                [ -n "$pr" ] || continue
-                body="$(gh pr view "$pr" --json body -q .body)"
-                pr_tickets_r "$body" "$head"
-                [[ " $REPLY " == *" $ISSUE "* ]] || continue
-                verifier "$pr" "$sha" "$REPLY" || true
-            done < <(gh pr list --state open --json number,headRefName,headRefOid \
-                -q '.[] | [.number, .headRefName, .headRefOid] | @tsv')
+            accepter "$ISSUE"
             ;;
         assigned)
             # Pris en charge : en cours, s'il attendait dans le backlog
