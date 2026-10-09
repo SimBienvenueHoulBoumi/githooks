@@ -372,6 +372,7 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert b["name"]=="repowarden" and b["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
         assert b["rules"][2]["parameters"]["allowed_merge_methods"]==["squash"]; \
         assert b["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repowarden"; \
+        assert b["rules"][3]["parameters"]["strict_required_status_checks_policy"] is True; \
         assert t["target"]=="tag" and t["conditions"]["ref_name"]["include"]==["refs/tags/v*"]' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : true"* ]]
     [[ "$output" != *"branche par défaut"* ]]
@@ -390,7 +391,7 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert d["name"]=="repowarden (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
         assert d["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
         assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repowarden","tests (ubuntu-latest)"]; \
-        assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is True; \
+        assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert d["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert m["bypass_actors"]==[] and d["bypass_actors"]==[]; \
         assert m["rules"][2]["parameters"]["required_approving_review_count"]==1; \
