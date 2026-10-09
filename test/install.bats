@@ -89,7 +89,9 @@ setup() {
 @test "version : version installee suffisante -> aucun message" {
     initial_commit
     git switch -q -c feat/version
-    installed="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$HOOKS/../package.json")"
+    source "$HOOKS/lib/ui.sh"
+    repogarde_version_r "$HOOKS/.."
+    installed="$REPLY"
     for v in 1 "$installed" "v${installed%%.*}"; do
         git config repogarde.version "$v"
         echo "$v" >>a.txt && git add a.txt

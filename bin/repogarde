@@ -45,7 +45,8 @@ case "$commande" in
     proteger | protect) exec bash "$ROOT/bin/proteger" "$@" ;;
     npm-publication | npm-publish) exec bash "$ROOT/bin/npm-publication" "$@" ;;
     -v | --version | version)
-        sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$ROOT/package.json" | sed -n 1p
+        repogarde_version_r "$ROOT"
+        echo "$REPLY"
         ;;
     "" | statut | status) exec bash "$ROOT/bin/statut" "$@" ;;
     -h | --help | help) aide ;;
