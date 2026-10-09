@@ -11,10 +11,12 @@
 #    d'événement que GITHUB_TOKEN a le droit de déclencher), son résultat réel
 #    est reporté en statuts sur le commit, puis la PR est mergée (squash) ;
 # 3. release-please, relancé, crée le tag vX.Y.Z et la release GitHub.
-# Mode « tag » (flux develop → main, entrée mode: tag) : aucune PR de release
-# ni fichier de version. Sur la branche d'intégration, une PR de livraison
-# develop → main est tenue à jour (titre « chore(release): vX.Y.Z », notes) ;
-# la merger (humain) publie : sur main, tag vX.Y.Z et release GitHub.
+# Mode « tag » (flux develop → main, entrée mode: tag), conseillé : la release
+# n'écrit aucun fichier (version portée par le tag, notes dans la release
+# GitHub). Sur la branche d'intégration : préversion vX.Y.Z-next.N et PR de
+# livraison develop → main tenues à jour ; la merger (humain) publie sur main
+# le tag vX.Y.Z et la release. Un correctif urgent mergé sur main revient seul
+# dans la branche d'intégration.
 # Mode « cycle » (flux develop → main avec fichiers de version) : le travail
 # s'intègre dans develop, une PR de livraison develop → main est tenue à jour ;
 # la merger (humain, merge commit) déclenche sur main la release du mode pr
@@ -64,7 +66,7 @@ on:
         default: pr
       preversion:
         description: >-
-          Mode cycle : identifiant des préversions publiées à chaque merge sur
+          Modes tag et cycle : identifiant des préversions publiées à chaque merge sur
           la branche d'intégration (vX.Y.Z-next.N, release « pre-release »).
           Vide : aucune préversion.
         type: string
@@ -275,8 +277,8 @@ jobs:
           MERGE_AUTO: "true"
           TAG: ${{ steps.release.outputs.tag_name || steps.publish.outputs.tag_name }}
         run: |
-          if [ "$(gh api "repos/$GH_REPO/compare/$INTEGRATION...$MAIN" --jq .ahead_by)" = 0 ]; then
-            echo "$INTEGRATION contient déjà $MAIN : rien à fusionner."
+          if [ "$(gh api "repos/$GH_REPO/compare/$INTEGRATION...$MAIN" --jq '.files | length')" = 0 ]; then
+            echo "$INTEGRATION contient déjà tout le contenu de $MAIN : rien à fusionner."
             exit 0
           fi
           pr="$(gh pr list --head "$MAIN" --base "$INTEGRATION" --state open --json number -q '.[0].number // empty')"
@@ -330,7 +332,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # tag et release
-      pull-requests: write # PR de livraison
+      pull-requests: write # PR de livraison, retour vers la branche d'intégration
+      actions: write # retour : lancer la CI sur sa PR
+      checks: read
+      statuses: write # retour : reporter le résultat de cette CI
     outputs:
       release_created: ${{ steps.publier.outputs.release_created }}
       tag_name: ${{ steps.publier.outputs.tag_name }}
@@ -400,7 +405,7 @@ jobs:
       # d'intégration ; numéro = commits depuis la branche principale
       - name: Préversion
         id: preversion
-        if: inputs.mode == 'cycle' && inputs.preversion != '' && github.ref_name == inputs.integration-branch
+        if: (inputs.mode == 'tag' || inputs.mode == 'cycle') && inputs.preversion != '' && github.ref_name == inputs.integration-branch
         env:
           GH_TOKEN: ${{ github.token }}
           MAIN: ${{ inputs.main-branch }}
@@ -458,6 +463,51 @@ jobs:
             echo "major=${version%%.*}"
             echo "sha=$GITHUB_SHA"
           } >>"$GITHUB_OUTPUT"
+
+      # Mode tag : la release n'écrit aucun fichier, main n'a donc rien que la
+      # branche d'intégration n'ait déjà, sauf un correctif urgent (hotfix/…)
+      # mergé directement sur main. Dans ce cas seulement (contenu différent,
+      # release ou non), main revient dans la branche d'intégration par une PR
+      # validée par la CI (lancée par le workflow) puis mergée : sans clé.
+      - name: Retour vers la branche d'intégration
+        if: inputs.mode == 'tag' && github.ref_name == inputs.main-branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          INTEGRATION: ${{ inputs.integration-branch }}
+          MAIN: ${{ inputs.main-branch }}
+          BASE: ${{ inputs.integration-branch }}
+          WORKFLOWS: ${{ inputs.workflows }}
+          CALLER: ${{ github.workflow_ref }}
+          MERGE_AUTO: "true"
+        run: |
+          # Contenu de main absent de la branche d'intégration (depuis leur base
+          # commune) : le commit de merge d'une livraison n'en apporte aucun
+          if [ "$(gh api "repos/$GH_REPO/compare/$INTEGRATION...$MAIN" --jq '.files | length')" = 0 ]; then
+            echo "$INTEGRATION contient déjà tout le contenu de $MAIN : pas de retour."
+            exit 0
+          fi
+          if [ -z "$WORKFLOWS" ]; then
+            appelant="${CALLER%%@*}"
+            appelant="${appelant##*/}"
+            for f in $(gh api "repos/$GH_REPO/contents/.github/workflows?ref=$MAIN" \
+              --jq '.[] | select(.name | test("\\.ya?ml$")) | .name'); do
+              [ "$f" = "$appelant" ] && continue
+              contenu="$(gh api "repos/$GH_REPO/contents/.github/workflows/$f?ref=$MAIN" --jq .content | base64 -d)"
+              if grep -qw pull_request <<<"$contenu" && grep -qw workflow_dispatch <<<"$contenu"; then
+                WORKFLOWS="$WORKFLOWS $f"
+              fi
+            done
+            export WORKFLOWS
+          fi
+          pr="$(gh pr list --head "$MAIN" --base "$INTEGRATION" --state open --json number -q '.[0].number // empty')"
+          if [ -z "$pr" ]; then
+            url="$(gh pr create --head "$MAIN" --base "$INTEGRATION" \
+              --title "chore: $INTEGRATION à jour de $MAIN" \
+              --body "Ramène dans \`$INTEGRATION\` ce qui a été mergé directement sur \`$MAIN\` (correctif urgent). Validée par la CI puis mergée automatiquement (merge commit) par le workflow de release (repogarde).")"
+            pr="${url##*/}"
+          fi
+          bash .repogarde-ci/ci/merger-pr.sh "$pr" merge
 
   # Canal de l'équipe (optionnel) : release publiée, PR de release à approuver,
   # échec. Sans secret webhook, rien n'est envoyé. Message dans la langue du projet.
