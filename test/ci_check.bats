@@ -760,3 +760,19 @@ GH
     ! grep -q "^pr merge" "$GH_LOG"
     grep -qx "waiting_pr=9" "$GITHUB_OUTPUT"
 }
+
+@test "code-mort : seuls des .md et .yml modifies -> pas d'analyse JavaScript" {
+    git update-ref refs/remotes/origin/main HEAD
+    printf '# Doc\n' >NOTES.md
+    printf 'a: 1\n' >conf.yml
+    run "$BATS_TEST_DIRNAME/../bin/code-mort"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"JavaScript"* ]]
+}
+
+@test "langue : scripts sans configuration complete -> lang du .repogarde.conf (meme en CI)" {
+    printf '[repogarde]\n    lang = fr\n' >.repogarde.conf
+    run env -u REPOGARDE_LANG CI=true GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+        bash -c "source '$HOOKS/lib/ui.sh'; source '$HOOKS/lib/i18n.sh'; echo \$REPOGARDE_LANG"
+    [ "$output" = fr ]
+}

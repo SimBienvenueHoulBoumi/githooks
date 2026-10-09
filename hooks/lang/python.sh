@@ -28,9 +28,9 @@ python_format() {
 # documentation, scripts) ne doit pas exiger pytest.
 python_has_tests() {
     [ -f manage.py ] && return 0
-    find . \( -name node_modules -o -name .venv -o -name .git -o -name site-packages \) -prune -o \
-        \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print 2>/dev/null |
-        grep -q .
+    # -quit : premier fichier trouvé suffit (pas de tube vers grep -q : SIGPIPE)
+    [ -n "$(find . \( -name node_modules -o -name .venv -o -name .git -o -name site-packages \) -prune -o \
+        \( -name 'test_*.py' -o -name '*_test.py' -o -name conftest.py \) -print -quit 2>/dev/null)" ]
 }
 
 python_test() {
@@ -50,7 +50,9 @@ python_test() {
     if ! python_has_tests; then info_t lang.python.3; rm -rf "$cache"; return 0; fi
     if ! python_has pytest; then warn_t lang.python.4; rm -rf "$cache"; return 0; fi
     step_t lang.python.5
-    python_run pytest -q -p no:cacheprovider || rc=$?
+    # Racine du projet importable (comme « python -m pytest ») : tests/ importe
+    # le paquet sans installation ni conftest.py
+    PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python_run pytest -q -p no:cacheprovider || rc=$?
     rm -rf "$cache"
     # 5 = aucun test collecté : pas une erreur
     if [ "$rc" -eq 5 ]; then info_t lang.python.6; return 0; fi

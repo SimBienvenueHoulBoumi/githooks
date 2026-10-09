@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # JavaScript / TypeScript (React, Next.js, Vue, Angular, Nest…) : prettier, <pm> test
+# Extensions de code (analyse du code mort) : les autres (md, yml, json…) ne
+# sont rattachées à node que pour le formatage
+# shellcheck disable=SC2034 # lu par deadcode.sh (${PLUGIN}_CODE_EXT)
+NODE_CODE_EXT='\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|vue|svelte|astro)$'
 register node "package.json" '\.(js|jsx|ts|tsx|mjs|cjs|mts|cts|vue|svelte|astro|json|jsonc|css|scss|less|html|md|mdx|ya?ml|graphql)$' standalone
 
 # Gestionnaire de paquets d'après le lockfile (y compris à la racine d'un monorepo)

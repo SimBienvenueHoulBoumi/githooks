@@ -192,6 +192,7 @@ while :; do
         ANSWER="$OPT_SCOPE"
         ask "$REPLY"
         scope="$REPLY"
+        [ "$scope" = - ] && scope="" # « - » : aucun scope, comme avec une proposition
     fi
     [[ -z "$scope" || "$scope" =~ ^[a-z0-9._-]+$ ]] && break
     # Version corrigée proposée (« Doc Test » → « doc-test ») : Entrée pour l'accepter

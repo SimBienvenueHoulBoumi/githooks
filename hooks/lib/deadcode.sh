@@ -17,7 +17,7 @@
 # Code mort introduit depuis $1 (base) dans les fichiers lus sur stdin.
 # Retour : 1 si un élément bloque selon le réglage deadcode.
 deadcode_projects() {
-    local base="$1" changed added found dir p plugins niveau f l msg path proven=0 cand=0 mode ignore pat
+    local base="$1" changed added found dir p plugins niveau f l msg path proven=0 cand=0 mode ignore pat code var
     local ran="" file
     changed="$(mktemp)"
     added="$(mktemp)"
@@ -49,6 +49,14 @@ deadcode_projects() {
         if [ "${dir#\*}" != "$dir" ]; then
             plugins="${dir#\*}"
             dir=.
+            # Fichiers isolés (hors projet) : analyse seulement si du code de ce
+            # langage a changé ; des .md ou .yml rattachés à node pour le
+            # formatage ne justifient pas une analyse JavaScript
+            plugin_get "$plugins" EXT
+            code="$REPLY"
+            var="$(printf '%s' "$plugins" | tr '[:lower:]' '[:upper:]')_CODE_EXT"
+            [ -z "${!var:-}" ] || code="${!var}"
+            grep -qE "$code" "$changed" || continue
         else
             for p in $ACTIVE_PLUGINS; do
                 has_marker "$dir" "$p" && declare -F "${p}_deadcode" >/dev/null && plugins="$plugins $p"
