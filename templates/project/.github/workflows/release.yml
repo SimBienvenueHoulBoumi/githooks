@@ -21,7 +21,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3 # x-release-please-major
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
     permissions:
       contents: write
       pull-requests: write
@@ -41,7 +41,7 @@ jobs:
   # npm:
   #   needs: release
   #   if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
-  #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3 # x-release-please-major
+  #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
   #   permissions: { contents: read, id-token: write }
   #   with:
   #     tag: ${{ needs.release.outputs.tag_name }}

@@ -11,10 +11,12 @@ setup() {
     touch "$GIT_CONFIG_GLOBAL"
 }
 
-@test "npm : version du paquet = version de la derniere release" {
+@test "npm : version lue dans le tag (clone), package.json ecrit seulement a la publication" {
     run "$PKG/bin/repogarde" --version
     [ "$status" -eq 0 ]
-    [[ "$(cat "$PKG/.release-please-manifest.json")" == *"\"$output\""* ]]
+    tag="$(git -C "$PKG" describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+    if [ -n "$tag" ]; then [ "$output" = "${tag#v}" ]; else [ "$output" = 0.0.0-dev ]; fi
+    grep -q '"version": "0.0.0-dev"' "$PKG/package.json"
 }
 
 @test "npm : appelee par un lien symbolique (npm install -g), installe les vrais hooks" {

@@ -21,5 +21,16 @@ err() { echo "${UI_R}✖${UI_N} ${UI_B}$*${UI_N}" >&2; }
 attention() { echo "${UI_Y}⚠${UI_N} $*" >&2; }
 # Texte secondaire (aides, détails)
 dim() { echo "${UI_D}$*${UI_N}"; }
+# REPLY = version de l'installation repogarde $1 : paquet npm (package.json,
+# écrit à la publication) ; clone (dépôt git) : dernier tag vX.Y.Z atteint
+repogarde_version_r() {
+    local tag=""
+    REPLY="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$1/package.json" 2>/dev/null | sed -n 1p)"
+    if [ -e "$1/.git" ]; then
+        tag="$(git -C "$1" describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+        [ -z "$tag" ] || REPLY="${tag#v}"
+    fi
+}
+
 # En-tête de marque
 brand() { echo "${UI_C}${UI_B}◆ repogarde${UI_N}${UI_D}${1:+ · $1}${UI_N}"; }

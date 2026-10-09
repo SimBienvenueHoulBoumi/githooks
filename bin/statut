@@ -12,7 +12,8 @@ exec 2>&1 # une seule sortie, dans l'ordre (avertissements compris)
 # shellcheck disable=SC2034 # lu par check_version (common.sh)
 HOOKS_DIR="$ROOT/hooks"
 
-version="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$ROOT/package.json" 2>/dev/null | sed -n 1p)"
+repogarde_version_r "$ROOT"
+version="$REPLY"
 case "$ROOT" in
     */node_modules/*) mode=npm ;;
     *) mode=clone ;;

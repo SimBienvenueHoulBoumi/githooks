@@ -4,7 +4,7 @@ min_version: 2.0.0
 
 remotes:
   - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v3.5.0 # x-release-please-version
+    ref: v3 # dernière 3.x (vX.Y.Z pour figer)
     configs:
       - lefthook-remote.yml
 

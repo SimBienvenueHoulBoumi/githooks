@@ -37,5 +37,6 @@ The CI re-runs everything on Linux, macOS and Windows, plus one e2e job per lang
 ## Branches and releases
 
 - PRs target **`develop`** (default branch); a PR opened against `main` is retargeted automatically. Only urgent fixes (`hotfix/…`) may target `main`.
-- A **delivery PR** `develop` → `main` is kept up to date on every merge (upcoming version, notes). Merging it, as a merge commit, starts the release: release PR (changelog, version files), tag, npm, site. `main` then flows back into `develop` automatically.
-- Details: [Versions and releases, cycle mode](releases.md#develop-main-cycle-with-version-files-cycle-mode).
+- On every merge into `develop`: a **pre-release** `vX.Y.Z-next.N` (npm `next`) and the **delivery PR** `develop` → `main` kept up to date (upcoming version, notes). Merging it, as a merge commit, publishes: `vX.Y.Z` tag, GitHub release (release notes), `v3`, npm `latest`, site. No file is written: the version is carried by the tag.
+- An urgent fix (`hotfix/…`) merged into `main` flows back into `develop` on its own.
+- Details: [Versions and releases, tag mode](releases.md#develop-main-flow-tag-mode-recommended).

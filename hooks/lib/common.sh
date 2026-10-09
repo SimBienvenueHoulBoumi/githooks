@@ -344,7 +344,8 @@ check_version() {
     wanted="${REPLY#v}"
     [ -n "$wanted" ] || return 0
     root="${HOOKS_DIR%/hooks}"
-    installed="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$root/package.json" 2>/dev/null | sed -n 1p)"
+    repogarde_version_r "$root"
+    installed="$REPLY"
     [ -n "$installed" ] || return 0
     local IFS=.
     # shellcheck disable=SC2206 # découpage voulu sur les points

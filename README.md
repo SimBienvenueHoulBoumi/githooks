@@ -66,21 +66,17 @@ Chaque personne de l'équipe installe repogarde une fois sur son poste (partie 1
 
 L'essentiel des deux fichiers :
 
-<!-- x-release-please-start-major -->
 ```yaml
 # .github/workflows/repogarde.yml : vérifications de la PR (dernière version 3.x)
 - uses: SimBienvenueHoulBoumi/repogarde@v3
   with: { strict: true }      # un outil manquant fait échouer la CI
 ```
-<!-- x-release-please-end -->
 
-<!-- x-release-please-start-version -->
 ```ini
 # .repogarde.conf : un poste en retard est prévenu, avec la commande de mise à jour
 [repogarde]
-    version = 3.5.0
+    version = 3
 ```
-<!-- x-release-please-end -->
 
 Puis rendre la CI obligatoire pour merger : `repogarde proteger` (protection de `main`, check `repogarde` exigé).
 

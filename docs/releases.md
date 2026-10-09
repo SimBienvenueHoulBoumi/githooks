@@ -20,7 +20,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3 # x-release-please-major
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
     permissions:
       contents: write
       pull-requests: write
@@ -90,19 +90,23 @@ Le type de projet est détecté d'après les fichiers à la racine :
 !!! note "Maven"
     Après chaque release, release-please propose de repasser en `-SNAPSHOT` (PR mergée automatiquement de la même façon). Pour s'en passer : `"skip-snapshot": true` dans `release-please-config.json`.
 
-## Flux develop → main (mode tag)
+## Flux develop → main (mode tag, recommandé)
 
-Pour un projet à deux branches longues ([flux `integrationBranch`](configuration.md#flux-avec-branche-dintegration-develop)), la version n'est écrite dans aucun fichier : elle est calculée depuis les commits et portée par le tag (un build Maven la reçoit par exemple en `-Drevision`).
+Pour un projet à deux branches longues ([flux `integrationBranch`](configuration.md#flux-avec-branche-dintegration-develop)) : `develop` sert aux tests (préversions), `main` à la production. **Aucune version n'est écrite dans les fichiers** : elle est calculée depuis tous les commits livrés et portée par le tag, les notes vont dans la release GitHub, comme le [recommande semantic-release](https://semantic-release.gitbook.io/semantic-release/support/faq). repogarde lui-même fonctionne ainsi.
 
 ```yaml title=".github/workflows/release.yml"
 on:
   push:
     branches: [main, develop]
 
+concurrency:
+  group: release-${{ github.ref_name }}   # une file par branche
+  cancel-in-progress: false
+
 jobs:
   release:
     uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
-    permissions: { contents: write, pull-requests: write }
+    permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
     with:
       mode: tag
 
@@ -119,13 +123,22 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
 ```
 
-1. À chaque merge sur `develop`, la **PR de livraison** `develop` → `main` est créée ou mise à jour : titre `chore(release): vX.Y.Z`, notes groupées (incompatibles, fonctionnalités, corrections, maintenance) ;
-2. la merger (décision humaine, **merge commit** de préférence : les notes gardent le détail des commits) publie : tag `vX.Y.Z` et release GitHub sur `main` ;
-3. un `hotfix/…` mergé sur `main` publie un correctif de la même façon.
+1. À chaque merge sur `develop` : une **préversion** de test (`vX.Y.Z-next.N`, release GitHub « pre-release », entrée `preversion`) et la **PR de livraison** `develop` → `main` (version à venir, notes) tenue à jour ;
+2. la merger (décision humaine, **merge commit** : chaque commit reste visible) publie sur `main` le tag `vX.Y.Z` et la release ; la version est calculée à partir de **tous** les commits livrés (merges exclus) ;
+3. un `hotfix/…` mergé directement sur `main` publie un correctif, puis **revient seul dans `develop`** : PR validée par la CI (lancée par le workflow) et mergée, sans clé ni jeton. Une livraison n'a rien à faire revenir (`develop` a déjà tout).
+
+| | `develop` : test | `main` : production |
+|---|---|---|
+| Version | préversion `3.6.0-next.4` (sorties `prerelease_*`) | stable `3.6.0` (sorties `release_created`, `tag_name`…) |
+| Release GitHub | « pre-release » | release, notes groupées |
+| Paquet (ex. npm) | étiquette `next` | étiquette `latest` |
 
 La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications portent sur le commit de tête, et valent donc pour la PR de livraison.
 
 ## Cycle develop → main avec fichiers de version (mode cycle)
+
+!!! warning "Déconseillé : préférer le mode tag"
+    release-please ne lit sur `main` que les commits de premier niveau : une livraison mergée en merge commit lui apparaît comme un seul « Merge pull request », il n'y voit pas les `feat` et `fix` apportés de `develop`, et peut ne publier **aucune** version. Le mode tag calcule la version à partir de tous les commits livrés.
 
 Pour livrer à un rythme choisi, tout en gardant changelog et fichiers de version à jour (mode pr) : le travail s'intègre dans `develop`, `main` ne reçoit que les livraisons. repogarde lui-même fonctionne ainsi.
 
