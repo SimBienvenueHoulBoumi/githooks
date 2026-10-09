@@ -385,6 +385,12 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]
+    # sans workflow de nettoyage : avertissement ; avec : rien
+    [[ "$output" == *"ajouter un workflow qui appelle nettoyage-branches.yml"* ]]
+    mkdir -p .github/workflows
+    printf 'jobs:\n  n:\n    uses: o/r/.github/workflows/nettoyage-branches.yml@v3\n' >.github/workflows/nettoyage.yml
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde"
+    [[ "$output" != *"nettoyage-branches.yml"* ]]
 }
 
 @test "proteger : relecture exigee (approbations, CODEOWNERS, pas d'auto-approbation du dernier push)" {
@@ -743,6 +749,8 @@ GH
     grep -q "api repos/o/r/statuses/abc123 -f state=success -f context=repogarde" "$GH_LOG"
     grep -qx "pr merge 9 --merge --match-head-commit abc123" "$GH_LOG"
     grep -qx "merged=true" "$GITHUB_OUTPUT"
+    # retour vers develop : la branche source (main) n'est jamais supprimée
+    ! grep -q "api -X DELETE" "$GH_LOG"
 }
 
 @test "merger-pr : merge-auto false -> PR validee, laissee a un humain" {
