@@ -20,7 +20,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3 # x-release-please-major
+    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
     permissions:
       contents: write
       pull-requests: write
@@ -90,23 +90,27 @@ The project type is detected from the files at the root:
 !!! note "Maven"
     After each release, release-please proposes switching back to `-SNAPSHOT` (PR merged automatically in the same way). To skip it: `"skip-snapshot": true` in `release-please-config.json`.
 
-## develop → main flow (tag mode)
+## develop → main flow (tag mode, recommended)
 
-For a project with two long-lived branches ([`integrationBranch` flow](configuration.md#integration-branch-flow-develop)), the version is not written to any file: it is computed from the commits and carried by the tag (a Maven build receives it as `-Drevision`, for example).
+For a project with two long-lived branches ([`integrationBranch` flow](configuration.md#integration-branch-flow-develop)): `develop` is for testing (pre-releases), `main` for production. **No version is written to files**: it is computed from all the delivered commits and carried by the tag, the notes go into the GitHub release, as [semantic-release recommends](https://semantic-release.gitbook.io/semantic-release/support/faq). repogarde itself works this way.
 
 ```yaml title=".github/workflows/release.yml"
 on:
   push:
     branches: [main, develop]
 
+concurrency:
+  group: release-${{ github.ref_name }}   # one queue per branch
+  cancel-in-progress: false
+
 jobs:
   release:
     uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
-    permissions: { contents: write, pull-requests: write }
+    permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
     with:
       mode: tag
 
-  publier:
+  publish:
     needs: release
     if: needs.release.outputs.release_created == 'true'
     runs-on: ubuntu-latest
@@ -119,13 +123,22 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
 ```
 
-1. On every merge into `develop`, the `develop` → `main` **delivery PR** is created or updated: title `chore(release): vX.Y.Z`, grouped notes (breaking changes, features, fixes, maintenance);
-2. merging it (a human decision, preferably a **merge commit**: the notes keep the commit details) publishes: `vX.Y.Z` tag and GitHub release on `main`;
-3. a `hotfix/…` merged into `main` publishes a patch in the same way.
+1. On every merge into `develop`: a test **pre-release** (`vX.Y.Z-next.N`, GitHub "pre-release", `preversion` input) and the **delivery PR** `develop` → `main` (upcoming version, notes) kept up to date;
+2. merging it (human decision, **merge commit**: every commit stays visible) publishes the `vX.Y.Z` tag and the release on `main`; the version is computed from **all** the delivered commits (merges excluded);
+3. a `hotfix/…` merged directly into `main` publishes a fix, then **flows back into `develop` on its own**: PR validated by the CI (started by the workflow) and merged, no key or token. A delivery has nothing to bring back (`develop` already has everything).
 
-The project's CI must run on pushes to `develop`: its checks apply to the head commit, and therefore count for the delivery PR.
+| | `develop`: testing | `main`: production |
+|---|---|---|
+| Version | pre-release `3.6.0-next.4` (`prerelease_*` outputs) | stable `3.6.0` (`release_created`, `tag_name`… outputs) |
+| GitHub release | "pre-release" | release, grouped notes |
+| Package (e.g. npm) | `next` tag | `latest` tag |
+
+The project CI must run on pushes to `develop`: its checks apply to the head commit, and therefore to the delivery PR.
 
 ## develop → main cycle with version files (cycle mode)
+
+!!! warning "Not recommended: prefer tag mode"
+    On `main`, release-please only reads first-level commits: a delivery merged as a merge commit appears as a single "Merge pull request", it does not see the `feat` and `fix` brought from `develop`, and may publish **no** version at all. Tag mode computes the version from all the delivered commits.
 
 To deliver at a chosen pace while keeping the changelog and version files up to date (pr mode): work is integrated into `develop`, `main` only receives deliveries. repogarde itself works this way.
 

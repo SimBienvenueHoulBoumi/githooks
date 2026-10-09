@@ -37,5 +37,6 @@ La CI relance tout sur Linux, macOS et Windows, plus un job e2e par langage avec
 ## Branches et releases
 
 - Les PR visent **`develop`** (branche par défaut) ; une PR ouverte vers `main` est reciblée automatiquement. Seuls les correctifs urgents (`hotfix/…`) peuvent viser `main`.
-- Une **PR de livraison** `develop` → `main` est tenue à jour à chaque merge (version à venir, notes). La merger, en merge commit, lance la release : PR de release (changelog, fichiers de version), tag, npm, site. `main` revient ensuite automatiquement dans `develop`.
-- Détail : [Versions et releases, mode cycle](https://simbienvenuehoulboumi.github.io/repogarde/releases/#cycle-develop-main-avec-fichiers-de-version-mode-cycle).
+- À chaque merge sur `develop` : une **préversion** `vX.Y.Z-next.N` (npm `next`) et la **PR de livraison** `develop` → `main` tenue à jour (version à venir, notes). La merger, en merge commit, publie : tag `vX.Y.Z`, release GitHub (notes de version), `v3`, npm `latest`, site. Aucun fichier n'est écrit : la version est portée par le tag.
+- Un correctif urgent (`hotfix/…`) mergé sur `main` revient seul dans `develop`.
+- Détail : [Versions et releases, mode tag](https://simbienvenuehoulboumi.github.io/repogarde/releases/#flux-develop-main-mode-tag-recommande).
