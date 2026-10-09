@@ -33,6 +33,7 @@ repowarden ticket                             # ticket de la branche courante
 
 - **Pas de PR sans ticket** : une PR cite son ticket dans sa description (`Ticket : #12`), ou sa branche le porte (`feat/12-panier`). Sinon, le ticket est **créé automatiquement** à partir de la PR, relié à sa description, et « à valider ».
 - **Pas de merge sans ticket validé** : la vérification `ticket` de la PR échoue tant que son ticket n'a pas l'étiquette `validé`. Elle passe dès que l'étiquette est posée, sans rien relancer. Le job `tickets` reste vert pendant l'attente : un job rouge signale une vraie panne.
+- **Un ticket, une branche, et le ticket s'en souvient** : la branche créée par le ticket lui est liée (panneau *Development*). GitHub ne sait lier une branche qu'à sa création, et une branche liée supprimée y perd son nom : le bot **inscrit donc le nom de la branche sur le ticket** (commentaire « Branche du ticket »), à sa création comme au premier push d'une branche `type/12-…` faite à la main. Une seconde branche pour le même ticket est inscrite et signalée.
 - Les bots de dépendances, les PR de release et les livraisons `develop` → `main` n'ont pas besoin de ticket.
 - La PR en brouillon est ouverte par le jeton des Actions, qui ne déclenche pas d'autre workflow : la CI tourne au push suivant, ou au passage « Ready for review » (`ready_for_review` dans les déclencheurs de la CI, comme dans le modèle de projet).
 
@@ -42,10 +43,16 @@ repowarden ticket                             # ticket de la branche courante
 ## Mise en place
 
 ```bash
-repowarden tickets init          # étiquettes, modèle de ticket, workflow tickets.yml
+repowarden tickets init          # étiquettes, modèle, workflow, tickets et branches existants
 git add .github && git cc       # puis PR
 repowarden proteger --checks "repowarden,ticket"   # vérification « ticket » exigée
 ```
+
+Sur un dépôt qui a déjà des tickets, `tickets init` les reprend (relançable, rien n'est fait deux fois) :
+
+- tickets ouverts **sans statut** : ceux qui portent `validé` ou ont été ouverts par un mainteneur passent en **backlog**, les autres **à valider** (`--sans-validation-auto` : tous à valider) ;
+- **branches des PR** ouvertes et mergées : inscrites sur les tickets qu'elles citent, pour savoir quel ticket a géré quelle branche, même supprimée ;
+- aucune branche créée en masse : elle naît quand le ticket est pris (`repowarden ticket N`).
 
 Dans `.github/workflows/release.yml`, les tickets passent en préprod à chaque préversion et en done à chaque release :
 
