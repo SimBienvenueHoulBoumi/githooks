@@ -60,6 +60,15 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     [ "$status" -eq 0 ]
     [[ "$output" == *"Premier commit du dépôt"* ]]
     [ "$(subject)" = "feat: initialise le projet" ]
+    # « - » sans scope proposé : aucun scope (et non « (-) »)
+    rm -rf .git
+    git init -q -b main
+    git config user.name test
+    git config user.email test@example.com
+    git config core.hooksPath /dev/null
+    git add a.txt
+    run answer chore - "initialise le projet" "" "" ""
+    [ "$(subject)" = "chore: initialise le projet" ]
 }
 
 @test "assistant : touches parasites (Echap, fleches) et point final ignores" {

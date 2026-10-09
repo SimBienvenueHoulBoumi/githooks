@@ -36,24 +36,12 @@ PY
     [ "$status" -eq 0 ] || { echo "Fichiers jamais lancés sous Windows :"; echo "$output"; return 1; }
 }
 
-@test "release : tout fichier marque x-release-please est mis a jour par la release, et inversement" {
-    command -v python3 >/dev/null || skip "python3 absent"
-    run python3 - "$BATS_TEST_DIRNAME" <<'PY'
-import json, subprocess, sys, pathlib
-root = pathlib.Path(sys.argv[1]).parent
-config = json.loads((root / "release-please-config.json").read_text(encoding="utf-8"))
-listed = {f for f in config["packages"]["."]["extra-files"] if isinstance(f, str)}
-out = subprocess.run(["git", "-C", str(root), "grep", "-l", "x-release-please-"], capture_output=True, text=True).stdout
-marked = set(out.split()) - {"release-please-config.json", "test/test_names.bats"}
-for f in sorted(marked - listed): print("marqué mais jamais mis à jour :", f)
-for f in sorted(listed - marked): print("listé sans marqueur :", f)
-# Le jeton des Actions ne peut pas modifier .github/workflows/ : une release qui
-# y touche échoue (« Error adding to tree »)
-workflows = sorted(f for f in listed | marked if f.startswith(".github/workflows/"))
-for f in workflows: print("fichier de workflow modifié par la release :", f)
-sys.exit(1 if (marked ^ listed) or workflows else 0)
-PY
-    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+@test "release : aucune version ecrite dans les fichiers (portee par le tag, mode tag)" {
+    cd "$BATS_TEST_DIRNAME/.."
+    # Plus de release-please : un marqueur oublié ne serait jamais mis à jour
+    run git grep -n "x-release-please" -- . ':!CHANGELOG.md' ':!test/test_names.bats'
+    [ -z "$output" ] || { echo "$output"; return 1; }
+    [ ! -e release-please-config.json ] && [ ! -e .release-please-manifest.json ]
 }
 
 @test "scripts : aucun tube vers grep -q ou head (SIGPIPE + pipefail = echec aleatoire)" {
@@ -61,5 +49,9 @@ PY
     # grep -q et head s'arrêtent avant la fin : la commande qui écrit reçoit
     # SIGPIPE et, avec pipefail, la condition échoue au hasard du timing
     run git grep -nE '\| *(grep -[a-zA-Z]*q|head)\b' -- ci hooks bin install.sh
+    [ -z "$output" ] || { echo "$output"; return 1; }
+    # Même chose quand le tube est coupé en fin de ligne
+    run awk 'FNR == 1 { prev = "" } prev ~ /\|[ \t]*$/ && $0 ~ /^[ \t]*(grep -[a-zA-Z]*q|head)([ \t]|$)/ { print FILENAME ":" FNR } { prev = $0 }' \
+        $(git ls-files ci hooks bin install.sh)
     [ -z "$output" ] || { echo "$output"; return 1; }
 }

@@ -25,7 +25,10 @@ i18n_init() {
             cfg_r lang ""
             lang="$REPLY"
         else
-            lang="$(git config --get repogarde.lang 2>/dev/null || true)"
+            # Scripts sans la configuration complète (ci/install-tool.sh…) :
+            # git config, puis le .repogarde.conf du dépôt courant
+            lang="$(git config --get repogarde.lang 2>/dev/null ||
+                git config -f "$(git rev-parse --show-toplevel 2>/dev/null)/.repogarde.conf" --get repogarde.lang 2>/dev/null || true)"
         fi
     fi
     if [ -z "$lang" ]; then
