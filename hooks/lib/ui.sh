@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Charte visuelle de repogarde : mêmes symboles et couleurs partout (hooks,
+# Charte visuelle de repowarden : mêmes symboles et couleurs partout (hooks,
 # CI, assistant, installation). Couleurs dans un terminal ou si FORCE_COLOR
 # est défini (logs de CI) ; jamais avec NO_COLOR, TERM=dumb ou une sortie
 # redirigée (fichiers, tubes, tests). Compatible bash 3.2.
 # shellcheck disable=SC2034 # couleurs utilisées par les scripts qui sourcent ce fichier
+
+# Anciens noms (REPOGARDE_*) : lus avant tout le reste
+# shellcheck source=compat.sh
+source "$(dirname "${BASH_SOURCE[0]}")/compat.sh"
 
 if [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != dumb ] &&
     { [ -n "${FORCE_COLOR:-}" ] || [ -t 2 ]; }; then
@@ -21,9 +25,9 @@ err() { echo "${UI_R}✖${UI_N} ${UI_B}$*${UI_N}" >&2; }
 attention() { echo "${UI_Y}⚠${UI_N} $*" >&2; }
 # Texte secondaire (aides, détails)
 dim() { echo "${UI_D}$*${UI_N}"; }
-# REPLY = version de l'installation repogarde $1 : paquet npm (package.json,
+# REPLY = version de l'installation repowarden $1 : paquet npm (package.json,
 # écrit à la publication) ; clone (dépôt git) : dernier tag vX.Y.Z atteint
-repogarde_version_r() {
+repowarden_version_r() {
     local tag=""
     REPLY="$(sed -n 's/^  "version": *"\([^"]*\)".*/\1/p' "$1/package.json" 2>/dev/null | sed -n 1p)"
     if [ -e "$1/.git" ]; then
@@ -33,4 +37,4 @@ repogarde_version_r() {
 }
 
 # En-tête de marque
-brand() { echo "${UI_C}${UI_B}◆ repogarde${UI_N}${UI_D}${1:+ · $1}${UI_N}"; }
+brand() { echo "${UI_C}${UI_B}◆ repowarden${UI_N}${UI_D}${1:+ · $1}${UI_N}"; }

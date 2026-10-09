@@ -22,24 +22,24 @@ Chaque release contient une archive source signée avec [Sigstore](https://www.s
 
 ```bash
 TAG=v1.1.0
-gh release download "$TAG" --repo SimBienvenueHoulBoumi/repogarde -p "repogarde-$TAG*"
-cosign verify-blob "repogarde-$TAG.tar.gz" \
-  --bundle "repogarde-$TAG.tar.gz.sigstore.json" \
-  --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/repogarde/\.github/workflows/release\.yml@' \
+gh release download "$TAG" --repo SimBienvenueHoulBoumi/repowarden -p "repowarden-$TAG*"
+cosign verify-blob "repowarden-$TAG.tar.gz" \
+  --bundle "repowarden-$TAG.tar.gz.sigstore.json" \
+  --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/repowarden/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-Chaque release contient aussi une **preuve de provenance [SLSA](https://slsa.dev) niveau 3** (`repogarde-vX.Y.Z.intoto.jsonl`) : elle atteste que l'archive a été construite par le workflow de release de ce dépôt, depuis le commit du tag.
+Chaque release contient aussi une **preuve de provenance [SLSA](https://slsa.dev) niveau 3** (`repowarden-vX.Y.Z.intoto.jsonl`) : elle atteste que l'archive a été construite par le workflow de release de ce dépôt, depuis le commit du tag.
 
 ```bash
-slsa-verifier verify-artifact "repogarde-$TAG.tar.gz" \
-  --provenance-path "repogarde-$TAG.intoto.jsonl" \
-  --source-uri github.com/SimBienvenueHoulBoumi/repogarde --source-branch main
+slsa-verifier verify-artifact "repowarden-$TAG.tar.gz" \
+  --provenance-path "repowarden-$TAG.intoto.jsonl" \
+  --source-uri github.com/SimBienvenueHoulBoumi/repowarden --source-branch main
 ```
 
 (`--source-branch main` : les releases sont construites par le workflow lancé sur `main`, qui crée ensuite le tag.)
 
-## Ce que repogarde fait pour la sécurité
+## Ce que repowarden fait pour la sécurité
 
 - Détection de secrets (gitleaks) dans les hooks et en CI ; gitleaks installé en CI à **version figée avec somme SHA-256 vérifiée**.
 - Actions GitHub figées par SHA, outils Python de la CI figés par empreinte (`--require-hashes`), mis à jour par Dependabot ; workflows sans droits par défaut.

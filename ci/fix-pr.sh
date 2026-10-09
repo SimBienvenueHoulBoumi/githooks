@@ -10,13 +10,13 @@
 # Variables : GH_TOKEN, PR, HEAD (branche), BASE (cible), TITLE, HEAD_SHA
 set -euo pipefail
 
-REPOGARDE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+REPOWARDEN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
-source "$REPOGARDE_DIR/hooks/lib/common.sh"
+source "$REPOWARDEN_DIR/hooks/lib/common.sh"
 cd "$(git rev-parse --show-toplevel)"
 
 out() { echo "$1=${2//$'\n'/ }" >>"${GITHUB_ENV:-/dev/null}"; } # une ligne : pas d'injection
-notice() { echo "::notice title=repogarde::$*"; }
+notice() { echo "::notice title=repowarden::$*"; }
 notice_t() { _tr "$@"; notice "$_T"; }
 
 # 1. Cible
@@ -27,15 +27,15 @@ if [ -n "$allowed" ] && [[ " $allowed " != *" $BASE "* ]]; then
     target="${allowed%% *}"
     dup="$(gh pr list --head "$HEAD" --base "$target" --state open --json number -q '.[0].number // empty')"
     if [ -n "$dup" ]; then
-        gh pr close "$PR" --comment "Doublon de #$dup : ouverte vers \`$BASE\` au lieu de \`$target\`, fermée automatiquement (repogarde)."
-        out REPOGARDE_PR_CLOSED true
+        gh pr close "$PR" --comment "Doublon de #$dup : ouverte vers \`$BASE\` au lieu de \`$target\`, fermée automatiquement (repowarden)."
+        out REPOWARDEN_PR_CLOSED true
         notice_t ci.fix_pr.1 "$PR" "$dup" "$target"
         exit 0
     fi
     gh pr edit "$PR" --base "$target" >/dev/null
     git fetch -q origin "$target"
-    out REPOGARDE_FIXED_TARGET "$target"
-    out REPOGARDE_FIXED_BASE "$(git merge-base "$HEAD_SHA" "origin/$target")"
+    out REPOWARDEN_FIXED_TARGET "$target"
+    out REPOWARDEN_FIXED_BASE "$(git merge-base "$HEAD_SHA" "origin/$target")"
     notice_t ci.fix_pr.2 "$PR" "$BASE" "$target" "$(cfg integrationBranch)"
 fi
 
@@ -70,5 +70,5 @@ if [ -z "$new" ]; then
     new="$REPLY"
 fi
 gh pr edit "$PR" --title "$new" >/dev/null
-out REPOGARDE_FIXED_TITLE "$new"
+out REPOWARDEN_FIXED_TITLE "$new"
 notice_t ci.fix_pr.4 "$TITLE" "$new"

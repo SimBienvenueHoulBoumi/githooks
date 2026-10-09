@@ -63,7 +63,7 @@ _msg_en() {
         cc.next_branch) _M="Next changes: on a branch, e.g. %s, then a %s." ;;
         cc.topic) _M="topic" ;;
         cc.next_push) _M="Push: %s" ;;
-        hook.version_old) _M="This project requires repogarde %s or later; installed on this machine: %s. Update: %s" ;;
+        hook.version_old) _M="This project requires repowarden %s or later; installed on this machine: %s. Update: %s" ;;
         # Installation
         install.unknown_arg) _M="Unknown argument: %s" ;;
         install.not_repo) _M="Not in a git repository (use --global for all repositories)." ;;
@@ -72,24 +72,25 @@ _msg_en() {
         install.alias_removed) _M="git cc alias removed (%s)." ;;
         install.npm_remove) _M="The package stays installed; to remove it too: %s" ;;
         install.nothing) _M="No core.hooksPath (%s): nothing to remove." ;;
-        install.removed) _M="repogarde hooks removed (%s)." ;;
-        install.foreign) _M="core.hooksPath (%s) = '%s' is not repogarde: left untouched." ;;
+        install.removed) _M="repowarden hooks removed (%s)." ;;
+        install.foreign) _M="core.hooksPath (%s) = '%s' is not repowarden: left untouched." ;;
         install.cache_removed) _M="Cache removed: %s" ;;
-        install.scan) _M="Repositories under %s still using repogarde:" ;;
+        install.scan) _M="Repositories under %s still using repowarden:" ;;
         install.none) _M="none" ;;
-        install.last_step) _M="Last step, to run yourself if you no longer use repogarde:" ;;
+        install.last_step) _M="Last step, to run yourself if you no longer use repowarden:" ;;
         install.purge_needs_uninstall) _M="--purge and --scan go with --uninstall." ;;
         install.replaced) _M="core.hooksPath (%s) was '%s', replaced." ;;
         install.enabled) _M="Hooks enabled (%s) → %s" ;;
         install.local_wins) _M="A local core.hooksPath (e.g. husky) still takes precedence in that repository." ;;
         install.lang_set) _M="Message language: English (change: %s --global --lang fr)" ;;
         install.lang_invalid) _M="--lang: fr or en." ;;
+        install.keys_migrated) _M="repogarde.* settings (%s) renamed to repowarden.*" ;;
         help.alias.feat) _M="(branch: feature/ accepted)" ;;
         help.alias.fix) _M="(branch: bugfix/, hotfix/ accepted)" ;;
         # Hooks and language plugins
         hook.pre_commit.1) _M="Commit refused: branch name does not follow the convention." ;;
         hook.pre_commit.2) _M="Direct commit on '%s' forbidden. Create a branch: git switch -c feat/my-feature" ;;
-        hook.pre_commit.3) _M="  (disable for this repository: git config repogarde.skip protect-branch)" ;;
+        hook.pre_commit.3) _M="  (disable for this repository: git config repowarden.skip protect-branch)" ;;
         hook.pre_commit.4) _M="Secret detection (gitleaks)" ;;
         hook.pre_commit.5) _M="Secret detected: commit refused." ;;
         hook.pre_commit.6) _M="gitleaks not installed, secret detection skipped (install: %s)." ;;
@@ -98,7 +99,7 @@ _msg_en() {
         hook.pre_push.1) _M="Push refused: branch name does not follow the convention." ;;
         hook.pre_push.2) _M="Direct push to '%s' refused: it only changes through pull requests." ;;
         hook.pre_push.3) _M="  Create a branch: git switch -c feat/my-feature, then open a PR." ;;
-        hook.pre_push.4) _M="  (disable for this repository: git config repogarde.skip protect-branch)" ;;
+        hook.pre_push.4) _M="  (disable for this repository: git config repowarden.skip protect-branch)" ;;
         hook.pre_push.5) _M="%s: no changed file, nothing to test." ;;
         hook.pre_push.6) _M="Nothing to test (branch deletion only)." ;;
         hook.pre_push.7) _M="Pre-push OK" ;;
@@ -108,8 +109,10 @@ _msg_en() {
         hook.post_merge.2) _M="🧹 Local branch deleted (squash-merged and deleted on the server): %s" ;;
         hook.post_merge.3) _M="%s: deleted on the server but some changes are missing here, kept." ;;
         hook.post_merge.4) _M="  To delete it anyway: git branch -D %s" ;;
-        hook.common.3) _M="%s disabled (git config repogarde.skip)." ;;
-        hook.common.lefthook_ignored) _M="%s: hook installed by lefthook, ignored (lefthook is no longer supported since repogarde 4). Move its commands to .repogarde/%s, then: lefthook uninstall" ;;
+        hook.common.3) _M="%s disabled (git config repowarden.skip)." ;;
+        hook.common.lefthook_ignored) _M="%s: hook installed by lefthook, ignored (lefthook is no longer supported since repowarden 4). Move its commands to .repowarden/%s, then: lefthook uninstall" ;;
+        compat.old_names) _M="Old repogarde name still in use (%s): rename to repowarden (REPOWARDEN_*, repowarden.*, .repowarden.conf, .repowarden/). Old names will be ignored in v5." ;;
+        compat.old_command) _M="The repogarde command is now called repowarden (npm install -g repowarden). The old name will be removed in v5." ;;
         hook.common.5) _M="Project local hook: %s" ;;
         hook.lang.1) _M="Custom formatting: %s" ;;
         hook.lang.2) _M="%s: %s file(s)" ;;
@@ -207,12 +210,12 @@ _msg_en() {
         ci.check.19) _M="gitleaks not installed: run ci/install-tool.sh gitleaks before this script." ;;
         ci.check.20) _M="Working tree modified before the check: formatting cannot be verified." ;;
         ci.check.21) _M="A formatter failed (syntax error, or tool / dependency unavailable): see the log above." ;;
-        ci.check.22) _M="Fix: install the hooks (repogarde install --global) or run the formatter, then commit." ;;
+        ci.check.22) _M="Fix: install the hooks (repowarden install --global) or run the formatter, then commit." ;;
         ci.check.23) _M="Changed files are correctly formatted." ;;
-        ci.check.24) _M="repogarde CI — base: %s — checks: %s" ;;
-        ci.check.25) _M="Disabled by .repogarde.conf (skip %s)." ;;
+        ci.check.24) _M="repowarden CI — base: %s — checks: %s" ;;
+        ci.check.25) _M="Disabled by .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Failed:%s" ;;
-        ci.check.27) _M="All repogarde checks passed." ;;
+        ci.check.27) _M="All repowarden checks passed." ;;
         ci.fix_pr.1) _M="PR #%s closed: duplicate of #%s (target %s)" ;;
         ci.fix_pr.2) _M="PR #%s retargeted: %s → %s (%s flow)" ;;
         ci.fix_pr.3) _M="Title follows the convention: %s" ;;
@@ -282,14 +285,14 @@ _msg_en() {
         ci.section.strict) _M="Strict mode" ;;
         # Notifications
         ci.notify.sent) _M="Message sent to the team channel." ;;
-        ci.notify.failed) _M="Could not send to the team channel (REPOGARDE_WEBHOOK address?): release not affected." ;;
+        ci.notify.failed) _M="Could not send to the team channel (REPOWARDEN_WEBHOOK address?): release not affected." ;;
         ci.notify.released) _M="🚀 %s %s released: %s" ;;
         ci.notify.waiting) _M="⏳ %s: release PR #%s is waiting for approval: %s" ;;
         ci.notify.failure) _M="❌ %s: release workflow failed: %s" ;;
         # GitHub CLI
         bot.no_gh) _M="GitHub CLI (gh) required: https://cli.github.com" ;;
         # npm package
-        npm.npx_global) _M="npx uses a temporary folder: global hooks would point to a deleted folder. Install the package first: npm install -g @simbie/repogarde, then repogarde install --global." ;;
+        npm.npx_global) _M="npx uses a temporary folder: global hooks would point to a deleted folder. Install the package first: npm install -g repowarden, then repowarden install --global." ;;
         npm.no_npm) _M="npm required: https://nodejs.org" ;;
         npm.no_package) _M="No package.json at the repository root." ;;
         npm.old_npm) _M="npm %s is too old: 11.15 or later required (npm install -g npm@11)." ;;
@@ -314,27 +317,27 @@ _msg_en() {
         npm.token_removed) _M="NPM_TOKEN secret removed from the repository." ;;
         npm.token_revoked) _M="Temporary token revoked on npm." ;;
         npm.done) _M="Done: every release publishes %s to npm, without a token." ;;
-        # Status (repogarde statut)
+        # Status (repowarden statut)
         st.hooks_on) _M="Git hooks active for all repositories (this installation)" ;;
-        st.hooks_repo) _M="Git hooks active in this repository only (local install; all repositories: repogarde install --global)" ;;
+        st.hooks_repo) _M="Git hooks active in this repository only (local install; all repositories: repowarden install --global)" ;;
         st.hooks_off) _M="Git hooks not enabled: no checks on commit or push" ;;
-        st.hooks_other) _M="Git hooks from another repogarde installation: %s" ;;
+        st.hooks_other) _M="Git hooks from another repowarden installation: %s" ;;
         st.hooks_foreign) _M="Git hooks from another tool (core.hooksPath = %s): left as is" ;;
         st.cc_on) _M="Commit assistant: git cc" ;;
         st.cc_off) _M="Commit assistant (git cc) not installed" ;;
-        st.cc_other) _M="git cc points to another repogarde installation" ;;
+        st.cc_other) _M="git cc points to another repowarden installation" ;;
         st.cc_foreign) _M="git cc alias already used by something else: %s" ;;
         st.lang) _M="Message language: %s" ;;
         st.repo) _M="Repository: %s" ;;
         st.repo_local) _M="Repository-specific hooks (local core.hooksPath = %s), take precedence" ;;
-        st.repo_lefthook) _M="%s present: lefthook is no longer supported since repogarde 4, its commands are not run. Move them to .repogarde/<hook>, the expected version to .repogarde.conf (version)" ;;
-        st.repo_version_old) _M="The project requires repogarde %s; installed: %s" ;;
+        st.repo_lefthook) _M="%s present: lefthook is no longer supported since repowarden 4, its commands are not run. Move them to .repowarden/<hook>, the expected version to .repowarden.conf (version)" ;;
+        st.repo_version_old) _M="The project requires repowarden %s; installed: %s" ;;
         st.repo_version_ok) _M="Version required by the project (%s): met" ;;
         st.repo_forge) _M="Platform: %s" ;;
         st.tools) _M="Tools present: %s · missing: %s (depending on the projects' languages)" ;;
         st.next) _M="Next step:" ;;
-        st.ready) _M="All set: git cc to commit, repogarde code-mort on a branch." ;;
-        st.help) _M="Every command: repogarde --help" ;;
+        st.ready) _M="All set: git cc to commit, repowarden code-mort on a branch." ;;
+        st.help) _M="Every command: repowarden --help" ;;
         # Tickets
         tk.none) _M="No linked ticket: add \"Ticket: #12\" to the PR description, or name the branch feat/12-topic." ;;
         tk.waiting) _M="Ticket %s awaiting validation: a maintainer adds the \"%s\" label to the ticket." ;;
@@ -347,7 +350,7 @@ _msg_en() {
         tk.init_exists) _M="%s already exists: left as is." ;;
         tk.init_written) _M="%s created." ;;
         tk.init_done) _M="Ticket tracking ready." ;;
-        tk.init_next) _M="Next: commit these files; require the \"ticket\" check (repogarde proteger --checks \"…,ticket\"); in release.yml, wire the tickets job (see the Tickets docs)." ;;
+        tk.init_next) _M="Next: commit these files; require the \"ticket\" check (repowarden proteger --checks \"…,ticket\"); in release.yml, wire the tickets job (see the Tickets docs)." ;;
         tk.prerelease) _M="Available in pre-release **%s**: to be tested before production." ;;
         tk.released) _M="Released in **%s**." ;;
         *) _M="" ;;

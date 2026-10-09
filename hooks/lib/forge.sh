@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Plateforme de gestion de version : github, gitlab, bitbucket, gitea (Gitea,
-# Forgejo, Codeberg) ou other. Réglage forge (git config ou .repogarde.conf),
+# Forgejo, Codeberg) ou other. Réglage forge (git config ou .repowarden.conf),
 # sinon variables de la CI, sinon adresse du remote origin (domaine interne
 # reconnu s'il contient gitlab, gitea…). Résultat mémorisé : FORGE.
 # Vocabulaire : FORGE_PR (PR / MR), FORGE_REFS (exemple de références).

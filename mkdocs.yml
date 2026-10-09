@@ -1,8 +1,8 @@
-site_name: repogarde
+site_name: repowarden
 site_description: Hooks git et CI multi-langages — messages de commit, nommage des branches, secrets, formatage, tests ciblés, releases.
-site_url: https://simbienvenuehoulboumi.github.io/repogarde/
-repo_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-repo_name: SimBienvenueHoulBoumi/repogarde
+site_url: https://simbienvenuehoulboumi.github.io/repowarden/
+repo_url: https://github.com/SimBienvenueHoulBoumi/repowarden
+repo_name: SimBienvenueHoulBoumi/repowarden
 edit_uri: edit/main/docs/
 copyright: Licence MIT
 
@@ -52,6 +52,7 @@ nav:
   - Code mort: code-mort.md
   - En organisation: industrialisation.md
   - Désinstallation: desinstallation.md
+  - Passer à la v4: migration-v4.md
   - Limites: limites.md
   - Sécurité: securite.md
   - Contribuer: contribuer.md
@@ -77,6 +78,7 @@ plugins:
           site_description: Multi-language git hooks and CI — commit messages, branch naming, secrets, formatting, targeted tests, releases.
           nav_translations:
             Accueil: Home
+            Passer à la v4: Moving to v4
             Démarrage rapide: Quick start
             Hooks et règles: Hooks and rules
             Technologies: Technologies

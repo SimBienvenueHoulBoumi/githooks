@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Protège le dépôt GitHub courant d'après .repogarde.conf (relançable sans risque) :
+# Protège le dépôt GitHub courant d'après .repowarden.conf (relançable sans risque) :
 #   - branches protectedBranches : PR obligatoire, vérifications exigées à jour,
-#     ni suppression ni push forcé (ruleset « repogarde ») ;
+#     ni suppression ni push forcé (ruleset « repowarden ») ;
 #   - merges : squash ; avec integrationBranch (flux develop), merge commit sur
 #     main et branche par défaut develop ; titre de PR = message du commit ;
 #   - tags v* : créés, déplacés ou supprimés uniquement par les workflows ;
@@ -9,11 +9,11 @@
 #   - validation humaine (optionnelle) : approbations obligatoires, revue des
 #     CODEOWNERS, environnement de déploiement approuvé par des personnes.
 #
-#   bin/proteger [--repo propriétaire/nom] [--checks "repogarde,tests (ubuntu-latest)"] [--relecteurs N]
+#   bin/proteger [--repo propriétaire/nom] [--checks "repowarden,tests (ubuntu-latest)"] [--relecteurs N]
 #                [--codeowners] [--environnement NOM] [--approbateurs "login …"]
 #                [--sans-tags] [--dry-run]
 # --sans-tags : dépôt qui déplace lui-même un tag (tag majeur flottant v2…).
-# Réglages équivalents dans .repogarde.conf (requiredReviews, codeOwnerReview,
+# Réglages équivalents dans .repowarden.conf (requiredReviews, codeOwnerReview,
 # environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
 set -euo pipefail
 
@@ -30,7 +30,7 @@ ENVIRONMENT="$REPLY"
 cfg_r environmentReviewers ""
 APPROVERS="$REPLY"
 REPO=""
-CHECKS="repogarde"
+CHECKS="repowarden"
 DRY_RUN=""
 NO_TAGS=""
 while [ $# -gt 0 ]; do
@@ -131,7 +131,7 @@ tags_ruleset() { # $1 : Organization ou User
     fi
     cat <<JSON
 {
-  "name": "repogarde (tags)",
+  "name": "repowarden (tags)",
   "target": "tag",
   "enforcement": "active",
   "bypass_actors": [$bypass],
@@ -153,13 +153,13 @@ if [ -n "$integration" ]; then
     # le mainteneur peut donc l'approuver), sans exiger un autre approbateur
     # que l'auteur du dernier push sauf si des relectures sont configurées
     livraison=$((REVIEWS > 0 ? REVIEWS : 1))
-    [ -z "$others" ] || rulesets+=("$(branch_ruleset repogarde "$others" '"merge"' true "$livraison" "$last_push")")
+    [ -z "$others" ] || rulesets+=("$(branch_ruleset repowarden "$others" '"merge"' true "$livraison" "$last_push")")
     # Branche d'intégration : PR à jour non exigée. Le retour de main (après
     # une release) serait sinon presque toujours en retard, et « mettre à jour »
     # fusionnerait develop dans main en contournant la livraison ; la CI
     # vérifie de toute façon chaque push sur develop.
     [[ " $existing " != *" $integration "* ]] ||
-        rulesets+=("$(branch_ruleset "repogarde ($integration)" "$integration" '"squash", "merge"' false)")
+        rulesets+=("$(branch_ruleset "repowarden ($integration)" "$integration" '"squash", "merge"' false)")
     merge_commit=true
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)
@@ -173,7 +173,7 @@ if [ -n "$integration" ]; then
     t ci.proteger.methods_flow "$integration"
     methods="$REPLY"
 else
-    rulesets+=("$(branch_ruleset repogarde "$existing" '"squash"')")
+    rulesets+=("$(branch_ruleset repowarden "$existing" '"squash"')")
     merge_commit=false
     auto_merge=true
     delete_on_merge=true
@@ -251,7 +251,11 @@ gh api -X PUT "repos/$REPO/actions/permissions/workflow" --silent \
 
 for ruleset in "${rulesets[@]}"; do
     name="$(sed -n 's/^  "name": "\(.*\)",$/\1/p' <<<"$ruleset")"
-    id="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name == \"$name\") | .id")"
+    # Ruleset posé sous l'ancien nom (repogarde, v3) : repris et renommé, sinon
+    # il resterait à côté et exigerait une vérification « repogarde » disparue
+    old="${name/repowarden/repogarde}"
+    id="$(gh api "repos/$REPO/rulesets" \
+        --jq "([.[] | select(.name == \"$name\")] + [.[] | select(.name == \"$old\")]) | .[0].id // empty")"
     if [ -n "$id" ]; then
         gh api -X PUT "repos/$REPO/rulesets/$id" --input - <<<"$ruleset" >/dev/null
         ok_t ci.proteger.10 "$name"

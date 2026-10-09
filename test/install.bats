@@ -12,13 +12,13 @@ setup() {
     export XDG_CACHE_HOME="$BATS_TEST_TMPDIR/cache"
 }
 
-@test "install : --uninstall retire les hooks repogarde du depot" {
+@test "install : --uninstall retire les hooks repowarden du depot" {
     git config --unset core.hooksPath
     "$INSTALL" >/dev/null
     [ -n "$(git config --local --get core.hooksPath)" ]
     run "$INSTALL" --uninstall
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Hooks repogarde retirés"* ]]
+    [[ "$output" == *"Hooks repowarden retirés"* ]]
     [ -z "$(git config --local --get core.hooksPath || true)" ]
 }
 
@@ -26,23 +26,23 @@ setup() {
     git config core.hooksPath .husky/_
     run "$INSTALL" --uninstall
     [ "$status" -eq 0 ]
-    [[ "$output" == *"n'est pas repogarde : laissé intact"* ]]
+    [[ "$output" == *"n'est pas repowarden : laissé intact"* ]]
     [ "$(git config --local --get core.hooksPath)" = ".husky/_" ]
 }
 
 @test "install : --uninstall reconnait un ancien emplacement disparu" {
-    git config core.hooksPath /chemin/qui/n-existe/plus/repogarde/hooks
+    git config core.hooksPath /chemin/qui/n-existe/plus/repowarden/hooks
     run "$INSTALL" --uninstall
-    [[ "$output" == *"Hooks repogarde retirés"* ]]
+    [[ "$output" == *"Hooks repowarden retirés"* ]]
 }
 
 @test "install : --uninstall --global --purge supprime les caches" {
     "$INSTALL" --global >/dev/null
-    mkdir -p "$XDG_CACHE_HOME/repogarde/kubeconform"
+    mkdir -p "$XDG_CACHE_HOME/repowarden/kubeconform"
     run "$INSTALL" --uninstall --global --purge
     [ "$status" -eq 0 ]
     [ -z "$(git config --global --get core.hooksPath || true)" ]
-    [ ! -d "$XDG_CACHE_HOME/repogarde" ]
+    [ ! -d "$XDG_CACHE_HOME/repowarden" ]
     [[ "$output" == *'rm -rf'* ]]
 }
 
@@ -50,7 +50,7 @@ setup() {
     "$INSTALL" >/dev/null # dépôt de test branché localement
     mkdir -p "$BATS_TEST_TMPDIR/autre"
     git init -q "$BATS_TEST_TMPDIR/autre/projet-lefthook"
-    printf 'remotes:\n  - git_url: https://github.com/x/repogarde\n' >"$BATS_TEST_TMPDIR/autre/projet-lefthook/lefthook.yml"
+    printf 'remotes:\n  - git_url: https://github.com/x/repowarden\n' >"$BATS_TEST_TMPDIR/autre/projet-lefthook/lefthook.yml"
     git init -q "$BATS_TEST_TMPDIR/autre/sans-rapport"
     printf 'pre-commit: {}\n' >"$BATS_TEST_TMPDIR/autre/sans-rapport/lefthook.yml"
     run "$INSTALL" --uninstall --global --purge --scan "$BATS_TEST_TMPDIR"
@@ -69,7 +69,7 @@ setup() {
     git config --unset core.hooksPath
     run "$BATS_TEST_DIRNAME/../install.sh" --lang en
     [ "$status" -eq 0 ]
-    [ "$(git config --local --get repogarde.lang)" = en ]
+    [ "$(git config --local --get repowarden.lang)" = en ]
     [[ "$output" == *"Message language: English"* ]]
     [[ "$output" == *"Hooks enabled"* ]]
     run "$BATS_TEST_DIRNAME/../install.sh" --lang de
@@ -79,25 +79,25 @@ setup() {
 @test "version : projet qui demande une version plus recente -> avertissement et commande de mise a jour" {
     initial_commit
     git switch -q -c feat/version
-    git config repogarde.version 99.0.0
+    git config repowarden.version 99.0.0
     echo a >a.txt && git add a.txt
     run git commit -m "feat: a"
     [ "$status" -eq 0 ] # avertissement seulement : la CI fait foi
-    [[ "$output" == *"demande repogarde 99.0.0 ou plus récent"* ]]
+    [[ "$output" == *"demande repowarden 99.0.0 ou plus récent"* ]]
 }
 
 @test "version : version installee suffisante -> aucun message" {
     initial_commit
     git switch -q -c feat/version
     source "$HOOKS/lib/ui.sh"
-    repogarde_version_r "$HOOKS/.."
+    repowarden_version_r "$HOOKS/.."
     installed="$REPLY"
     for v in 1 "$installed" "v${installed%%.*}"; do
-        git config repogarde.version "$v"
+        git config repowarden.version "$v"
         echo "$v" >>a.txt && git add a.txt
         run git commit -m "feat: a"
         [ "$status" -eq 0 ]
-        [[ "$output" != *"demande repogarde"* ]]
+        [[ "$output" != *"demande repowarden"* ]]
     done
 }
 
@@ -112,15 +112,15 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" != *"LEFTHOOK-LANCE"* ]]
     [[ "$output" == *"hook installé par lefthook, ignoré"* ]]
-    [[ "$output" == *".repogarde/pre-commit"* ]]
+    [[ "$output" == *".repowarden/pre-commit"* ]]
 }
 
-@test "hooks : .repogarde/<hook> du projet lance a la place de lefthook" {
+@test "hooks : .repowarden/<hook> du projet lance a la place de lefthook" {
     initial_commit
     git switch -q -c feat/hook-projet
-    mkdir -p .repogarde
-    printf '#!/bin/sh\necho HOOK-PROJET-LANCE\n' >.repogarde/pre-commit
-    chmod +x .repogarde/pre-commit
+    mkdir -p .repowarden
+    printf '#!/bin/sh\necho HOOK-PROJET-LANCE\n' >.repowarden/pre-commit
+    chmod +x .repowarden/pre-commit
     echo a >a.txt && git add a.txt
     run git commit -m "feat: a"
     [ "$status" -eq 0 ]

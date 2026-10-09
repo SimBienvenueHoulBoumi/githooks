@@ -9,7 +9,7 @@
 # Première version : $INITIAL_VERSION (défaut 0.1.0).
 set -euo pipefail
 
-# Langue des notes : celle du projet (lang de .repogarde.conf), anglais par défaut en CI
+# Langue des notes : celle du projet (lang de .repowarden.conf), anglais par défaut en CI
 # shellcheck source=../hooks/lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/common.sh"
 

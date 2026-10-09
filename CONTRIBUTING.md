@@ -4,7 +4,7 @@
 
 ```bash
 brew install bats-core shellcheck actionlint gitleaks   # ou équivalents apt / winget
-./install.sh   # hooks repogarde sur ce dépôt (il se teste lui-même)
+./install.sh   # hooks repowarden sur ce dépôt (il se teste lui-même)
 ```
 
 ## Avant chaque PR
@@ -37,6 +37,6 @@ La CI relance tout sur Linux, macOS et Windows, plus un job e2e par langage avec
 ## Branches et releases
 
 - Les PR visent **`develop`** (branche par défaut) ; une PR ouverte vers `main` est reciblée automatiquement. Seuls les correctifs urgents (`hotfix/…`) peuvent viser `main`.
-- À chaque merge sur `develop` : une **préversion** `vX.Y.Z-next.N` (npm `next`) et la **PR de livraison** `develop` → `main` tenue à jour (version à venir, notes). La merger, en merge commit, publie : tag `vX.Y.Z`, release GitHub (notes de version), `v3`, npm `latest`, site. Aucun fichier n'est écrit : la version est portée par le tag.
+- À chaque merge sur `develop` : une **préversion** `vX.Y.Z-next.N` (npm `next`) et la **PR de livraison** `develop` → `main` tenue à jour (version à venir, notes). La merger, en merge commit, publie : tag `vX.Y.Z`, release GitHub (notes de version), `v4`, npm `latest`, site. Aucun fichier n'est écrit : la version est portée par le tag.
 - Un correctif urgent (`hotfix/…`) mergé sur `main` revient seul dans `develop`.
-- Détail : [Versions et releases, mode tag](https://simbienvenuehoulboumi.github.io/repogarde/releases/#flux-develop-main-mode-tag-recommande).
+- Détail : [Versions et releases, mode tag](https://simbienvenuehoulboumi.github.io/repowarden/releases/#flux-develop-main-mode-tag-recommande).

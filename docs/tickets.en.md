@@ -28,9 +28,9 @@ Everything is automatic except validation: it is the only human decision, and Gi
 ## Setup
 
 ```bash
-repogarde tickets init          # labels, ticket template, tickets.yml workflow
+repowarden tickets init          # labels, ticket template, tickets.yml workflow
 git add .github && git cc       # then a PR
-repogarde proteger --checks "repogarde,ticket"   # "ticket" check required
+repowarden proteger --checks "repowarden,ticket"   # "ticket" check required
 ```
 
 In `.github/workflows/release.yml`, tickets move to pre-production on each pre-release and to done on each release:
@@ -39,7 +39,7 @@ In `.github/workflows/release.yml`, tickets move to pre-production on each pre-r
   tickets:
     needs: release
     if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
     permissions: { issues: write, pull-requests: write, statuses: write }
     with:
       tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}

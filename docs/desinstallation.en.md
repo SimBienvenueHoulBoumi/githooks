@@ -1,38 +1,38 @@
 # Uninstalling
 
-`repogarde uninstall` only removes **repogarde's** hooks: a `core.hooksPath` pointing to another tool (husky…) is left untouched, with a warning.
+`repowarden uninstall` only removes **repowarden's** hooks: a `core.hooksPath` pointing to another tool (husky…) is left untouched, with a warning.
 
 ## Global installation (all repositories on the machine)
 
 ```bash
-repogarde uninstall --global
-npm uninstall -g @simbie/repogarde
+repowarden uninstall --global
+npm uninstall -g repowarden
 ```
 
-In this order: npm runs nothing when uninstalling, and hooks wired to a deleted package silently stop firing. `repogarde` (status) shows what is still active.
+In this order: npm runs nothing when uninstalling, and hooks wired to a deleted package silently stop firing. `repowarden` (status) shows what is still active.
 
-Full uninstall, removing the caches (`~/.cache/repogarde`) and listing the repositories still wired to repogarde:
+Full uninstall, removing the caches (`~/.cache/repowarden`) and listing the repositories still wired to repowarden:
 
 ```bash
-repogarde uninstall --global --purge --scan ~/projets
+repowarden uninstall --global --purge --scan ~/projets
 ```
 
-The command **lists** the affected repositories and the command to run for each one, without modifying them. At the end, it prints the last command to run yourself: `npm uninstall -g @simbie/repogarde`, or deleting the directory for a clone installation.
+The command **lists** the affected repositories and the command to run for each one, without modifying them. At the end, it prints the last command to run yourself: `npm uninstall -g repowarden`, or deleting the directory for a clone installation.
 
-Clone installation: same commands with `~/repogarde/install.sh --uninstall` instead of `repogarde uninstall`.
+Clone installation: same commands with `~/repowarden/install.sh --uninstall` instead of `repowarden uninstall`.
 
 ## A single repository
 
 ```bash
 cd my-project
-repogarde uninstall
+repowarden uninstall
 ```
 
-## Project still configured with lefthook (repogarde 3)
+## Project still configured with lefthook (repowarden 3)
 
 ```bash
 cd my-project
 lefthook uninstall
 ```
 
-Then remove the repogarde `remotes` entry from `lefthook.yml`, or the file itself. Since repogarde 4, lefthook is no longer supported: the project's own commands go in `.repogarde/<hook>` ([Configuration](configuration.md#project-specific-hooks)).
+Then remove the repowarden `remotes` entry from `lefthook.yml`, or the file itself. Since repowarden 4, lefthook is no longer supported: the project's own commands go in `.repowarden/<hook>` ([Configuration](configuration.md#project-specific-hooks)).

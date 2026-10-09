@@ -33,7 +33,7 @@ To write a compliant message without remembering the format, `git cc` guides you
 
 ```text
 $ git cc
-◆ repogarde · conventional commit
+◆ repowarden · conventional commit
 Enter = suggested value in [brackets] · Ctrl+C to cancel
 
 ◇ 1/5  Type of change
@@ -78,9 +78,9 @@ Commit? [Y/n]:
 
 **On a protected branch** (`main`…), the commit would be refused: the assistant says so at step 2 and suggests a `<type>/<scope>` branch (Enter to create it, your changes follow; "n" to cancel). An incomplete answer is completed (`feat` → `feat/<scope>`), an approximate name fixed (`My Test` → `feat/my-test`).
 
-**Robust input**: arrow keys and deletion in a terminal, stray keys ignored; an invalid yes/no answer is asked again; Ctrl+D cancels. If a hook refuses the commit, the message is kept (`git commit -F .git/repogarde-message` once fixed).
+**Robust input**: arrow keys and deletion in a terminal, stray keys ignored; an invalid yes/no answer is asked again; Ctrl+D cancels. If a hook refuses the commit, the message is kept (`git commit -F .git/repowarden-message` once fixed).
 
-`git commit` options are passed through (`git cc --no-verify`…); `git cc --dry-run` shows the message without committing. Answers supplied by a script (one per line on standard input): `git cc --strict`, so that a refused answer stops everything instead of reading the next line as a new answer. Without `install.sh`: `git config --global alias.cc '!bash /path/to/repogarde/bin/commit'`.
+`git commit` options are passed through (`git cc --no-verify`…); `git cc --dry-run` shows the message without committing. Answers supplied by a script (one per line on standard input): `git cc --strict`, so that a refused answer stops everything instead of reading the next line as a new answer. Without `install.sh`: `git config --global alias.cc '!bash /path/to/repowarden/bin/commit'`.
 
 **Without questions** (scripts, agents, CI): answers are passed as options, with the same checks, and any refused value stops everything without committing. An omitted type and scope are inferred from the branch, as with Enter; on a protected branch, no branch is created.
 

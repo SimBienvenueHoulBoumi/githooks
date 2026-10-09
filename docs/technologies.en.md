@@ -55,7 +55,7 @@ Detected automatically; each one is **tested in CI on a real project** with its 
 ¹ multi-module: build from the topmost parent project. ² also formats standalone files, outside any project.
 
 !!! note "Infrastructure"
-    For infrastructure, the "tests" step is a **validation** (lint, rendering, schemas): nothing is deployed. Kubernetes schemas and Terraform providers are cached (`~/.cache/repogarde`).
+    For infrastructure, the "tests" step is a **validation** (lint, rendering, schemas): nothing is deployed. Kubernetes schemas and Terraform providers are cached (`~/.cache/repowarden`).
 
 **Missing tool**: skipped on the developer machine (warning in a project, silent for a standalone file); blocking in CI with [strict mode](ci.md).
 

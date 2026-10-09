@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     release:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
 #       permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
 #
 # 1. release-please tient à jour une PR "release x.y.z" : version calculée
@@ -86,13 +86,13 @@ on:
         description: "Mode tag : branche des releases"
         type: string
         default: main
-      repogarde-ref:
-        description: "Mode tag : version de repogarde utilisée pour calculer la version"
+      repowarden-ref:
+        description: "Mode tag : version de repowarden utilisée pour calculer la version"
         type: string
         # Version majeure courante, à changer à la main à chaque majeure : la
         # release ne modifie aucun fichier de .github/workflows/ (le jeton des
         # Actions n'en a pas le droit)
-        default: v3
+        default: v4
       notify:
         description: >-
           Événements envoyés au canal de l'équipe (secret webhook) : release
@@ -162,13 +162,13 @@ jobs:
         if: env.HAS_APP == 'true'
         run: |
           echo "::warning::Secrets app-id / app-key ignorés : le bot de release n'existe plus (aucune clé nécessaire). Les retirer de release.yml ; ils seront refusés en v4."
-      # Aucun code du projet n'est exécuté : seuls les scripts de repogarde, à
-      # la version repogarde-ref (validation et merge des PR : ci/merger-pr.sh)
+      # Aucun code du projet n'est exécuté : seuls les scripts de repowarden, à
+      # la version repowarden-ref (validation et merge des PR : ci/merger-pr.sh)
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: SimBienvenueHoulBoumi/repogarde
-          ref: ${{ inputs.repogarde-ref }}
-          path: .repogarde-ci
+          repository: SimBienvenueHoulBoumi/repowarden
+          ref: ${{ inputs.repowarden-ref }}
+          path: .repowarden-ci
           persist-credentials: false
       - name: Configuration
         id: config
@@ -252,7 +252,7 @@ jobs:
               --json number -q '.[0].number')"
           fi
           [ -n "$pr" ] || { echo "Aucune PR de release en attente"; exit 0; }
-          bash .repogarde-ci/ci/merger-pr.sh "$pr" squash
+          bash .repowarden-ci/ci/merger-pr.sh "$pr" squash
 
       # Le merge fait par GITHUB_TOKEN ne relance pas le workflow : on publie ici
       - id: publish
@@ -292,10 +292,10 @@ jobs:
           if [ -z "$pr" ]; then
             url="$(gh pr create --head "$MAIN" --base "$INTEGRATION" \
               --title "chore(release): $INTEGRATION à jour de $TAG" \
-              --body "Fusionne la release **$TAG** (changelog, fichiers de version) dans \`$INTEGRATION\`. Validée par la CI puis mergée automatiquement (merge commit) par le workflow de release (repogarde).")"
+              --body "Fusionne la release **$TAG** (changelog, fichiers de version) dans \`$INTEGRATION\`. Validée par la CI puis mergée automatiquement (merge commit) par le workflow de release (repowarden).")"
             pr="${url##*/}"
           fi
-          bash .repogarde-ci/ci/merger-pr.sh "$pr" merge
+          bash .repowarden-ci/ci/merger-pr.sh "$pr" merge
 
       - name: Aide
         if: failure()
@@ -366,9 +366,9 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: SimBienvenueHoulBoumi/repogarde
-          ref: ${{ inputs.repogarde-ref }}
-          path: .repogarde-ci
+          repository: SimBienvenueHoulBoumi/repowarden
+          ref: ${{ inputs.repowarden-ref }}
+          path: .repowarden-ci
           persist-credentials: false
 
       - name: PR de livraison
@@ -386,7 +386,7 @@ jobs:
             echo "$INTEGRATION ne contient rien de plus que $MAIN : pas de livraison."
             exit 0
           fi
-          version="$(bash .repogarde-ci/ci/version.sh next HEAD)"
+          version="$(bash .repowarden-ci/ci/version.sh next HEAD)"
           if [ -n "$version" ]; then
             title="chore(release): v$version"
             if [ "$MODE" = cycle ]; then
@@ -394,8 +394,8 @@ jobs:
             else
               suite="publie **v%s** : tag et release GitHub automatiques"
             fi
-            body="$(printf "Merger cette PR (merge commit) $suite.\n\n%s\n\n---\n_Tenue à jour à chaque merge sur %s (repogarde)._\n" \
-              "$version" "$(bash .repogarde-ci/ci/version.sh notes HEAD)" "$INTEGRATION")"
+            body="$(printf "Merger cette PR (merge commit) $suite.\n\n%s\n\n---\n_Tenue à jour à chaque merge sur %s (repowarden)._\n" \
+              "$version" "$(bash .repowarden-ci/ci/version.sh notes HEAD)" "$INTEGRATION")"
           else
             title="chore(release): livrer $INTEGRATION sur $MAIN"
             body="Aucune nouvelle version : maintenance uniquement (ci, chore, docs…)."
@@ -420,7 +420,7 @@ jobs:
           INITIAL_VERSION: ${{ inputs.initial-version }}
         run: |
           git fetch -q origin "$MAIN"
-          base="$(bash .repogarde-ci/ci/version.sh next HEAD)"
+          base="$(bash .repowarden-ci/ci/version.sh next HEAD)"
           if [ -z "$base" ]; then
             echo "Aucune nouvelle version (ci, chore, docs…) : pas de préversion."
             exit 0
@@ -434,7 +434,7 @@ jobs:
           {
             echo "> ⚠️ Préversion de test, à ne pas utiliser en production : la version stable sortira au merge de la livraison."
             echo
-            bash .repogarde-ci/ci/version.sh notes HEAD
+            bash .repowarden-ci/ci/version.sh notes HEAD
           } >"$RUNNER_TEMP/notes.md"
           gh release create "$tag" --target "$GITHUB_SHA" --prerelease --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
           {
@@ -454,7 +454,7 @@ jobs:
           ID: ${{ inputs.preversion }}
           INTEGRATION: ${{ inputs.integration-branch }}
         run: |
-          version="$(bash .repogarde-ci/ci/version.sh next HEAD)"
+          version="$(bash .repowarden-ci/ci/version.sh next HEAD)"
           if [ -z "$version" ]; then
             echo "Rien à publier."
             exit 0
@@ -470,7 +470,7 @@ jobs:
             echo "::error::$tag refusée : aucune préversion $tag-$ID.N publiée depuis $INTEGRATION. Livrer depuis $INTEGRATION (préversion testée), ou désactiver preversion-obligatoire."
             exit 1
           fi
-          bash .repogarde-ci/ci/version.sh notes HEAD >"$RUNNER_TEMP/notes.md"
+          bash .repowarden-ci/ci/version.sh notes HEAD >"$RUNNER_TEMP/notes.md"
           gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
           {
             echo "release_created=true"
@@ -520,10 +520,10 @@ jobs:
           if [ -z "$pr" ]; then
             url="$(gh pr create --head "$MAIN" --base "$INTEGRATION" \
               --title "chore: $INTEGRATION à jour de $MAIN" \
-              --body "Ramène dans \`$INTEGRATION\` ce qui a été mergé directement sur \`$MAIN\` (correctif urgent). Validée par la CI puis mergée automatiquement (merge commit) par le workflow de release (repogarde).")"
+              --body "Ramène dans \`$INTEGRATION\` ce qui a été mergé directement sur \`$MAIN\` (correctif urgent). Validée par la CI puis mergée automatiquement (merge commit) par le workflow de release (repowarden).")"
             pr="${url##*/}"
           fi
-          bash .repogarde-ci/ci/merger-pr.sh "$pr" merge
+          bash .repowarden-ci/ci/merger-pr.sh "$pr" merge
 
   # Canal de l'équipe (optionnel) : release publiée, PR de release à approuver,
   # échec. Sans secret webhook, rien n'est envoyé. Message dans la langue du projet.
@@ -538,18 +538,18 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          sparse-checkout: .repogarde.conf # langue du projet
+          sparse-checkout: .repowarden.conf # langue du projet
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: SimBienvenueHoulBoumi/repogarde
-          ref: ${{ inputs.repogarde-ref }}
-          path: .repogarde-ci
+          repository: SimBienvenueHoulBoumi/repowarden
+          ref: ${{ inputs.repowarden-ref }}
+          path: .repowarden-ci
           persist-credentials: false
       - name: Notifier
         env:
-          REPOGARDE_WEBHOOK: ${{ secrets.webhook }}
+          REPOWARDEN_WEBHOOK: ${{ secrets.webhook }}
           EVENTS: ${{ inputs.notify }}
           CREATED: ${{ needs.release.outputs.release_created || needs.tag.outputs.release_created }}
           TAG: ${{ needs.release.outputs.tag_name || needs.tag.outputs.tag_name }}
@@ -558,11 +558,11 @@ jobs:
           REPO: ${{ github.repository }}
           SERVER: ${{ github.server_url }}
           RUN_ID: ${{ github.run_id }}
-          REPOGARDE_REF: ${{ inputs.repogarde-ref }}
+          REPOWARDEN_REF: ${{ inputs.repowarden-ref }}
         run: |
-          # Version de repogarde sans notifications (ancien tag) : rien à faire
-          [ -f .repogarde-ci/ci/notifier.sh ] || { echo "notifier.sh absent de $REPOGARDE_REF : ignoré"; exit 0; }
-          notifier() { bash .repogarde-ci/ci/notifier.sh "$@"; }
+          # Version de repowarden sans notifications (ancien tag) : rien à faire
+          [ -f .repowarden-ci/ci/notifier.sh ] || { echo "notifier.sh absent de $REPOWARDEN_REF : ignoré"; exit 0; }
+          notifier() { bash .repowarden-ci/ci/notifier.sh "$@"; }
           a_notifier() { [[ " $EVENTS " == *" $1 "* ]]; }
           if [ "$FAILED" = true ] && a_notifier echec; then
             notifier ci.notify.failure "$REPO" "$SERVER/$REPO/actions/runs/$RUN_ID"

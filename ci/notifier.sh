@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Envoie un message au canal de l'équipe (webhook entrant). L'adresse est un
-# secret (REPOGARDE_WEBHOOK), jamais écrite dans un fichier du dépôt.
+# secret (REPOWARDEN_WEBHOOK), jamais écrite dans un fichier du dépôt.
 #   ci/notifier.sh <clé de message> [arguments]   (catalogue de traduction)
 # Format adapté à la plateforme d'après l'adresse : Slack, Discord, Microsoft
 # Teams (Workflows / connecteur), sinon {"text"} (Mattermost, Rocket.Chat…).
@@ -8,11 +8,11 @@
 # jamais une release : il est seulement signalé.
 set -euo pipefail
 
-REPOGARDE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+REPOWARDEN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
-source "$REPOGARDE_DIR/hooks/lib/common.sh"
+source "$REPOWARDEN_DIR/hooks/lib/common.sh"
 
-url="${REPOGARDE_WEBHOOK:-}"
+url="${REPOWARDEN_WEBHOOK:-}"
 [ -n "$url" ] || exit 0
 _tr "$@"
 text="$_T"

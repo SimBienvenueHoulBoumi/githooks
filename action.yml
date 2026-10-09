@@ -1,10 +1,10 @@
-# Action GitHub : mêmes règles que les hooks repogarde, en CI (non contournable).
+# Action GitHub : mêmes règles que les hooks repowarden, en CI (non contournable).
 #
 #   - uses: actions/checkout@v4
 #     with:
 #       fetch-depth: 0
-#   - uses: SimBienvenueHoulBoumi/repogarde@v3
-name: repogarde
+#   - uses: SimBienvenueHoulBoumi/repowarden@v4
+name: repowarden
 description: Vérifie messages de commit, nom de branche, secrets, formatage et tests des projets touchés ; linters via MegaLinter en option.
 author: SimBienvenueHoulBoumi
 
@@ -39,7 +39,7 @@ runs:
       shell: bash
       env:
         GITLEAKS_VERSION: ${{ inputs.gitleaks-version }}
-        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
+        REPOWARDEN_BIN: ${{ runner.temp }}/repowarden-bin
       run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" gitleaks
 
     # Les workflows du projet sont vérifiés par actionlint (étape tests)
@@ -48,7 +48,7 @@ runs:
       shell: bash
       env:
         ACTIONLINT_VERSION: ${{ inputs.actionlint-version }}
-        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
+        REPOWARDEN_BIN: ${{ runner.temp }}/repowarden-bin
       run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" actionlint
 
     - name: Correction de la PR (cible, titre)
@@ -71,21 +71,21 @@ runs:
       if: contains(inputs.checks, 'deadcode') && hashFiles('**/pom.xml', '**/build.gradle', '**/build.gradle.kts') != ''
       shell: bash
       env:
-        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
+        REPOWARDEN_BIN: ${{ runner.temp }}/repowarden-bin
       run: bash "$GITHUB_ACTION_PATH/ci/install-tool.sh" pmd
 
-    - name: Vérifications repogarde
-      if: env.REPOGARDE_PR_CLOSED != 'true'
+    - name: Vérifications repowarden
+      if: env.REPOWARDEN_PR_CLOSED != 'true'
       shell: bash
       env:
-        REPOGARDE_CHECKS: ${{ inputs.checks }}
-        REPOGARDE_STRICT: ${{ inputs.strict }}
-        REPOGARDE_BIN: ${{ runner.temp }}/repogarde-bin
+        REPOWARDEN_CHECKS: ${{ inputs.checks }}
+        REPOWARDEN_STRICT: ${{ inputs.strict }}
+        REPOWARDEN_BIN: ${{ runner.temp }}/repowarden-bin
         GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         # Valeurs corrigées par l'étape précédente (fix-pr), sinon celles de la PR
-        REPOGARDE_PR_TITLE: ${{ env.REPOGARDE_FIXED_TITLE || github.event.pull_request.title }}
-        REPOGARDE_TARGET: ${{ env.REPOGARDE_FIXED_TARGET }}
-        REPOGARDE_BASE: ${{ env.REPOGARDE_FIXED_BASE }}
+        REPOWARDEN_PR_TITLE: ${{ env.REPOWARDEN_FIXED_TITLE || github.event.pull_request.title }}
+        REPOWARDEN_TARGET: ${{ env.REPOWARDEN_FIXED_TARGET }}
+        REPOWARDEN_BASE: ${{ env.REPOWARDEN_FIXED_BASE }}
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         FORCE_COLOR: "1" # charte visuelle dans les logs
       run: bash "$GITHUB_ACTION_PATH/ci/check.sh"

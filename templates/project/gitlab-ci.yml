@@ -2,17 +2,17 @@
 # Rendre le pipeline obligatoire : Settings → Merge requests →
 # "Pipelines must succeed".
 include:
-  # repogarde hébergé sur votre GitLab (recommandé : accès interne, pas de dépendance externe)
-  - project: outils/repogarde
-    ref: v3 # dernière 3.x (vX.Y.Z pour figer)
-    file: templates/gitlab/repogarde.gitlab-ci.yml
+  # repowarden hébergé sur votre GitLab (recommandé : accès interne, pas de dépendance externe)
+  - project: outils/repowarden
+    ref: v4 # dernière 4.x (vX.Y.Z pour figer)
+    file: templates/gitlab/repowarden.gitlab-ci.yml
   # ou depuis GitHub (dépôt public) :
-  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repogarde/v3/templates/gitlab/repogarde.gitlab-ci.yml
+  # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repowarden/v4/templates/gitlab/repowarden.gitlab-ci.yml
 
 stages: [test]
 
-repogarde:
+repowarden:
   # Image contenant bash, git, curl et les outils du projet (JDK, node, python…)
   image: eclipse-temurin:21-jdk
   variables:
-    REPOGARDE_STRICT: "true"
+    REPOWARDEN_STRICT: "true"

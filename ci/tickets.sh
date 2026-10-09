@@ -19,9 +19,9 @@
 # HEAD_SHA, AUTHOR ; issue : ISSUE, ACTION, LABEL ; release : TAG
 set -euo pipefail
 
-REPOGARDE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+REPOWARDEN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
-source "$REPOGARDE_DIR/hooks/lib/common.sh"
+source "$REPOWARDEN_DIR/hooks/lib/common.sh"
 
 VALIDE="validé"
 S_AVALIDER="statut: à valider"
@@ -160,7 +160,7 @@ cmd_release() {
     done < <(gh issue list --state open --label "$S_PREPROD" --limit 500 --json number -q '.[].number')
 }
 
-notice() { echo "::notice title=repogarde::$*"; }
+notice() { echo "::notice title=repowarden::$*"; }
 notice_t() { _tr "$@"; notice "$_T"; }
 
 # Chargé par les tests (source) : fonctions seulement

@@ -1,6 +1,6 @@
-# Vérifications repogarde en CI (obligatoires pour merger : à déclarer en
+# Vérifications repowarden en CI (obligatoires pour merger : à déclarer en
 # "required status check" dans les règles de protection de la branche).
-name: repogarde
+name: repowarden
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  repogarde:
+  repowarden:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -29,6 +29,6 @@ jobs:
       #   with: { node-version: 24, cache: npm }
       # - run: npm ci
 
-      - uses: SimBienvenueHoulBoumi/repogarde@v3
+      - uses: SimBienvenueHoulBoumi/repowarden@v4
         with:
           strict: true
