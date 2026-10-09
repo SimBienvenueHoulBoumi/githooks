@@ -45,6 +45,7 @@ _msg_en() {
         cc.header_too_long) _M="Header too long: %s characters (72 max). Shorten the description." ;;
         cc.step5) _M="Details (optional)" ;;
         cc.body_hint) _M="Body: explain why, on several lines; press Enter on an empty line to finish." ;;
+        cc.refs_prompt_ticket) _M="References (\"-\" for none) [%s]: " ;;
         cc.refs_prompt) _M="References (e.g. %s; Enter for none): " ;;
         cc.preview) _M="Message" ;;
         cc.confirm) _M="Commit? [Y/n]: " ;;
@@ -335,6 +336,21 @@ _msg_en() {
         st.next) _M="Next step:" ;;
         st.ready) _M="All set: git cc to commit, repogarde code-mort on a branch." ;;
         st.help) _M="Every command: repogarde --help" ;;
+        # Tickets
+        tk.none) _M="No linked ticket: add \"Ticket: #12\" to the PR description, or name the branch feat/12-topic." ;;
+        tk.waiting) _M="Ticket %s awaiting validation: a maintainer adds the \"%s\" label to the ticket." ;;
+        tk.ok) _M="Ticket %s validated." ;;
+        tk.merged) _M="Merged by PR #%s into %s: in pre-production, available in the next pre-release." ;;
+        tk.created_body) _M="Ticket created automatically for PR #%s, which cited none. To be validated by a maintainer (\"validé\" label)." ;;
+        tk.created) _M="Ticket #%s created for PR #%s and linked in its description: to be validated by a maintainer." ;;
+        tk.init_labels) _M="Labels (statuses and validation)" ;;
+        tk.init_files) _M="Ticket template and workflow" ;;
+        tk.init_exists) _M="%s already exists: left as is." ;;
+        tk.init_written) _M="%s created." ;;
+        tk.init_done) _M="Ticket tracking ready." ;;
+        tk.init_next) _M="Next: commit these files; require the \"ticket\" check (repogarde proteger --checks \"…,ticket\"); in release.yml, wire the tickets job (see the Tickets docs)." ;;
+        tk.prerelease) _M="Available in pre-release **%s**: to be tested before production." ;;
+        tk.released) _M="Released in **%s**." ;;
         *) _M="" ;;
     esac
 }

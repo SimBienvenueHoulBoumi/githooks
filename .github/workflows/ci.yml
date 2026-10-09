@@ -47,7 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { part: branches, files: test/branches.bats test/test_names.bats test/install.bats test/npm.bats }
+          - { part: branches, files: test/branches.bats test/test_names.bats test/install.bats test/npm.bats test/tickets.bats }
           - { part: ci, files: test/ci_check.bats }
           - { part: messages, files: test/commit_messages.bats test/commit_assistant.bats }
           - { part: lefthook, files: test/lefthook.bats }

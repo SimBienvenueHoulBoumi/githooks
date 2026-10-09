@@ -259,3 +259,10 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     [ "$status" -ne 0 ]
     [[ "$output" == *"Type obligatoire"* ]]
 }
+
+@test "assistant : branche feat/12-sujet -> Ticket : #12 propose en reference" {
+    git switch -q -c feat/12-panier
+    run answer "" "" "" "ajoute le panier" "" "" ""
+    [ "$status" -eq 0 ]
+    git log -1 --format=%B | grep -qx 'Ticket : #12'
+}
