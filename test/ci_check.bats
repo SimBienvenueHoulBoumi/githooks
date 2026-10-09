@@ -391,9 +391,13 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is True; \
         assert d["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert m["bypass_actors"]==[] and d["bypass_actors"]==[]; \
+        assert m["rules"][2]["parameters"]["required_approving_review_count"]==1; \
+        assert m["rules"][2]["parameters"]["require_last_push_approval"] is False; \
+        assert d["rules"][2]["parameters"]["required_approving_review_count"]==0; \
         assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]
+    [[ "$output" == *"livraison vers main : 1 approbation(s) exigée(s)"* ]]
     # sans workflow de nettoyage : avertissement ; avec : rien
     [[ "$output" == *"ajouter un workflow qui appelle nettoyage-branches.yml"* ]]
     mkdir -p .github/workflows
