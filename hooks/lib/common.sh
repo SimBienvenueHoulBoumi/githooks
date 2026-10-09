@@ -137,9 +137,10 @@ pr_targets_r() {
     integration="$REPLY"
     [ -n "$integration" ] || return 0
     cfg_r mainBranch main
+    # Seule la branche d'intégration entre dans la branche principale : tout
+    # le reste (correctifs urgents compris) passe par elle et ses préversions
     case "$1" in
         "$integration" | release-please--*) ;;
-        release/* | hotfix/*) REPLY="$REPLY $integration" ;;
         *) REPLY="$integration" ;;
     esac
 }
