@@ -64,6 +64,13 @@ on:
           livraison sur main, puis main fusionnée dans develop.
         type: string
         default: pr
+      preversion-obligatoire:
+        description: >-
+          Modes tag et cycle : refuser une version stable qui n'a pas d'abord
+          existé en préversion sur la branche d'intégration (vX.Y.Z-next.N) ;
+          une majeure passe donc toujours par ses préversions.
+        type: boolean
+        default: true
       preversion:
         description: >-
           Modes tag et cycle : identifiant des préversions publiées à chaque merge sur
@@ -443,6 +450,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
+          OBLIGATOIRE: ${{ inputs.preversion-obligatoire }}
+          ID: ${{ inputs.preversion }}
+          INTEGRATION: ${{ inputs.integration-branch }}
         run: |
           version="$(bash .repogarde-ci/ci/version.sh next HEAD)"
           if [ -z "$version" ]; then
@@ -453,6 +463,12 @@ jobs:
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "::warning::$tag existe déjà : rien à faire."
             exit 0
+          fi
+          # Aucune version stable sans préversion testée sur la branche
+          # d'intégration (une majeure passe par ses vX.0.0-next.N)
+          if [ "$OBLIGATOIRE" = true ] && [ -n "$ID" ] && [ -z "$(git tag --list "$tag-$ID.*")" ]; then
+            echo "::error::$tag refusée : aucune préversion $tag-$ID.N publiée depuis $INTEGRATION. Livrer depuis $INTEGRATION (préversion testée), ou désactiver preversion-obligatoire."
+            exit 1
           fi
           bash .repogarde-ci/ci/version.sh notes HEAD >"$RUNNER_TEMP/notes.md"
           gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
