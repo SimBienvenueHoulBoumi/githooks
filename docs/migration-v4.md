@@ -1,6 +1,6 @@
 # Passer de repogarde 3 à repowarden 4
 
-En v4, **repogarde s'appelle repowarden** et **lefthook n'est plus pris en charge**. Les anciens noms restent lus pendant toute la v4, avec un avertissement : rien ne casse le jour de la mise à jour. Ils seront ignorés en v5.
+**lefthook n'est plus pris en charge** depuis la v4.0.0, et **repogarde s'appelle repowarden** depuis la v4.1.0. Les anciens noms restent lus pendant toute la v4, avec un avertissement : rien ne casse le jour de la mise à jour. Ils seront ignorés en v5.
 
 ## Ce qui change
 

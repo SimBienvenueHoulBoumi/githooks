@@ -1,6 +1,6 @@
 # Moving from repogarde 3 to repowarden 4
 
-In v4, **repogarde is now called repowarden** and **lefthook is no longer supported**. The old names are still read throughout v4, with a warning: nothing breaks on the day you update. They will be ignored in v5.
+**lefthook is no longer supported** since v4.0.0, and **repogarde is called repowarden** since v4.1.0. The old names are still read throughout v4, with a warning: nothing breaks on the day you update. They will be ignored in v5.
 
 ## What changes
 
