@@ -17,7 +17,7 @@ if [[ "$SUBJECT" =~ ^(Merge|Revert|fixup!|squash!) ]]; then
 fi
 
 if ! [[ "$SUBJECT" =~ $CC_PATTERN ]]; then
-    if [ "${REPOGARDE_LANG:-}" = en ]; then
+    if [ "${REPOWARDEN_LANG:-}" = en ]; then
         cat >&2 <<EOF
 ✖ Invalid commit message: "$SUBJECT"
 

@@ -36,7 +36,7 @@ plugin_has_flag() {
     [[ " $REPLY " == *" $2 "* ]]
 }
 
-# Plugins actifs (non désactivés via repogarde.skip <nom>), calculés une seule fois
+# Plugins actifs (non désactivés via repowarden.skip <nom>), calculés une seule fois
 ACTIVE_PLUGINS=""
 ACTIVE_PLUGINS_DONE=""
 active_plugins_init() {
@@ -157,8 +157,8 @@ find_up() {
 }
 
 # Cache des téléchargements entre deux lancements (schémas, providers)
-REPOGARDE_CACHE="${REPOGARDE_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/repogarde}"
-cache_dir() { mkdir -p "$REPOGARDE_CACHE/$1" && echo "$REPOGARDE_CACHE/$1"; }
+REPOWARDEN_CACHE="${REPOWARDEN_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/repowarden}"
+cache_dir() { mkdir -p "$REPOWARDEN_CACHE/$1" && echo "$REPOWARDEN_CACHE/$1"; }
 kubeconform_cache() { cache_dir kubeconform; }
 
 # Outil absent : avertissement dans un projet, silence pour un fichier isolé
@@ -168,7 +168,7 @@ tool_missing() {
     return 0
 }
 
-# Chemins exclus (repogarde.exclude) : globs séparés par des espaces, ex.
+# Chemins exclus (repowarden.exclude) : globs séparés par des espaces, ex.
 # "vendor/* generated/*" — code vendorisé, fichiers générés, fixtures de test.
 EXCLUDE_PATTERNS=""
 EXCLUDE_DONE=""
@@ -197,12 +197,12 @@ without_excluded() {
 
 # --- Formatage (pre-commit) --------------------------------------------------
 
-# Commande personnalisée : repogarde.format reçoit les fichiers stagés en arguments
+# Commande personnalisée : repowarden.format reçoit les fichiers stagés en arguments
 format_custom() {
     local cmd="$1"
     shift
     step_t hook.lang.1 "$cmd"
-    sh -c "$cmd \"\$@\"" repogarde-format "$@"
+    sh -c "$cmd \"\$@\"" repowarden-format "$@"
 }
 
 # Formate les fichiers stagés puis les re-stage (pre-commit)

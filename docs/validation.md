@@ -1,6 +1,6 @@
 # Validation humaine
 
-repogarde automatise ce qui est **mécanique et vérifiable** :
+repowarden automatise ce qui est **mécanique et vérifiable** :
 - formater ;
 - vérifier un message, un nom de branche ou une cible de PR ;
 - calculer une version, écrire un changelog, poser un tag ;
@@ -17,11 +17,11 @@ Le risque n'est pas la machine. C'est une validation humaine trop légère. Cett
 
 ## Les points de décision
 
-| Décision | Mécanisme GitHub | repogarde |
+| Décision | Mécanisme GitHub | repowarden |
 |---|---|---|
-| Relire le code avant qu'il n'entre | approbations obligatoires ; approbation annulée par un nouveau commit ; le dernier à pousser ne peut pas approuver son propre push | `repogarde proteger --relecteurs N` |
-| Faire relire les zones sensibles par leurs responsables | fichier `CODEOWNERS` + revue du propriétaire obligatoire | `repogarde proteger --codeowners` |
-| Décider de publier | environnement de déploiement : le job attend l'approbation d'une personne désignée | `repogarde proteger --environnement production` |
+| Relire le code avant qu'il n'entre | approbations obligatoires ; approbation annulée par un nouveau commit ; le dernier à pousser ne peut pas approuver son propre push | `repowarden proteger --relecteurs N` |
+| Faire relire les zones sensibles par leurs responsables | fichier `CODEOWNERS` + revue du propriétaire obligatoire | `repowarden proteger --codeowners` |
+| Décider de publier | environnement de déploiement : le job attend l'approbation d'une personne désignée | `repowarden proteger --environnement production` |
 | Décider de livrer (flux `develop`) | PR de livraison `develop` → `main`, toujours mergée par un humain | mode `tag` |
 | Garder la main sur la PR de release (mode `pr`) | merge humain | `release-auto` avec `merge-auto: false` |
 
@@ -29,10 +29,10 @@ Avec une relecture exigée, la PR de release n'est jamais mergée par le bot. Il
 
 ## Mise en place
 
-Réglages versionnés dans `.repogarde.conf`, appliqués par `repogarde proteger` (relançable) :
+Réglages versionnés dans `.repowarden.conf`, appliqués par `repowarden proteger` (relançable) :
 
 ```ini
-[repogarde]
+[repowarden]
     requiredReviews = 1              # approbations par PR
     codeOwnerReview = true           # revue des CODEOWNERS sur leurs fichiers
     environment = production         # déploiements soumis à approbation
@@ -63,7 +63,7 @@ L'environnement n'accepte de déploiement que depuis les branches protégées et
 
 ## Projet solo
 
-GitHub interdit d'approuver sa propre PR, et `repogarde proteger` n'accorde **aucune exception**, pas même à l'administrateur : avec `requiredReviews = 1` et un seul développeur, aucun merge ne serait possible. Pour un projet solo, le réglage conseillé :
+GitHub interdit d'approuver sa propre PR, et `repowarden proteger` n'accorde **aucune exception**, pas même à l'administrateur : avec `requiredReviews = 1` et un seul développeur, aucun merge ne serait possible. Pour un projet solo, le réglage conseillé :
 - `requiredReviews = 0` : la CI fait foi sur la forme ;
 - `environment = production` avec soi-même comme approbateur : chaque publication demande un clic délibéré.
 
@@ -75,7 +75,7 @@ Les destinataires se désignent par **compte ou équipe GitHub**, jamais par adr
 |---|---|---|
 | Relecteurs, par zone du code | `.github/CODEOWNERS` | `/.github/  @acme/plateforme` |
 | Approbateurs des publications | `environmentReviewers` | `alice @acme/release` |
-| Canal de l'équipe (optionnel) | secret `REPOGARDE_WEBHOOK` | Slack, Teams, Discord, Mattermost… |
+| Canal de l'équipe (optionnel) | secret `REPOWARDEN_WEBHOOK` | Slack, Teams, Discord, Mattermost… |
 
 Une équipe (`@organisation/equipe`) se gère dans GitHub : arrivées et départs ne touchent aucun fichier.
 
@@ -84,15 +84,15 @@ Une équipe (`@organisation/equipe`) se gère dans GitHub : arrivées et départ
 Le workflow de release peut écrire dans un canal : release publiée, PR de release en attente d'approbation, échec. L'adresse du webhook entrant est un **secret**, jamais dans le dépôt :
 
 ```bash
-gh secret set REPOGARDE_WEBHOOK      # adresse collée en saisie masquée
+gh secret set REPOWARDEN_WEBHOOK      # adresse collée en saisie masquée
 ```
 
 ```yaml
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
     secrets:
-      webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
+      webhook: ${{ secrets.REPOWARDEN_WEBHOOK }}
     with:
       notify: release attente echec   # défaut : les trois
 ```
@@ -102,5 +102,5 @@ Le format suit la plateforme reconnue d'après l'adresse (Slack, Discord, Micros
 ## Traçabilité et arrêt d'urgence
 
 - Chaque merge, approbation, déploiement et contournement est enregistré (historique des PR, onglet *Environments*, journal d'audit).
-- Les tags `v*` ne peuvent être posés que par les workflows (ruleset « repogarde (tags) ») ; chaque paquet publié porte une attestation de provenance vérifiable.
+- Les tags `v*` ne peuvent être posés que par les workflows (ruleset « repowarden (tags) ») ; chaque paquet publié porte une attestation de provenance vérifiable.
 - Suspendre les releases automatiques : *Actions → release → Disable workflow*.

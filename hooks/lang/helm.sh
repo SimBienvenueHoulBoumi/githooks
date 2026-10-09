@@ -14,7 +14,7 @@ helm_test() {
     step_t lang.helm.2
     helm lint --quiet . || return 1
     rendered="$(mktemp)"
-    helm template repogarde . >"$rendered" || { rm -f "$rendered"; return 1; }
+    helm template repowarden . >"$rendered" || { rm -f "$rendered"; return 1; }
     if has kubeconform; then
         step_t lang.helm.3
         kubeconform -strict -summary -ignore-missing-schemas -cache "$(kubeconform_cache)" <"$rendered" || rc=1

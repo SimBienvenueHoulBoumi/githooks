@@ -3,19 +3,19 @@
 #
 #   jobs:
 #     release:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
 #       …
 #     npm:
 #       needs: release
 #       if: needs.release.outputs.release_created == 'true'
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/npm-publish.yml@v4
 #       permissions: { contents: read, id-token: write }
 #       with:
 #         tag: ${{ needs.release.outputs.tag_name }}
 #
 # Sans jeton : publication de confiance npm (OIDC). Le registre vérifie que la
 # publication vient de ce dépôt et de ce workflow (release.yml), et joint la
-# provenance au paquet. Mise en place guidée : repogarde npm-publication.
+# provenance au paquet. Mise en place guidée : repowarden npm-publication.
 # Le paquet est publié à la version du tag (package.json mis à jour au besoin,
 # utile en mode tag sans fichier de version) ; une version déjà publiée est
 # ignorée, un run relancé ne fait donc jamais échouer la release.

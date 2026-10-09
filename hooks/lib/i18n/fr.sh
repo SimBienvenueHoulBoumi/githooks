@@ -63,7 +63,7 @@ _msg_fr() {
         cc.next_branch) _M="Prochains changements : sur une branche, ex. %s, puis une %s." ;;
         cc.topic) _M="sujet" ;;
         cc.next_push) _M="Envoyer : %s" ;;
-        hook.version_old) _M="Ce projet demande repogarde %s ou plus récent ; installé sur ce poste : %s. Mettre à jour : %s" ;;
+        hook.version_old) _M="Ce projet demande repowarden %s ou plus récent ; installé sur ce poste : %s. Mettre à jour : %s" ;;
         # Installation
         install.unknown_arg) _M="Argument inconnu : %s" ;;
         install.not_repo) _M="Pas dans un dépôt git (utilise --global pour tous les dépôts)." ;;
@@ -72,22 +72,23 @@ _msg_fr() {
         install.alias_removed) _M="Alias git cc retiré (%s)." ;;
         install.npm_remove) _M="Le paquet reste installé ; pour le retirer aussi : %s" ;;
         install.nothing) _M="Aucun core.hooksPath (%s) : rien à retirer." ;;
-        install.removed) _M="Hooks repogarde retirés (%s)." ;;
-        install.foreign) _M="core.hooksPath (%s) = '%s' n'est pas repogarde : laissé intact." ;;
+        install.removed) _M="Hooks repowarden retirés (%s)." ;;
+        install.foreign) _M="core.hooksPath (%s) = '%s' n'est pas repowarden : laissé intact." ;;
         install.cache_removed) _M="Cache supprimé : %s" ;;
-        install.scan) _M="Dépôts de %s encore branchés sur repogarde :" ;;
+        install.scan) _M="Dépôts de %s encore branchés sur repowarden :" ;;
         install.none) _M="aucun" ;;
-        install.last_step) _M="Dernière étape, à lancer toi-même si tu n'utilises plus repogarde :" ;;
+        install.last_step) _M="Dernière étape, à lancer toi-même si tu n'utilises plus repowarden :" ;;
         install.purge_needs_uninstall) _M="--purge et --scan s'utilisent avec --uninstall." ;;
         install.replaced) _M="core.hooksPath (%s) valait '%s', remplacé." ;;
         install.enabled) _M="Hooks activés (%s) → %s" ;;
         install.local_wins) _M="Un core.hooksPath local (ex. husky) reste prioritaire dans le dépôt concerné." ;;
         install.lang_set) _M="Langue des messages : français (changer : %s --global --lang en)" ;;
         install.lang_invalid) _M="--lang : fr ou en." ;;
+        install.keys_migrated) _M="Réglages repogarde.* (%s) renommés en repowarden.*" ;;
         # Hooks et plugins de langage
         hook.pre_commit.1) _M="Commit refusé : nom de branche non conforme." ;;
         hook.pre_commit.2) _M="Commit direct sur '%s' interdit. Crée une branche : git switch -c feat/ma-feature" ;;
-        hook.pre_commit.3) _M="  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" ;;
+        hook.pre_commit.3) _M="  (désactiver pour ce dépôt : git config repowarden.skip protect-branch)" ;;
         hook.pre_commit.4) _M="Détection de secrets (gitleaks)" ;;
         hook.pre_commit.5) _M="Secret détecté : commit refusé." ;;
         hook.pre_commit.6) _M="gitleaks absent, détection de secrets ignorée (installation : %s)." ;;
@@ -96,7 +97,7 @@ _msg_fr() {
         hook.pre_push.1) _M="Push refusé : nom de branche non conforme." ;;
         hook.pre_push.2) _M="Push direct refusé sur '%s' : elle n'évolue que par Pull Request." ;;
         hook.pre_push.3) _M="  Crée une branche : git switch -c feat/ma-feature, puis ouvre une PR." ;;
-        hook.pre_push.4) _M="  (désactiver pour ce dépôt : git config repogarde.skip protect-branch)" ;;
+        hook.pre_push.4) _M="  (désactiver pour ce dépôt : git config repowarden.skip protect-branch)" ;;
         hook.pre_push.5) _M="%s : aucun fichier modifié, rien à tester." ;;
         hook.pre_push.6) _M="Rien à tester (suppression de branche uniquement)." ;;
         hook.pre_push.7) _M="Pre-push OK" ;;
@@ -106,8 +107,10 @@ _msg_fr() {
         hook.post_merge.2) _M="🧹 Branche locale supprimée (mergée en squash et supprimée sur le serveur) : %s" ;;
         hook.post_merge.3) _M="%s : supprimée sur le serveur mais des modifications manquent ici, conservée." ;;
         hook.post_merge.4) _M="  Pour la supprimer quand même : git branch -D %s" ;;
-        hook.common.3) _M="%s désactivé (git config repogarde.skip)." ;;
-        hook.common.lefthook_ignored) _M="%s : hook installé par lefthook, ignoré (lefthook n'est plus pris en charge depuis repogarde 4). Déplacer ses commandes dans .repogarde/%s, puis : lefthook uninstall" ;;
+        hook.common.3) _M="%s désactivé (git config repowarden.skip)." ;;
+        hook.common.lefthook_ignored) _M="%s : hook installé par lefthook, ignoré (lefthook n'est plus pris en charge depuis repowarden 4). Déplacer ses commandes dans .repowarden/%s, puis : lefthook uninstall" ;;
+        compat.old_names) _M="Ancien nom repogarde encore utilisé (%s) : renommer en repowarden (REPOWARDEN_*, repowarden.*, .repowarden.conf, .repowarden/). Les anciens noms seront ignorés en v5." ;;
+        compat.old_command) _M="La commande repogarde s'appelle désormais repowarden (npm install -g repowarden). L'ancien nom sera retiré en v5." ;;
         hook.common.5) _M="Hook local du projet : %s" ;;
         hook.lang.1) _M="Formatage personnalisé : %s" ;;
         hook.lang.2) _M="%s : %s fichier(s)" ;;
@@ -207,12 +210,12 @@ _msg_fr() {
         ci.check.19) _M="gitleaks absent : lancer ci/install-tool.sh gitleaks avant ce script." ;;
         ci.check.20) _M="Dossier de travail modifié avant la vérification : impossible de contrôler le formatage." ;;
         ci.check.21) _M="Un formateur a échoué (erreur de syntaxe, ou outil / dépendance indisponible) : voir le log ci-dessus." ;;
-        ci.check.22) _M="Corriger : installer les hooks (repogarde install --global) ou lancer le formateur, puis commiter." ;;
+        ci.check.22) _M="Corriger : installer les hooks (repowarden install --global) ou lancer le formateur, puis commiter." ;;
         ci.check.23) _M="Fichiers modifiés correctement formatés." ;;
-        ci.check.24) _M="repogarde CI — base : %s — vérifications : %s" ;;
-        ci.check.25) _M="Désactivé par .repogarde.conf (skip %s)." ;;
+        ci.check.24) _M="repowarden CI — base : %s — vérifications : %s" ;;
+        ci.check.25) _M="Désactivé par .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Échec :%s" ;;
-        ci.check.27) _M="Toutes les vérifications repogarde sont passées." ;;
+        ci.check.27) _M="Toutes les vérifications repowarden sont passées." ;;
         ci.fix_pr.1) _M="PR #%s fermée : doublon de #%s (cible %s)" ;;
         ci.fix_pr.2) _M="PR #%s reciblée : %s → %s (flux %s)" ;;
         ci.fix_pr.3) _M="Titre conforme : %s" ;;
@@ -282,14 +285,14 @@ _msg_fr() {
         ci.section.strict) _M="Mode strict" ;;
         # Notifications
         ci.notify.sent) _M="Message envoyé au canal de l'équipe." ;;
-        ci.notify.failed) _M="Envoi au canal de l'équipe impossible (adresse REPOGARDE_WEBHOOK ?) : release non affectée." ;;
+        ci.notify.failed) _M="Envoi au canal de l'équipe impossible (adresse REPOWARDEN_WEBHOOK ?) : release non affectée." ;;
         ci.notify.released) _M="🚀 %s %s publiée : %s" ;;
         ci.notify.waiting) _M="⏳ %s : la PR de release #%s attend une approbation : %s" ;;
         ci.notify.failure) _M="❌ %s : échec du workflow de release : %s" ;;
         # GitHub CLI
         bot.no_gh) _M="GitHub CLI (gh) requis : https://cli.github.com" ;;
         # Paquet npm
-        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g @simbie/repogarde, puis repogarde install --global." ;;
+        npm.npx_global) _M="npx utilise un dossier temporaire : des hooks globaux pointeraient vers un dossier effacé. Installe d'abord le paquet : npm install -g repowarden, puis repowarden install --global." ;;
         npm.no_npm) _M="npm requis : https://nodejs.org" ;;
         npm.no_package) _M="Aucun package.json à la racine du dépôt." ;;
         npm.old_npm) _M="npm %s trop ancien : 11.15 au minimum (npm install -g npm@11)." ;;
@@ -314,27 +317,27 @@ _msg_fr() {
         npm.token_removed) _M="Secret NPM_TOKEN supprimé du dépôt." ;;
         npm.token_revoked) _M="Jeton temporaire révoqué sur npm." ;;
         npm.done) _M="Terminé : chaque release publie %s sur npm, sans jeton." ;;
-        # Statut (repogarde statut)
+        # Statut (repowarden statut)
         st.hooks_on) _M="Hooks git actifs pour tous les dépôts (cette installation)" ;;
-        st.hooks_repo) _M="Hooks git actifs dans ce dépôt seulement (installation locale ; tous les dépôts : repogarde install --global)" ;;
+        st.hooks_repo) _M="Hooks git actifs dans ce dépôt seulement (installation locale ; tous les dépôts : repowarden install --global)" ;;
         st.hooks_off) _M="Hooks git non activés : aucun contrôle au commit ni au push" ;;
-        st.hooks_other) _M="Hooks git d'une autre installation de repogarde : %s" ;;
+        st.hooks_other) _M="Hooks git d'une autre installation de repowarden : %s" ;;
         st.hooks_foreign) _M="Hooks git d'un autre outil (core.hooksPath = %s) : laissés tels quels" ;;
         st.cc_on) _M="Assistant de commit : git cc" ;;
         st.cc_off) _M="Assistant de commit (git cc) non installé" ;;
-        st.cc_other) _M="git cc pointe vers une autre installation de repogarde" ;;
+        st.cc_other) _M="git cc pointe vers une autre installation de repowarden" ;;
         st.cc_foreign) _M="Alias git cc déjà pris par autre chose : %s" ;;
         st.lang) _M="Langue des messages : %s" ;;
         st.repo) _M="Dépôt : %s" ;;
         st.repo_local) _M="Hooks propres à ce dépôt (core.hooksPath local = %s), prioritaires" ;;
-        st.repo_lefthook) _M="%s présent : lefthook n'est plus pris en charge depuis repogarde 4, ses commandes ne sont pas lancées. Les déplacer dans .repogarde/<hook>, la version attendue dans .repogarde.conf (version)" ;;
-        st.repo_version_old) _M="Le projet demande repogarde %s ; installé : %s" ;;
+        st.repo_lefthook) _M="%s présent : lefthook n'est plus pris en charge depuis repowarden 4, ses commandes ne sont pas lancées. Les déplacer dans .repowarden/<hook>, la version attendue dans .repowarden.conf (version)" ;;
+        st.repo_version_old) _M="Le projet demande repowarden %s ; installé : %s" ;;
         st.repo_version_ok) _M="Version demandée par le projet (%s) : respectée" ;;
         st.repo_forge) _M="Plateforme : %s" ;;
         st.tools) _M="Outils présents : %s · absents : %s (selon les langages des projets)" ;;
         st.next) _M="Étape suivante :" ;;
-        st.ready) _M="Tout est prêt : git cc pour commiter, repogarde code-mort sur une branche." ;;
-        st.help) _M="Toutes les commandes : repogarde --help" ;;
+        st.ready) _M="Tout est prêt : git cc pour commiter, repowarden code-mort sur une branche." ;;
+        st.help) _M="Toutes les commandes : repowarden --help" ;;
         # Tickets
         tk.none) _M="Aucun ticket relié : ajouter « Ticket : #12 » à la description de la PR, ou nommer la branche feat/12-sujet." ;;
         tk.waiting) _M="Ticket %s à valider : un mainteneur pose l'étiquette « %s » sur le ticket." ;;
@@ -347,7 +350,7 @@ _msg_fr() {
         tk.init_exists) _M="%s existe déjà : laissé tel quel." ;;
         tk.init_written) _M="%s créé." ;;
         tk.init_done) _M="Suivi des tickets prêt." ;;
-        tk.init_next) _M="Ensuite : committer ces fichiers ; exiger la vérification « ticket » (repogarde proteger --checks \"…,ticket\") ; dans release.yml, brancher le job tickets (voir la doc Tickets)." ;;
+        tk.init_next) _M="Ensuite : committer ces fichiers ; exiger la vérification « ticket » (repowarden proteger --checks \"…,ticket\") ; dans release.yml, brancher le job tickets (voir la doc Tickets)." ;;
         tk.prerelease) _M="Disponible en préversion **%s** : à tester avant la production." ;;
         tk.released) _M="Publié dans **%s**." ;;
         *) _M="" ;;

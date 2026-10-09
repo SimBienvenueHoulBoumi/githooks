@@ -55,7 +55,7 @@ run_fixture() {
     git config user.email e2e@example.com
     git config commit.gpgsign false
     git config core.hooksPath "$HOOKS"
-    git config repogarde.skip secrets
+    git config repowarden.skip secrets
 
     if [ -n "$SETUP" ]; then
         log "▶ installation : $SETUP"
@@ -65,8 +65,8 @@ run_fixture() {
     git commit -q --no-verify -m "chore: projet de départ"
     base="$(git rev-parse HEAD)"
     git switch -q -c feat/e2e
-    export REPOGARDE_BASE="$base" REPOGARDE_BRANCH=feat/e2e
-    [ -n "${E2E_STRICT:-}" ] && export REPOGARDE_STRICT=true
+    export REPOWARDEN_BASE="$base" REPOWARDEN_BRANCH=feat/e2e
+    [ -n "${E2E_STRICT:-}" ] && export REPOWARDEN_STRICT=true
 
     # 1. Formatage au commit
     if [ -d "$fixture/bad" ]; then

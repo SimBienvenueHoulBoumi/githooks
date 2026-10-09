@@ -46,7 +46,7 @@ if ! skipped protect-branch; then
     done <<<"$REFS"
 fi
 
-skipped tests && { info "Tests désactivés (repogarde.skip)."; exit 0; }
+skipped tests && { info "Tests désactivés (repowarden.skip)."; exit 0; }
 
 REMOTE="${1:-origin}"
 
@@ -71,7 +71,7 @@ changed_files() {
 run_tests_for() { test_projects <"$1"; }
 
 TESTED=""
-CHANGED="$(git rev-parse --absolute-git-dir)/repogarde-changed-files"
+CHANGED="$(git rev-parse --absolute-git-dir)/repowarden-changed-files"
 while read -r _ local_sha _ remote_sha; do
     # suppression de branche : rien à tester
     if [ -z "$local_sha" ] || [[ "$local_sha" =~ ^0+$ ]]; then continue; fi

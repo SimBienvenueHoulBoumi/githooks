@@ -10,15 +10,15 @@ setup() {
     # contexte CI : pas de hooks (prepare-commit-msg corrigerait les messages testés)
     mkdir -p "$BATS_TEST_TMPDIR/nohooks"
     git config core.hooksPath "$BATS_TEST_TMPDIR/nohooks"
-    git config --unset repogarde.skip # contexte CI : aucune config locale
+    git config --unset repowarden.skip # contexte CI : aucune config locale
     initial_commit
     BASE_SHA="$(git rev-parse HEAD)"
     git switch -q -c feat/x
-    export REPOGARDE_BASE="$BASE_SHA" REPOGARDE_BRANCH=feat/x
+    export REPOWARDEN_BASE="$BASE_SHA" REPOWARDEN_BRANCH=feat/x
     # isole des variables CI de l'environnement d'exécution
     unset GITHUB_ACTIONS GITHUB_BASE_REF GITHUB_HEAD_REF GITHUB_REF_NAME CI_COMMIT_BRANCH \
         CI_MERGE_REQUEST_SOURCE_BRANCH_NAME CI_MERGE_REQUEST_DIFF_BASE_SHA \
-        CI_MERGE_REQUEST_TARGET_BRANCH_NAME REPOGARDE_TARGET
+        CI_MERGE_REQUEST_TARGET_BRANCH_NAME REPOWARDEN_TARGET
 }
 
 @test "ci : commits conformes" {
@@ -47,13 +47,13 @@ setup() {
 @test "ci : nom de branche" {
     run "$CHECK" branch
     [ "$status" -eq 0 ]
-    REPOGARDE_BRANCH=Mauvais run "$CHECK" branch
+    REPOWARDEN_BRANCH=Mauvais run "$CHECK" branch
     [ "$status" -ne 0 ]
     [[ "$output" == *"feat/mauvais"* ]]
 }
 
 @test "ci : branche detectee depuis les variables GitLab" {
-    unset REPOGARDE_BRANCH
+    unset REPOWARDEN_BRANCH
     CI_COMMIT_BRANCH=Mauvais run "$CHECK" branch
     [ "$status" -ne 0 ]
     CI_MERGE_REQUEST_SOURCE_BRANCH_NAME=fix/ok run "$CHECK" branch
@@ -61,7 +61,7 @@ setup() {
 }
 
 @test "ci : tag, pas de verification de branche" {
-    unset REPOGARDE_BRANCH
+    unset REPOWARDEN_BRANCH
     CI_COMMIT_TAG=v1.0.0 CI_COMMIT_BRANCH="" run "$CHECK" branch
     [ "$status" -eq 0 ]
 }
@@ -105,14 +105,14 @@ setup() {
     [ "$status" -ne 0 ]
 }
 
-@test "ci : skip via .repogarde.conf versionne" {
+@test "ci : skip via .repowarden.conf versionne" {
     git commit -q --no-verify --allow-empty -m "wip"
-    printf '[repogarde]\n\tskip = commit-msg\n' >.repogarde.conf
-    git add .repogarde.conf
+    printf '[repowarden]\n\tskip = commit-msg\n' >.repowarden.conf
+    git add .repowarden.conf
     git commit -q --no-verify -m "chore: conf"
     run "$CHECK" commits
     [ "$status" -eq 0 ]
-    [[ "$output" == *"Désactivé par .repogarde.conf"* ]]
+    [[ "$output" == *"Désactivé par .repowarden.conf"* ]]
 }
 
 @test "ci : mode strict, outil manquant = echec" {
@@ -120,7 +120,7 @@ setup() {
     printf 'const a=1\n' >a.js
     git add -A
     git commit -q --no-verify -m "feat: js"
-    run env PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" REPOGARDE_STRICT=true "$CHECK" format
+    run env PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" REPOWARDEN_STRICT=true "$CHECK" format
     [ "$status" -ne 0 ]
     [[ "$output" == *"prettier introuvable"* ]]
 }
@@ -128,7 +128,7 @@ setup() {
 @test "ci : annotations GitHub" {
     git commit -q --no-verify --allow-empty -m "wip"
     GITHUB_ACTIONS=true run "$CHECK" commits
-    [[ "$output" == *"::error title=repogarde::"* ]]
+    [[ "$output" == *"::error title=repowarden::"* ]]
 }
 
 @test "ci : verification inconnue" {
@@ -147,10 +147,10 @@ setup() {
 
 @test "ci : titre de PR conforme / non conforme (message du commit en squash)" {
     git commit -q --no-verify --allow-empty -m "feat: a"
-    REPOGARDE_PR_TITLE="feat(api): ajoute la route" run "$CHECK" commits
+    REPOWARDEN_PR_TITLE="feat(api): ajoute la route" run "$CHECK" commits
     [ "$status" -eq 0 ]
     [[ "$output" == *"Titre de la PR conforme"* ]]
-    REPOGARDE_PR_TITLE="Ajout de la route" run "$CHECK" commits
+    REPOWARDEN_PR_TITLE="Ajout de la route" run "$CHECK" commits
     [ "$status" -ne 0 ]
     [[ "$output" == *"Titre de la PR « Ajout de la route »"* ]]
 }
@@ -161,7 +161,7 @@ setup() {
     printf '# Doc\n' >docs/index.md
     git add -A
     git commit -q --no-verify -m "docs: site"
-    run env REPOGARDE_STRICT=true PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" "$CHECK" tests
+    run env REPOWARDEN_STRICT=true PATH="$(dirname "$(command -v git)"):/usr/bin:/bin" "$CHECK" tests
     [ "$status" -eq 0 ]
     [[ "$output" == *"Python : aucun test"* ]]
     [[ "$output" != *"pytest absent"* ]]
@@ -186,35 +186,35 @@ setup() {
 }
 
 @test "ci : flux develop, cibles de PR autorisees" {
-    git config repogarde.integrationBranch develop
-    git config repogarde.allowedBranches "main develop release/* release-please--* dependabot/*"
+    git config repowarden.integrationBranch develop
+    git config repowarden.allowedBranches "main develop release/* release-please--* dependabot/*"
     for paire in feat/x:develop develop:main release/1.2.0:develop hotfix/crash:develop \
         dependabot/maven/x:develop release-please--branches--main:main; do
-        REPOGARDE_BRANCH="${paire%%:*}" REPOGARDE_TARGET="${paire#*:}" run "$CHECK" branch
+        REPOWARDEN_BRANCH="${paire%%:*}" REPOWARDEN_TARGET="${paire#*:}" run "$CHECK" branch
         [ "$status" -eq 0 ] || { echo "devrait passer : $paire"; echo "$output"; return 1; }
     done
 }
 
 @test "ci : flux develop, seul develop entre dans main (hotfix et release compris)" {
-    git config repogarde.integrationBranch develop
+    git config repowarden.integrationBranch develop
     for b in hotfix/crash release/1.2.0 fix/x; do
-        REPOGARDE_BRANCH="$b" REPOGARDE_TARGET=main run "$CHECK" branch
+        REPOWARDEN_BRANCH="$b" REPOWARDEN_TARGET=main run "$CHECK" branch
         [ "$status" -ne 0 ] || { echo "devrait être refusée vers main : $b"; return 1; }
     done
 }
 
 @test "ci : flux develop, mauvaise cible refusee avec la correction" {
-    git config repogarde.integrationBranch develop
-    REPOGARDE_TARGET=main run "$CHECK" branch
+    git config repowarden.integrationBranch develop
+    REPOWARDEN_TARGET=main run "$CHECK" branch
     [ "$status" -ne 0 ]
     [[ "$output" == *"cible attendue develop"* ]]
     [[ "$output" == *"gh pr edit --base develop"* ]]
-    REPOGARDE_BRANCH=develop REPOGARDE_TARGET=release/1.0.0 run "$CHECK" branch
+    REPOWARDEN_BRANCH=develop REPOWARDEN_TARGET=release/1.0.0 run "$CHECK" branch
     [ "$status" -ne 0 ]
 }
 
 @test "ci : sans integrationBranch, toute cible acceptee" {
-    REPOGARDE_TARGET=develop run "$CHECK" branch
+    REPOWARDEN_TARGET=develop run "$CHECK" branch
     [ "$status" -eq 0 ]
     [[ "$output" != *"Cible"* ]]
 }
@@ -241,7 +241,7 @@ GH
 
 # main et develop sur le remote, branche feat/x avec un commit
 flux_develop() {
-    git config repogarde.integrationBranch develop
+    git config repowarden.integrationBranch develop
     git push -q origin HEAD:main HEAD:develop
     git fetch -q origin
     git commit -q --allow-empty -m "feat(panier): ajoute le panier"
@@ -255,8 +255,8 @@ flux_develop() {
     [ "$status" -eq 0 ]
     grep -q "pr edit 7 --base develop" "$GH_LOG"
     ! grep -q -- "--title" "$GH_LOG"
-    grep -q "^REPOGARDE_FIXED_TARGET=develop$" "$GITHUB_ENV"
-    grep -q "^REPOGARDE_FIXED_BASE=$BASE_SHA$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_FIXED_TARGET=develop$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_FIXED_BASE=$BASE_SHA$" "$GITHUB_ENV"
 }
 
 @test "fix-pr : doublon ferme au lieu d'etre recible" {
@@ -266,7 +266,7 @@ flux_develop() {
     [ "$status" -eq 0 ]
     grep -q "pr close 7 --comment Doublon de #3" "$GH_LOG"
     ! grep -q -- "--base" "$GH_LOG"
-    grep -q "^REPOGARDE_PR_CLOSED=true$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_PR_CLOSED=true$" "$GITHUB_ENV"
 }
 
 @test "fix-pr : titre non conforme remplace par le commit unique" {
@@ -275,7 +275,7 @@ flux_develop() {
     BASE=develop TITLE="Feat/x" run "$FIX"
     [ "$status" -eq 0 ]
     grep -q "pr edit 7 --title feat(panier): ajoute le panier" "$GH_LOG"
-    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
 }
 
 @test "fix-pr : plusieurs commits -> celui au plus fort impact de version" {
@@ -286,7 +286,7 @@ flux_develop() {
     export HEAD_SHA="$(git rev-parse HEAD)"
     BASE=develop TITLE="Ajout du panier" run "$FIX"
     [ "$status" -eq 0 ]
-    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_FIXED_TITLE=feat(panier): ajoute le panier$" "$GITHUB_ENV"
 }
 
 @test "fix-pr : pied BREAKING CHANGE -> ! ajoute au titre" {
@@ -296,24 +296,24 @@ flux_develop() {
     export HEAD_SHA="$(git rev-parse HEAD)"
     BASE=develop TITLE="wip" run "$FIX"
     [ "$status" -eq 0 ]
-    grep -q "^REPOGARDE_FIXED_TITLE=feat(panier)!: ajoute le panier$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_FIXED_TITLE=feat(panier)!: ajoute le panier$" "$GITHUB_ENV"
 }
 
 @test "fix-pr : aucun commit conforme -> titre deduit de la branche" {
     fake_gh
-    git config repogarde.integrationBranch develop
+    git config repowarden.integrationBranch develop
     git push -q origin HEAD:main HEAD:develop
     git fetch -q origin
     git commit -q --no-verify --allow-empty -m "wip"
     export HEAD=feat/ajout-du-panier HEAD_SHA="$(git rev-parse HEAD)"
     BASE=develop TITLE="Ajout du panier" run "$FIX"
     [ "$status" -eq 0 ]
-    grep -q "^REPOGARDE_FIXED_TITLE=feat: ajout du panier$" "$GITHUB_ENV"
+    grep -q "^REPOWARDEN_FIXED_TITLE=feat: ajout du panier$" "$GITHUB_ENV"
 }
 
 @test "titres deduits des branches" {
     source "$BATS_TEST_DIRNAME/../hooks/lib/common.sh"
-    git config repogarde.integrationBranch develop
+    git config repowarden.integrationBranch develop
     cfg_load
     for paire in "hotfix/crash-login:fix: crash login" "release/1.2.0:chore(release): 1.2.0" \
         "develop:chore(release): livrer develop sur main" "wip:chore: wip" \
@@ -325,7 +325,7 @@ flux_develop() {
     header_valid "$REPLY" || { echo "trop long : $REPLY"; return 1; }
 }
 
-# --- bin/proteger (protection GitHub d'après .repogarde.conf) : gh simulé --------
+# --- bin/proteger (protection GitHub d'après .repowarden.conf) : gh simulé --------
 
 PROTEGER="$BATS_TEST_DIRNAME/../bin/proteger"
 
@@ -367,9 +367,9 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     GH_BRANCHES="main" run "$PROTEGER" --dry-run
     [ "$status" -eq 0 ]
     python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==2; b,t=r; \
-        assert b["name"]=="repogarde" and b["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
+        assert b["name"]=="repowarden" and b["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
         assert b["rules"][2]["parameters"]["allowed_merge_methods"]==["squash"]; \
-        assert b["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repogarde"; \
+        assert b["rules"][3]["parameters"]["required_status_checks"][0]["context"]=="repowarden"; \
         assert t["target"]=="tag" and t["conditions"]["ref_name"]["include"]==["refs/tags/v*"]' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : true"* ]]
     [[ "$output" != *"branche par défaut"* ]]
@@ -378,31 +378,31 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
 @test "proteger : flux develop -> main en merge commit, develop squash ou merge, defaut develop" {
     require python3
     fake_gh_repo
-    git config repogarde.integrationBranch develop
-    git config repogarde.protectedBranches "main develop"
-    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde, tests (ubuntu-latest)"
+    git config repowarden.integrationBranch develop
+    git config repowarden.protectedBranches "main develop"
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repowarden, tests (ubuntu-latest)"
     [ "$status" -eq 0 ]
     python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==3; m,d,t=r; \
         assert m["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
         assert m["rules"][2]["parameters"]["allowed_merge_methods"]==["merge"]; \
-        assert d["name"]=="repogarde (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
+        assert d["name"]=="repowarden (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
         assert d["rules"][2]["parameters"]["allowed_merge_methods"]==["squash","merge"]; \
-        assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","tests (ubuntu-latest)"]; \
+        assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repowarden","tests (ubuntu-latest)"]; \
         assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is True; \
         assert d["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert m["bypass_actors"]==[] and d["bypass_actors"]==[]; \
         assert m["rules"][2]["parameters"]["required_approving_review_count"]==1; \
         assert m["rules"][2]["parameters"]["require_last_push_approval"] is False; \
         assert d["rules"][2]["parameters"]["required_approving_review_count"]==0; \
-        assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
+        assert t["name"]=="repowarden (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]
     [[ "$output" == *"livraison vers main : 1 approbation(s) exigée(s)"* ]]
     # sans workflow de nettoyage : avertissement ; avec : rien
     [[ "$output" == *"ajouter un workflow qui appelle nettoyage-branches.yml"* ]]
     mkdir -p .github/workflows
-    printf 'jobs:\n  n:\n    uses: o/r/.github/workflows/nettoyage-branches.yml@v3\n' >.github/workflows/nettoyage.yml
-    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repogarde"
+    printf 'jobs:\n  n:\n    uses: o/r/.github/workflows/nettoyage-branches.yml@v4\n' >.github/workflows/nettoyage.yml
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repowarden"
     [[ "$output" != *"nettoyage-branches.yml"* ]]
 }
 
@@ -419,11 +419,11 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     [ "$status" -ne 0 ]
 }
 
-@test "proteger : reglages lus dans .repogarde.conf" {
+@test "proteger : reglages lus dans .repowarden.conf" {
     require python3
     fake_gh_repo
-    git config repogarde.requiredReviews 1
-    git config repogarde.codeOwnerReview true
+    git config repowarden.requiredReviews 1
+    git config repowarden.codeOwnerReview true
     GH_BRANCHES="main" run "$PROTEGER" --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"approbations exigées : 1 ; revue des CODEOWNERS : true"* ]]
@@ -477,18 +477,18 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     long="fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod group"
     GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com" \
         git commit -q --no-verify --allow-empty -m "$long"
-    REPOGARDE_BRANCH=dependabot/maven/prod REPOGARDE_PR_TITLE="$long" run "$CHECK" commits
+    REPOWARDEN_BRANCH=dependabot/maven/prod REPOWARDEN_PR_TITLE="$long" run "$CHECK" commits
     [ "$status" -eq 0 ]
     GIT_AUTHOR_EMAIL="29139614+renovate[bot]@users.noreply.github.com" \
         git commit -q --no-verify --allow-empty -m "Update dependency x"
-    REPOGARDE_BRANCH=renovate/x run "$CHECK" commits
+    REPOWARDEN_BRANCH=renovate/x run "$CHECK" commits
     [ "$status" -ne 0 ]
     [[ "$output" == *"« Update dependency x »"* ]]
 }
 
 @test "ci : humain -> longueur toujours limitee, aide sans force push en premier" {
     git commit -q --no-verify --allow-empty -m "fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod group"
-    REPOGARDE_PR_TITLE="fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod" run "$CHECK" commits
+    REPOWARDEN_PR_TITLE="fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod" run "$CHECK" commits
     [ "$status" -ne 0 ]
     [[ "$output" == *"72 caractères"* ]]
     [[ "$output" == *"le corriger suffit"* ]]
@@ -555,11 +555,11 @@ c() { git commit -q --no-verify --allow-empty -m "$1"; }
 
 @test "langue en CI : anglais par defaut, langue du projet si reglee" {
     git commit -q --no-verify --allow-empty -m "wip"
-    REPOGARDE_LANG= CI=true GIT_CONFIG_GLOBAL=/dev/null run "$CHECK" commits
+    REPOWARDEN_LANG= CI=true GIT_CONFIG_GLOBAL=/dev/null run "$CHECK" commits
     [ "$status" -ne 0 ]
     [[ "$output" == *"expected format <type>(<scope>)"* ]]
-    printf '[repogarde]\n\tlang = fr\n' >.repogarde.conf
-    REPOGARDE_LANG= CI=true GIT_CONFIG_GLOBAL=/dev/null run "$CHECK" commits
+    printf '[repowarden]\n\tlang = fr\n' >.repowarden.conf
+    REPOWARDEN_LANG= CI=true GIT_CONFIG_GLOBAL=/dev/null run "$CHECK" commits
     [[ "$output" == *"format attendu <type>(<scope>)"* ]]
 }
 
@@ -567,7 +567,7 @@ c() { git commit -q --no-verify --allow-empty -m "$1"; }
     git tag v1.0.0
     c "feat: panier"
     c "fix: arrondi"
-    REPOGARDE_LANG=en run "$VERSION" notes
+    REPOWARDEN_LANG=en run "$VERSION" notes
     [[ "$output" == *"### Features"*"### Bug fixes"* ]]
     [[ "$output" == *"_Since v1.0.0._"* ]]
 }
@@ -601,7 +601,7 @@ python_dead_code() {
     printf 'import os\ndef ancienne():\n    pass\n' >ancien.py
     git add -A
     git commit -q --no-verify -m "chore: base"
-    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    export REPOWARDEN_BASE="$(git rev-parse HEAD)"
     printf 'import os\ndef aide():\n    pass\n' >nouveau.py
     git add -A
     git commit -q --no-verify -m "feat: nouveau"
@@ -621,11 +621,11 @@ python_dead_code() {
 @test "code mort : modes warn (rien ne bloque) et strict (candidats compris)" {
     fake_python_tools
     python_dead_code
-    git config repogarde.deadcode warn
+    git config repowarden.deadcode warn
     run "$CHECK" deadcode
     [ "$status" -eq 0 ]
-    git config repogarde.deadcode strict
-    git config repogarde.deadcodeIgnore "nouveau.py"
+    git config repowarden.deadcode strict
+    git config repowarden.deadcodeIgnore "nouveau.py"
     run "$CHECK" deadcode
     [ "$status" -eq 0 ]
     [[ "$output" == *"Aucun nouveau code mort"* ]]
@@ -637,7 +637,7 @@ python_dead_code() {
     for t in ruff vulture; do printf '#!/bin/sh\nexit 127\n' >"$BATS_TEST_TMPDIR/bin/$t"; chmod +x "$BATS_TEST_TMPDIR/bin/$t"; done
     export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
     python_dead_code
-    REPOGARDE_STRICT=true run "$CHECK" deadcode
+    REPOWARDEN_STRICT=true run "$CHECK" deadcode
     [ "$status" -eq 0 ]
     [[ "$output" == *"ruff / vulture absent"* ]]
 }
@@ -650,7 +650,7 @@ python_dead_code() {
     echo "<project/>" >pom.xml
     git add -A
     git commit -q --no-verify -m "chore: base"
-    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    export REPOWARDEN_BASE="$(git rev-parse HEAD)"
     printf 'package a;\n\nimport x;\nclass A {}\n' >src/a/A.java
     git add -A
     git commit -q --no-verify -m "feat: a"
@@ -677,29 +677,29 @@ T
 @test "notification : format adapte a Slack, Discord, Teams ; texte echappe" {
     require python3
     fake_curl
-    REPOGARDE_WEBHOOK=https://hooks.slack.com/services/x run "$NOTIFIER" ci.notify.released 'acme/app' 'v1.2.0' 'https://x/"y"'
+    REPOWARDEN_WEBHOOK=https://hooks.slack.com/services/x run "$NOTIFIER" ci.notify.released 'acme/app' 'v1.2.0' 'https://x/"y"'
     [ "$status" -eq 0 ]
     python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert d["text"]=="🚀 acme/app v1.2.0 publiée : https://x/\"y\""' "$CURL_BODY"
-    REPOGARDE_WEBHOOK=https://discord.com/api/webhooks/x run "$NOTIFIER" ci.notify.failure acme/app https://run
+    REPOWARDEN_WEBHOOK=https://discord.com/api/webhooks/x run "$NOTIFIER" ci.notify.failure acme/app https://run
     python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert d["content"].startswith("❌ acme/app")' "$CURL_BODY"
-    REPOGARDE_WEBHOOK=https://prod-01.westeurope.logic.azure.com/workflows/x run "$NOTIFIER" ci.notify.waiting acme/app 12 https://pr
+    REPOWARDEN_WEBHOOK=https://prod-01.westeurope.logic.azure.com/workflows/x run "$NOTIFIER" ci.notify.waiting acme/app 12 https://pr
     python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert "#12" in d["attachments"][0]["content"]["body"][0]["text"]' "$CURL_BODY"
 }
 
 @test "notification : sans adresse rien n'est envoye ; un echec d'envoi ne casse rien" {
     fake_curl
     rm -f "$CURL_BODY"
-    REPOGARDE_WEBHOOK= run "$NOTIFIER" ci.notify.released a v1 u
+    REPOWARDEN_WEBHOOK= run "$NOTIFIER" ci.notify.released a v1 u
     [ "$status" -eq 0 ]
     [ ! -e "$CURL_BODY" ]
-    CURL_EXIT=22 REPOGARDE_WEBHOOK=https://hooks.slack.com/x run "$NOTIFIER" ci.notify.released a v1 u
+    CURL_EXIT=22 REPOWARDEN_WEBHOOK=https://hooks.slack.com/x run "$NOTIFIER" ci.notify.released a v1 u
     [ "$status" -eq 0 ]
     [[ "$output" == *"release non affectée"* ]]
 }
 
 @test "code mort : script isole sans fichier de projet -> analyse quand meme" {
     fake_python_tools
-    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    export REPOWARDEN_BASE="$(git rev-parse HEAD)"
     printf 'import os\ndef aide():\n    pass\n' >script.py
     git add -A
     git commit -q --no-verify -m "feat: script"
@@ -709,7 +709,7 @@ T
 }
 
 @test "code mort : aucun fichier analysable -> le dire, sans pretendre que tout va bien" {
-    export REPOGARDE_BASE="$(git rev-parse HEAD)"
+    export REPOWARDEN_BASE="$(git rev-parse HEAD)"
     echo note >NOTES.txt
     git add -A
     git commit -q --no-verify -m "docs: note"
@@ -740,7 +740,7 @@ case "$*" in
     "pr view "*"--json state"*) echo OPEN ;;
     "pr view "*"mergeStateStatus"*) echo CLEAN ;;
     "api repos/"*"/commits/"*) echo abc123 ;;
-    "api repos/"*"/rules/branches/"*) echo repogarde ;;
+    "api repos/"*"/rules/branches/"*) echo repowarden ;;
     "run list "*) echo 101 ;;
     "run view 101 --json jobs"*) echo success ;;
     "run view 101 --json url"*) echo https://exemple/run/101 ;;
@@ -759,7 +759,7 @@ GH
     run bash "$BATS_TEST_DIRNAME/../ci/merger-pr.sh" 9 merge
     [ "$status" -eq 0 ]
     grep -qx "workflow run ci.yml --ref main" "$GH_LOG"
-    grep -q "api repos/o/r/statuses/abc123 -f state=success -f context=repogarde" "$GH_LOG"
+    grep -q "api repos/o/r/statuses/abc123 -f state=success -f context=repowarden" "$GH_LOG"
     grep -qx "pr merge 9 --merge --match-head-commit abc123" "$GH_LOG"
     grep -qx "merged=true" "$GITHUB_OUTPUT"
     # retour vers develop : la branche source (main) n'est jamais supprimée
@@ -783,9 +783,9 @@ GH
     [[ "$output" != *"JavaScript"* ]]
 }
 
-@test "langue : scripts sans configuration complete -> lang du .repogarde.conf (meme en CI)" {
-    printf '[repogarde]\n    lang = fr\n' >.repogarde.conf
-    run env -u REPOGARDE_LANG CI=true GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
-        bash -c "source '$HOOKS/lib/ui.sh'; source '$HOOKS/lib/i18n.sh'; echo \$REPOGARDE_LANG"
+@test "langue : scripts sans configuration complete -> lang du .repowarden.conf (meme en CI)" {
+    printf '[repowarden]\n    lang = fr\n' >.repowarden.conf
+    run env -u REPOWARDEN_LANG CI=true GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+        bash -c "source '$HOOKS/lib/ui.sh'; source '$HOOKS/lib/i18n.sh'; echo \$REPOWARDEN_LANG"
     [ "$output" = fr ]
 }

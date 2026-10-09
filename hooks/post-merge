@@ -24,7 +24,7 @@ squash_merged() {
     local base tree summary
     base="$(git merge-base HEAD "$1")" || return 1
     tree="$(git rev-parse "$1^{tree}")"
-    summary="$(git commit-tree "$tree" -p "$base" -m repogarde-squash-check)"
+    summary="$(git commit-tree "$tree" -p "$base" -m repowarden-squash-check)"
     [[ "$(git cherry HEAD "$summary")" == "-"* ]]
 }
 

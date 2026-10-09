@@ -1,0 +1,58 @@
+# Template GitLab CI : mêmes règles que les hooks repowarden, en CI (non contournable).
+#
+# Dans le .gitlab-ci.yml du projet :
+#
+#   include:
+#     # repowarden hébergé sur votre GitLab (recommandé) :
+#     - project: outils/repowarden
+#       ref: v4 # dernière 4.x (vX.Y.Z pour figer)
+#       file: templates/gitlab/repowarden.gitlab-ci.yml
+#     # ou depuis GitHub (dépôt public) :
+#     # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repowarden/v4/templates/gitlab/repowarden.gitlab-ci.yml
+#
+#   repowarden:
+#     image: votre-image-avec-les-outils-du-projet  # JDK, node, python…
+#
+# Variables surchargeables : REPOWARDEN_URL, REPOWARDEN_REF, REPOWARDEN_CHECKS,
+# REPOWARDEN_STRICT, GITLEAKS_VERSION. Prérequis de l'image : bash, git, curl.
+#
+# Linters (optionnel) : REPOWARDEN_MEGALINTER: "true" ajoute le job
+# repowarden-megalinter (MegaLinter, fichiers modifiés, config .mega-linter.yml).
+
+.repowarden:
+  stage: test
+  variables:
+    GIT_DEPTH: "0"
+    REPOWARDEN_URL: https://github.com/SimBienvenueHoulBoumi/repowarden.git
+    REPOWARDEN_REF: v4 # dernière 4.x (vX.Y.Z pour figer)
+    REPOWARDEN_CHECKS: commits branch secrets format tests deadcode
+    REPOWARDEN_STRICT: "false"
+    GITLEAKS_VERSION: 8.30.1
+    REPOWARDEN_BIN: $CI_PROJECT_DIR/.repowarden-bin
+  script:
+    - git clone --quiet --depth 1 --branch "$REPOWARDEN_REF" "$REPOWARDEN_URL" /tmp/repowarden
+    - case " $REPOWARDEN_CHECKS " in *" secrets "*) bash /tmp/repowarden/ci/install-tool.sh gitleaks ;; esac
+    - bash /tmp/repowarden/ci/check.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+repowarden:
+  extends: .repowarden
+
+repowarden-megalinter:
+  stage: test
+  image: oxsecurity/megalinter:v10.1.0
+  variables:
+    GIT_DEPTH: "0"
+    DEFAULT_WORKSPACE: $CI_PROJECT_DIR
+    VALIDATE_ALL_CODEBASE: "false"
+  # MegaLinter s'exécute dans le point d'entrée de l'image
+  script: ["true"]
+  rules:
+    - if: $REPOWARDEN_MEGALINTER == "true" && $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $REPOWARDEN_MEGALINTER == "true" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $REPOWARDEN_MEGALINTER == "true" && $CI_COMMIT_BRANCH

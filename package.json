@@ -1,5 +1,5 @@
 {
-  "name": "@simbie/repogarde",
+  "name": "repowarden",
   "version": "0.0.0-dev",
   "description": "Hooks git et CI multi-langages : messages de commit, nommage des branches, secrets, formatage, tests ciblés, code mort, releases.",
   "keywords": [
@@ -10,15 +10,16 @@
     "ci",
     "release"
   ],
-  "homepage": "https://simbienvenuehoulboumi.github.io/repogarde/",
-  "bugs": "https://github.com/SimBienvenueHoulBoumi/repogarde/issues",
+  "homepage": "https://simbienvenuehoulboumi.github.io/repowarden/",
+  "bugs": "https://github.com/SimBienvenueHoulBoumi/repowarden/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimBienvenueHoulBoumi/repogarde.git"
+    "url": "git+https://github.com/SimBienvenueHoulBoumi/repowarden.git"
   },
   "license": "MIT",
   "author": "SimBienvenueHoulBoumi (https://github.com/SimBienvenueHoulBoumi)",
   "bin": {
+    "repowarden": "bin/repowarden",
     "repogarde": "bin/repogarde"
   },
   "files": [

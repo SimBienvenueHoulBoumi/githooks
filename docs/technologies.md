@@ -55,7 +55,7 @@ Détectées automatiquement ; chacune est **vérifiée en CI sur un vrai projet*
 ¹ multi-module : build depuis le projet parent le plus haut. ² formate aussi les fichiers isolés, hors de tout projet.
 
 !!! note "Infrastructure"
-    Pour l'infrastructure, l'étape « tests » est une **validation** (lint, rendu, schémas) : rien n'est déployé. Schémas Kubernetes et providers Terraform sont mis en cache (`~/.cache/repogarde`).
+    Pour l'infrastructure, l'étape « tests » est une **validation** (lint, rendu, schémas) : rien n'est déployé. Schémas Kubernetes et providers Terraform sont mis en cache (`~/.cache/repowarden`).
 
 **Outil absent** : ignoré sur le poste (avertissement dans un projet, silence pour un fichier isolé) ; bloquant en CI avec le [mode strict](ci.md).
 

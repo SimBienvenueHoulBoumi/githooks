@@ -1,14 +1,14 @@
 # Configuration
 
-Everything is optional: without configuration, repogarde detects the languages and applies the default rules.
+Everything is optional: without configuration, repowarden detects the languages and applies the default rules.
 
-## `.repogarde.conf` file (shared)
+## `.repowarden.conf` file (shared)
 
 Versioned at the project root, in `git config` format, read **by the hooks and by the CI**: an exception agreed during review applies everywhere.
 
 ```ini
-[repogarde]
-    version = 3.1                       # minimum repogarde version expected on developer machines
+[repowarden]
+    version = 3.1                       # minimum repowarden version expected on developer machines
     # Custom commands: replace automatic detection
     format = npm run lint:fix --        # receives the staged files as arguments
     test = make ci                      # run at the root; modified files on standard input
@@ -20,14 +20,14 @@ Versioned at the project root, in `git config` format, read **by the hooks and b
 ```
 
 
-`version`: if repogarde is older on a machine, the hooks say so with the update command (`npm update -g @simbie/repogarde`, or `git pull` for a clone). It is a warning only: the CI checks every PR at its own version.
+`version`: if repowarden is older on a machine, the hooks say so with the update command (`npm update -g repowarden`, or `git pull` for a clone). It is a warning only: the CI checks every PR at its own version.
 
 ## Integration branch flow (`develop`)
 
 By default, everything starts from `main` and returns to it through a PR. For a flow with two long-lived branches, where work is integrated into `develop` and then delivered to `main`:
 
 ```ini
-[repogarde]
+[repowarden]
     integrationBranch = develop     # enables the flow
     mainBranch = main               # default: main
     protectedBranches = main develop
@@ -48,13 +48,13 @@ A wrongly targeted PR is rejected, with the command to fix it (`gh pr edit --bas
 
 ## Local settings (not shared)
 
-Take precedence over `.repogarde.conf`:
+Take precedence over `.repowarden.conf`:
 
 ```bash
-git config repogarde.skip true                    # disables everything
-git config repogarde.skip "pre-push"              # disables a hook
-git config repogarde.skip "protect-branch,format" # disables steps
-git config repogarde.skip "node"                  # disables a language
+git config repowarden.skip true                    # disables everything
+git config repowarden.skip "pre-push"              # disables a hook
+git config repowarden.skip "protect-branch,format" # disables steps
+git config repowarden.skip "node"                  # disables a language
 ```
 
 ## What can be disabled (`skip`)
@@ -68,32 +68,32 @@ git config repogarde.skip "node"                  # disables a language
 
 ## Project-specific hooks
 
-An executable script `.repogarde/<hook>` (or `.git/hooks/<hook>`) is also run, before the common checks. This is where the project's own commands go (lefthook is no longer supported since repogarde 4: a hook installed by lefthook in `.git/hooks` is ignored, with a warning).
+An executable script `.repowarden/<hook>` (or `.git/hooks/<hook>`) is also run, before the common checks. This is where the project's own commands go (lefthook is no longer supported since repowarden 4: a hook installed by lefthook in `.git/hooks` is ignored, with a warning).
 
 ## Output
 
-All repogarde messages (hooks, CI, `git cc` assistant, installation) follow the same style: `✔` success in green, `✖` error in red, `⚠` warning in yellow, `ℹ` information in blue, `▶` step in progress in cyan, hints in dimmed grey.
+All repowarden messages (hooks, CI, `git cc` assistant, installation) follow the same style: `✔` success in green, `✖` error in red, `⚠` warning in yellow, `ℹ` information in blue, `▶` step in progress in cyan, hints in dimmed grey.
 
 Colours are displayed in a terminal and in the GitHub action logs. They are disabled by `NO_COLOR=1`, by `TERM=dumb` or when the output is redirected (file, pipe); `FORCE_COLOR=1` forces them.
 
 ## Message language
 
-French or English, chosen **once at installation** (prompted, or `./install.sh --global --lang en`) and stored in `repogarde.lang`. Order of precedence:
+French or English, chosen **once at installation** (prompted, or `./install.sh --global --lang en`) and stored in `repowarden.lang`. Order of precedence:
 
 | Where | Language used |
 |---|---|
-| Developer machine | `REPOGARDE_LANG`, otherwise `repogarde.lang` (installation), otherwise `lang` from `.repogarde.conf`, otherwise the system language |
-| CI | `REPOGARDE_LANG`, otherwise `lang` from `.repogarde.conf` (team language), otherwise English |
+| Developer machine | `REPOWARDEN_LANG`, otherwise `repowarden.lang` (installation), otherwise `lang` from `.repowarden.conf`, otherwise the system language |
+| CI | `REPOWARDEN_LANG`, otherwise `lang` from `.repowarden.conf` (team language), otherwise English |
 
 ## Platform (GitHub, GitLab, Bitbucket, Gitea)
 
-repogarde recognises the platform and adapts its vocabulary (PR or MR) and its examples (`Closes #12`, `!34` on GitLab, `PROJ-42` on Bitbucket): `forge` setting, otherwise CI variables (GitHub Actions, GitLab CI, Bitbucket Pipelines, Gitea / Forgejo Actions), otherwise the URL of the `origin` remote. A self-hosted GitLab whose URL does not contain "gitlab" is declared as follows:
+repowarden recognises the platform and adapts its vocabulary (PR or MR) and its examples (`Closes #12`, `!34` on GitLab, `PROJ-42` on Bitbucket): `forge` setting, otherwise CI variables (GitHub Actions, GitLab CI, Bitbucket Pipelines, Gitea / Forgejo Actions), otherwise the URL of the `origin` remote. A self-hosted GitLab whose URL does not contain "gitlab" is declared as follows:
 
 ```ini
-[repogarde]
+[repowarden]
     forge = gitlab        # github, gitlab, bitbucket, gitea
 ```
 
 ## Internal sources (proxy, Nexus, Artifactory)
 
-Without direct Internet access, or to go through the company repositories: the projects' tools (Maven, Gradle, npm, pip, Go…) use their own configuration (`settings.xml`, `.npmrc`…), and repogarde can fetch its CI tools through a mirror (`REPOGARDE_DOWNLOAD_MIRROR`), checksums verified. Details: [In an organisation, internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory).
+Without direct Internet access, or to go through the company repositories: the projects' tools (Maven, Gradle, npm, pip, Go…) use their own configuration (`settings.xml`, `.npmrc`…), and repowarden can fetch its CI tools through a mirror (`REPOWARDEN_DOWNLOAD_MIRROR`), checksums verified. Details: [In an organisation, internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory).

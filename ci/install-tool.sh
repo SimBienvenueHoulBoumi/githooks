@@ -3,13 +3,13 @@
 #   ci/install-tool.sh gitleaks [version]     défaut : $GITLEAKS_VERSION ou 8.30.1
 #   ci/install-tool.sh actionlint [version]   défaut : $ACTIONLINT_VERSION ou 1.7.12
 #   ci/install-tool.sh pmd                    7.28.0 (Java, détection de code mort)
-# Destination : $REPOGARDE_BIN (défaut ~/.local/bin), ajouté au PATH par ci/check.sh.
+# Destination : $REPOWARDEN_BIN (défaut ~/.local/bin), ajouté au PATH par ci/check.sh.
 # Outil déjà présent (image de runner pré-équipée) : rien n'est téléchargé.
 # Empreintes SHA-256 figées ici pour les versions par défaut : un binaire
 # modifié est refusé, même si sa source (ou son fichier de sommes) l'est aussi.
 # Autre version : empreinte attendue en variable (GITLEAKS_SHA256, ACTIONLINT_SHA256).
 # Miroir interne (Artifactory, Nexus… en proxy des releases GitHub) :
-# REPOGARDE_DOWNLOAD_MIRROR remplace https://github.com ; l'empreinte ne vient
+# REPOWARDEN_DOWNLOAD_MIRROR remplace https://github.com ; l'empreinte ne vient
 # alors jamais du miroir (figée ici, ou fournie en variable, sinon refus).
 set -euo pipefail
 # shellcheck source=../hooks/lib/ui.sh
@@ -18,8 +18,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/ui.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../hooks/lib/i18n.sh"
 
 TOOL="${1:?usage : install-tool.sh gitleaks|actionlint|pmd [version]}"
-BIN="${REPOGARDE_BIN:-$HOME/.local/bin}"
-MIRROR="${REPOGARDE_DOWNLOAD_MIRROR:-}"
+BIN="${REPOWARDEN_BIN:-$HOME/.local/bin}"
+MIRROR="${REPOWARDEN_DOWNLOAD_MIRROR:-}"
 MIRROR="${MIRROR%/}"
 SOURCE="${MIRROR:-https://github.com}"
 

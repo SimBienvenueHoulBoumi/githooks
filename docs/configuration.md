@@ -1,14 +1,14 @@
 # Configuration
 
-Tout est optionnel : sans configuration, repogarde détecte les langages et applique les règles par défaut.
+Tout est optionnel : sans configuration, repowarden détecte les langages et applique les règles par défaut.
 
-## Fichier `.repogarde.conf` (partagé)
+## Fichier `.repowarden.conf` (partagé)
 
 Versionné à la racine du projet, au format `git config`, lu **par les hooks et par la CI** : une exception décidée en revue s'applique partout.
 
 ```ini
-[repogarde]
-    version = 3.1                       # version minimale de repogarde attendue sur les postes
+[repowarden]
+    version = 3.1                       # version minimale de repowarden attendue sur les postes
     # Commandes personnalisées : remplacent la détection automatique
     format = npm run lint:fix --        # reçoit les fichiers stagés en arguments
     test = make ci                      # lancée à la racine ; fichiers modifiés sur l'entrée standard
@@ -19,14 +19,14 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
     exclude = vendor/* generated/*      # chemins ni formatés ni testés
 ```
 
-`version` : si repogarde est plus ancien sur un poste, les hooks le signalent avec la commande de mise à jour (`npm update -g @simbie/repogarde`, ou `git pull` pour un clone). C'est un avertissement seulement : la CI vérifie chaque PR à sa propre version.
+`version` : si repowarden est plus ancien sur un poste, les hooks le signalent avec la commande de mise à jour (`npm update -g repowarden`, ou `git pull` pour un clone). C'est un avertissement seulement : la CI vérifie chaque PR à sa propre version.
 
 ## Flux avec branche d'intégration (`develop`)
 
 Par défaut, tout part de `main` et y revient par PR. Pour un flux à deux branches longues, où le travail s'intègre dans `develop` puis est livré sur `main` :
 
 ```ini
-[repogarde]
+[repowarden]
     integrationBranch = develop     # active le flux
     mainBranch = main               # défaut : main
     protectedBranches = main develop
@@ -47,13 +47,13 @@ Une PR mal ciblée est refusée, avec la commande de correction (`gh pr edit --b
 
 ## Réglages locaux (non partagés)
 
-Prioritaires sur `.repogarde.conf` :
+Prioritaires sur `.repowarden.conf` :
 
 ```bash
-git config repogarde.skip true                    # désactive tout
-git config repogarde.skip "pre-push"              # désactive un hook
-git config repogarde.skip "protect-branch,format" # désactive des étapes
-git config repogarde.skip "node"                  # désactive un langage
+git config repowarden.skip true                    # désactive tout
+git config repowarden.skip "pre-push"              # désactive un hook
+git config repowarden.skip "protect-branch,format" # désactive des étapes
+git config repowarden.skip "node"                  # désactive un langage
 ```
 
 ## Ce qui peut être désactivé (`skip`)
@@ -67,32 +67,32 @@ git config repogarde.skip "node"                  # désactive un langage
 
 ## Hooks propres au projet
 
-Un script exécutable `.repogarde/<hook>` (ou `.git/hooks/<hook>`) est lancé en plus, avant les vérifications communes. C'est là que se déclarent les commandes propres au projet (lefthook n'est plus pris en charge depuis repogarde 4 : un hook installé par lefthook dans `.git/hooks` est ignoré, avec un avertissement).
+Un script exécutable `.repowarden/<hook>` (ou `.git/hooks/<hook>`) est lancé en plus, avant les vérifications communes. C'est là que se déclarent les commandes propres au projet (lefthook n'est plus pris en charge depuis repowarden 4 : un hook installé par lefthook dans `.git/hooks` est ignoré, avec un avertissement).
 
 ## Affichage
 
-Tous les messages de repogarde (hooks, CI, assistant `git cc`, installation) suivent la même charte : `✔` succès en vert, `✖` erreur en rouge, `⚠` avertissement en jaune, `ℹ` information en bleu, `▶` étape en cours en cyan, aides en gris atténué.
+Tous les messages de repowarden (hooks, CI, assistant `git cc`, installation) suivent la même charte : `✔` succès en vert, `✖` erreur en rouge, `⚠` avertissement en jaune, `ℹ` information en bleu, `▶` étape en cours en cyan, aides en gris atténué.
 
 Les couleurs s'affichent dans un terminal et dans les logs de l'action GitHub. Elles sont désactivées par `NO_COLOR=1`, par `TERM=dumb` ou quand la sortie est redirigée (fichier, tube) ; `FORCE_COLOR=1` les impose.
 
 ## Langue des messages
 
-Français ou anglais, choisi **une fois à l'installation** (question posée, ou `./install.sh --global --lang en`) et enregistré dans `repogarde.lang`. Ordre de priorité :
+Français ou anglais, choisi **une fois à l'installation** (question posée, ou `./install.sh --global --lang en`) et enregistré dans `repowarden.lang`. Ordre de priorité :
 
 | Où | Langue utilisée |
 |---|---|
-| Poste | `REPOGARDE_LANG`, sinon `repogarde.lang` (installation), sinon `lang` de `.repogarde.conf`, sinon la langue du système |
-| CI | `REPOGARDE_LANG`, sinon `lang` de `.repogarde.conf` (langue de l'équipe), sinon anglais |
+| Poste | `REPOWARDEN_LANG`, sinon `repowarden.lang` (installation), sinon `lang` de `.repowarden.conf`, sinon la langue du système |
+| CI | `REPOWARDEN_LANG`, sinon `lang` de `.repowarden.conf` (langue de l'équipe), sinon anglais |
 
 ## Plateforme (GitHub, GitLab, Bitbucket, Gitea)
 
-repogarde reconnaît la plateforme et adapte son vocabulaire (PR ou MR) et ses exemples (`Closes #12`, `!34` sur GitLab, `PROJ-42` sur Bitbucket) : réglage `forge`, sinon variables de la CI (GitHub Actions, GitLab CI, Bitbucket Pipelines, Gitea / Forgejo Actions), sinon adresse du remote `origin`. Un GitLab auto-hébergé dont l'adresse ne contient pas « gitlab » se déclare :
+repowarden reconnaît la plateforme et adapte son vocabulaire (PR ou MR) et ses exemples (`Closes #12`, `!34` sur GitLab, `PROJ-42` sur Bitbucket) : réglage `forge`, sinon variables de la CI (GitHub Actions, GitLab CI, Bitbucket Pipelines, Gitea / Forgejo Actions), sinon adresse du remote `origin`. Un GitLab auto-hébergé dont l'adresse ne contient pas « gitlab » se déclare :
 
 ```ini
-[repogarde]
+[repowarden]
     forge = gitlab        # github, gitlab, bitbucket, gitea
 ```
 
 ## Sources internes (proxy, Nexus, Artifactory)
 
-Sans accès direct à Internet, ou pour passer par les dépôts de l'entreprise : les outils des projets (Maven, Gradle, npm, pip, Go…) utilisent leur propre configuration (`settings.xml`, `.npmrc`…), et repogarde peut récupérer ses outils de CI via un miroir (`REPOGARDE_DOWNLOAD_MIRROR`), empreintes vérifiées. Détail : [En organisation, sources internes](industrialisation.md#8-sources-internes-reseau-ferme-nexus-artifactory).
+Sans accès direct à Internet, ou pour passer par les dépôts de l'entreprise : les outils des projets (Maven, Gradle, npm, pip, Go…) utilisent leur propre configuration (`settings.xml`, `.npmrc`…), et repowarden peut récupérer ses outils de CI via un miroir (`REPOWARDEN_DOWNLOAD_MIRROR`), empreintes vérifiées. Détail : [En organisation, sources internes](industrialisation.md#8-sources-internes-reseau-ferme-nexus-artifactory).

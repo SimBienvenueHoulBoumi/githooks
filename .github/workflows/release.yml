@@ -42,8 +42,8 @@ jobs:
       integration-branch: develop
       # CI lancée sur la PR de retour vers develop (docs.yml : site, exclu)
       workflows: ci.yml codeql.yml
-      # repogarde s'utilise lui-même au commit publié, pas au tag v3
-      repogarde-ref: ${{ github.sha }}
+      # repowarden s'utilise lui-même au commit publié, pas au tag v4
+      repowarden-ref: ${{ github.sha }}
 
   # Site republié après la release (notes de version de la page Changelog)
   docs:
@@ -60,14 +60,14 @@ jobs:
         run: gh workflow run docs.yml --ref main
 
   # Paquet npm (installation sur la machine : npm install -g), publié sans
-  # jeton (publication de confiance). Activé par la variable REPOGARDE_NPM ;
+  # jeton (publication de confiance). Activé par la variable REPOWARDEN_NPM ;
   # mise en place : bin/npm-publication. Le secret NPM_TOKEN ne sert qu'à la
   # toute première publication (vide ensuite : publication de confiance).
   npm:
     needs: release
     # Nouvelle release, ou lancement manuel du workflow : rattrape la dernière
     # release si elle n'est pas encore sur npm (sans effet sinon)
-    if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
+    if: vars.REPOWARDEN_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/npm-publish.yml
     permissions:
       contents: read
@@ -78,10 +78,10 @@ jobs:
       npm-token: ${{ secrets.NPM_TOKEN }}
 
   # Préversion de test (develop) sur npm, étiquette « next » :
-  # npm install -g @simbie/repogarde@next
+  # npm install -g repowarden@next
   npm-next:
     needs: release
-    if: vars.REPOGARDE_NPM == 'true' && needs.release.outputs.prerelease_created == 'true'
+    if: vars.REPOWARDEN_NPM == 'true' && needs.release.outputs.prerelease_created == 'true'
     uses: ./.github/workflows/npm-publish.yml
     permissions:
       contents: read
@@ -90,7 +90,7 @@ jobs:
       tag: ${{ needs.release.outputs.prerelease_tag }}
       dist-tag: next
 
-  # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repogarde@v1`
+  # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repowarden@v1`
   tag-major:
     needs: release
     if: needs.release.outputs.release_created == 'true'
@@ -131,7 +131,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
-          name="repogarde-$TAG"
+          name="repowarden-$TAG"
           git archive --format=tar.gz --prefix="$name/" -o "$name.tar.gz" "$TAG"
           cosign sign-blob --yes --bundle "$name.tar.gz.sigstore.json" "$name.tar.gz"
           gh release upload "$TAG" "$name.tar.gz" "$name.tar.gz.sigstore.json" --clobber
@@ -154,4 +154,4 @@ jobs:
       base64-subjects: ${{ needs.sign.outputs.hashes }}
       upload-assets: true
       upload-tag-name: ${{ needs.release.outputs.tag_name }}
-      provenance-name: repogarde-${{ needs.release.outputs.tag_name }}.intoto.jsonl
+      provenance-name: repowarden-${{ needs.release.outputs.tag_name }}.intoto.jsonl

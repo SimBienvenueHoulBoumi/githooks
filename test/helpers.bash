@@ -1,9 +1,9 @@
 # Helpers communs aux tests bats : chaque test tourne dans un dépôt jetable
-# avec les hooks du dépôt repogarde courant.
+# avec les hooks du dépôt repowarden courant.
 
 HOOKS="$(cd "$BATS_TEST_DIRNAME/../hooks" && pwd -P)"
-# Messages attendus en français (les tests anglais fixent REPOGARDE_LANG=en)
-export REPOGARDE_LANG=fr
+# Messages attendus en français (les tests anglais fixent REPOWARDEN_LANG=en)
+export REPOWARDEN_LANG=fr
 
 setup_repo() {
     REPO="$BATS_TEST_TMPDIR/repo"
@@ -15,7 +15,7 @@ setup_repo() {
     git config user.email test@example.com
     git config commit.gpgsign false
     git config core.hooksPath "$HOOKS"
-    git config repogarde.skip secrets # gitleaks pas forcément installé
+    git config repowarden.skip secrets # gitleaks pas forcément installé
     git remote add origin "$REMOTE"
 }
 

@@ -1,4 +1,4 @@
-# MegaLinter sur repogarde : linters pertinents pour un projet bash + workflows
+# MegaLinter sur repowarden : linters pertinents pour un projet bash + workflows
 ENABLE_LINTERS:
   - BASH_SHELLCHECK
   - ACTION_ACTIONLINT

@@ -8,4 +8,4 @@
 - **Standalone files** (outside a project): formatted, but not tested.
 - **`pre-push` outside the current branch**: tests run in a temporary worktree, where only `node_modules` is linked.
 - **First run** on Helm, Kubernetes or Terraform: schemas and providers are downloaded, then cached.
-- **repogarde directory moved or renamed**: Git *silently* ignores a `core.hooksPath` that no longer exists, and the hooks stop running. Re-run `install.sh` (with `--global` if needed) from the new location; check with `git config --show-origin --get-all core.hooksPath` (a local repository setting overrides the global one).
+- **repowarden directory moved or renamed**: Git *silently* ignores a `core.hooksPath` that no longer exists, and the hooks stop running. Re-run `install.sh` (with `--global` if needed) from the new location; check with `git config --show-origin --get-all core.hooksPath` (a local repository setting overrides the global one).

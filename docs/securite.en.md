@@ -22,24 +22,24 @@ Each release contains a source archive signed with [Sigstore](https://www.sigsto
 
 ```bash
 TAG=v1.1.0
-gh release download "$TAG" --repo SimBienvenueHoulBoumi/repogarde -p "repogarde-$TAG*"
-cosign verify-blob "repogarde-$TAG.tar.gz" \
-  --bundle "repogarde-$TAG.tar.gz.sigstore.json" \
-  --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/repogarde/\.github/workflows/release\.yml@' \
+gh release download "$TAG" --repo SimBienvenueHoulBoumi/repowarden -p "repowarden-$TAG*"
+cosign verify-blob "repowarden-$TAG.tar.gz" \
+  --bundle "repowarden-$TAG.tar.gz.sigstore.json" \
+  --certificate-identity-regexp '^https://github.com/SimBienvenueHoulBoumi/repowarden/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-Each release also contains an **[SLSA](https://slsa.dev) level 3 provenance attestation** (`repogarde-vX.Y.Z.intoto.jsonl`): it attests that the archive was built by this repository's release workflow, from the tag's commit.
+Each release also contains an **[SLSA](https://slsa.dev) level 3 provenance attestation** (`repowarden-vX.Y.Z.intoto.jsonl`): it attests that the archive was built by this repository's release workflow, from the tag's commit.
 
 ```bash
-slsa-verifier verify-artifact "repogarde-$TAG.tar.gz" \
-  --provenance-path "repogarde-$TAG.intoto.jsonl" \
-  --source-uri github.com/SimBienvenueHoulBoumi/repogarde --source-branch main
+slsa-verifier verify-artifact "repowarden-$TAG.tar.gz" \
+  --provenance-path "repowarden-$TAG.intoto.jsonl" \
+  --source-uri github.com/SimBienvenueHoulBoumi/repowarden --source-branch main
 ```
 
 (`--source-branch main`: releases are built by the workflow triggered on `main`, which then creates the tag.)
 
-## What repogarde does for security
+## What repowarden does for security
 
 - Secret detection (gitleaks) in the hooks and in CI; gitleaks installed in CI at a **pinned version with a verified SHA-256 checksum**.
 - GitHub Actions pinned by SHA, CI Python tools pinned by hash (`--require-hashes`), updated by Dependabot; workflows have no permissions by default.

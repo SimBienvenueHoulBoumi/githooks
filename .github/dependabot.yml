@@ -1,5 +1,5 @@
 # Mises à jour des actions GitHub (figées par SHA) ; messages Conventional
-# Commits pour passer la vérification repogarde.
+# Commits pour passer la vérification repowarden.
 version: 2
 updates:
   - package-ecosystem: github-actions

@@ -371,7 +371,7 @@ if [ -z "$YN" ]; then
 fi
 
 # Message gardé dans le dépôt si le commit est refusé (hook, secret…) : rien à ressaisir
-file="$(git rev-parse --git-dir)/repogarde-message"
+file="$(git rev-parse --git-dir)/repowarden-message"
 printf '%s' "$message" >"$file"
 if ! git commit -F "$file" ${PASS[@]+"${PASS[@]}"}; then
     t cc.kept "$file"

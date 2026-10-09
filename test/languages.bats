@@ -83,9 +83,9 @@ load_engine() {
     [ "$(git show HEAD:frontend/app.py)" = "y = 2" ]
 }
 
-@test "format : repogarde.skip <langage> desactive ce langage" {
+@test "format : repowarden.skip <langage> desactive ce langage" {
     require ruff
-    git config repogarde.skip "secrets python"
+    git config repowarden.skip "secrets python"
     printf 'x  =  1\n' >script.py
     git add script.py
     git commit -q -m "ajoute script"
@@ -117,11 +117,11 @@ load_engine() {
     [[ "$output" != *"prettier introuvable"* ]]
 }
 
-# --- .repogarde.conf -------------------------------------------------------------
+# --- .repowarden.conf -------------------------------------------------------------
 
-@test ".repogarde.conf : format personnalise (recoit les fichiers stages)" {
+@test ".repowarden.conf : format personnalise (recoit les fichiers stages)" {
     printf '#!/bin/sh\nfor f; do echo "// formaté" >>"$f"; done\n' >fmt.sh
-    printf '[repogarde]\n\tformat = sh fmt.sh\n' >.repogarde.conf
+    printf '[repowarden]\n\tformat = sh fmt.sh\n' >.repowarden.conf
     git add -A
     git commit -q --no-verify -m "chore: conf"
     echo "code" >a.txt
@@ -130,15 +130,15 @@ load_engine() {
     git show HEAD:a.txt | grep -q '// formaté'
 }
 
-@test ".repogarde.conf : format personnalise qui echoue -> commit refuse" {
-    printf '[repogarde]\n\tformat = false\n' >.repogarde.conf
+@test ".repowarden.conf : format personnalise qui echoue -> commit refuse" {
+    printf '[repowarden]\n\tformat = false\n' >.repowarden.conf
     git add -A
     run git commit -q -m "ajoute conf"
     [ "$status" -ne 0 ]
 }
 
-@test ".repogarde.conf : test personnalise qui echoue -> push refuse" {
-    printf '[repogarde]\n\ttest = echo tests-perso && exit 3\n' >.repogarde.conf
+@test ".repowarden.conf : test personnalise qui echoue -> push refuse" {
+    printf '[repowarden]\n\ttest = echo tests-perso && exit 3\n' >.repowarden.conf
     git add -A
     git commit -q -m "ajoute conf"
     run git push -q origin feat/x
@@ -146,10 +146,10 @@ load_engine() {
     [[ "$output" == *"tests-perso"* ]]
 }
 
-@test ".repogarde.conf : test personnalise recoit les fichiers modifies sur stdin" {
+@test ".repowarden.conf : test personnalise recoit les fichiers modifies sur stdin" {
     printf '#!/bin/sh\ngrep -qx src/a.txt || { echo pas-de-liste; exit 1; }\n' >verifie.sh
     chmod +x verifie.sh
-    printf '[repogarde]\n\ttest = ./verifie.sh\n' >.repogarde.conf
+    printf '[repowarden]\n\ttest = ./verifie.sh\n' >.repowarden.conf
     mkdir -p src && echo a >src/a.txt
     git add -A
     git commit -q -m "ajoute conf"
@@ -157,20 +157,20 @@ load_engine() {
     [ "$status" -eq 0 ]
 }
 
-@test ".repogarde.conf : reglages partages (skip)" {
+@test ".repowarden.conf : reglages partages (skip)" {
     git switch -q main
-    printf '[repogarde]\n\tskip = secrets protect-branch\n' >.repogarde.conf
-    git add .repogarde.conf
-    git config --unset repogarde.skip
+    printf '[repowarden]\n\tskip = secrets protect-branch\n' >.repowarden.conf
+    git add .repowarden.conf
+    git config --unset repowarden.skip
     run git commit -q -m "chore: conf partagée"
     [ "$status" -eq 0 ]
 }
 
-@test ".repogarde.conf : git config local prioritaire" {
-    printf '[repogarde]\n\tallowedBranches = main\n' >.repogarde.conf
+@test ".repowarden.conf : git config local prioritaire" {
+    printf '[repowarden]\n\tallowedBranches = main\n' >.repowarden.conf
     load_engine
     [ "$(cfg allowedBranches)" = main ]
-    git config repogarde.allowedBranches "main develop"
+    git config repowarden.allowedBranches "main develop"
     cfg_load
     [ "$(cfg allowedBranches)" = "main develop" ]
 }
@@ -356,9 +356,9 @@ load_engine() {
 }
 
 @test "config : lue une seule fois, cles insensibles a la casse, derniere valeur" {
-    git config repogarde.allowedBranches "a"
-    git config --add repogarde.allowedBranches "b"
-    git config repogarde.skip ""
+    git config repowarden.allowedBranches "a"
+    git config --add repowarden.allowedBranches "b"
+    git config repowarden.skip ""
     load_engine
     [ "$(cfg allowedbranches)" = b ]
     [ "$(cfg ALLOWEDBRANCHES)" = b ]

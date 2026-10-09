@@ -7,7 +7,7 @@
 #       types: [opened, labeled]
 #   jobs:
 #     tickets:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
 #       permissions: { issues: write, pull-requests: write, statuses: write }
 #
 # et, dans release.yml, après une release ou une préversion :
@@ -15,7 +15,7 @@
 #     tickets:
 #       needs: release
 #       if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
 #       permissions: { issues: write, pull-requests: write, statuses: write }
 #       with:
 #         tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
@@ -39,10 +39,10 @@ on:
         description: Branche d'intégration (ses PR de livraison n'exigent pas de ticket)
         type: string
         default: develop
-      repogarde-ref:
-        description: Version de repogarde dont les scripts sont utilisés
+      repowarden-ref:
+        description: Version de repowarden dont les scripts sont utilisés
         type: string
-        default: v3
+        default: v4
 
 permissions: {}
 
@@ -57,9 +57,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: SimBienvenueHoulBoumi/repogarde
-          ref: ${{ inputs.repogarde-ref }}
-          path: .repogarde-ci
+          repository: SimBienvenueHoulBoumi/repowarden
+          ref: ${{ inputs.repowarden-ref }}
+          path: .repowarden-ci
           persist-credentials: false
       - name: Tickets
         env:
@@ -80,9 +80,9 @@ jobs:
           LABEL: ${{ github.event.label.name }}
         run: |
           if [ -n "$TAG" ]; then
-            bash .repogarde-ci/ci/tickets.sh release
+            bash .repowarden-ci/ci/tickets.sh release
           elif [ "$EVENT" = issues ]; then
-            bash .repogarde-ci/ci/tickets.sh issue
+            bash .repowarden-ci/ci/tickets.sh issue
           else
-            bash .repogarde-ci/ci/tickets.sh pr
+            bash .repowarden-ci/ci/tickets.sh pr
           fi

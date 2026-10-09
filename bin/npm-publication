@@ -11,7 +11,7 @@
 # 2. paquet absent de npm (la publication de confiance exige un paquet
 #    existant) : jeton npm temporaire (7 jours, limité au scope du paquet)
 #    créé et rangé directement en secret NPM_TOKEN, sans être affiché ;
-#    variable REPOGARDE_NPM=true ; la pipeline publie la dernière release
+#    variable REPOWARDEN_NPM=true ; la pipeline publie la dernière release
 #    (lancée par la commande), ou la prochaine s'il n'y en a pas encore ;
 # 3. publication de confiance (npm trust github), puis jeton révoqué et
 #    secret supprimé. Interrompue, la commande reprend où elle en était.
@@ -48,7 +48,7 @@ cd "$GIT_TOPLEVEL"
 name="$(node -p 'require("./package.json").name')"
 # Préfixe des jetons temporaires : nom unique à chaque création (npm refuse
 # les doublons, y compris celui d'une tentative interrompue) ; tous révoqués à la fin
-TOKEN_PREFIX="repogarde-ci-${REPO##*/}"
+TOKEN_PREFIX="repowarden-ci-${REPO##*/}"
 
 brand "npm · $name · $REPO"
 
@@ -105,7 +105,7 @@ if ! publie; then
         jeton=""
         ok_t npm.token_stored
     fi
-    gh variable set REPOGARDE_NPM --repo "$REPO" --body true
+    gh variable set REPOWARDEN_NPM --repo "$REPO" --body true
 
     # Release déjà publiée : la pipeline est lancée tout de suite (elle publie
     # la dernière release absente de npm) ; sinon, la prochaine release publie
@@ -133,7 +133,7 @@ else
     npm trust github "$name" --file "$WORKFLOW" --repo "$REPO" ${ENVIRONMENT:+--env "$ENVIRONMENT"} --allow-publish --yes
     ok_t npm.trust_set "$REPO" "$WORKFLOW"
 fi
-gh variable set REPOGARDE_NPM --repo "$REPO" --body true
+gh variable set REPOWARDEN_NPM --repo "$REPO" --body true
 if grep -q '^NPM_TOKEN' <<<"$(gh secret list --repo "$REPO")"; then
     gh secret delete NPM_TOKEN --repo "$REPO"
     ok_t npm.token_removed

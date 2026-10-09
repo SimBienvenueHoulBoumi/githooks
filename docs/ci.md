@@ -16,8 +16,8 @@ Les erreurs apparaissent en annotations sur GitHub et dans le log du job sur Git
 
 ## GitHub Actions
 
-```yaml title=".github/workflows/repogarde.yml"
-name: repogarde
+```yaml title=".github/workflows/repowarden.yml"
+name: repowarden
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited] # edited : titre de PR revérifié
@@ -26,7 +26,7 @@ on:
 permissions:
   contents: read
 jobs:
-  repogarde:
+  repowarden:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install ruff pytest
-      - uses: SimBienvenueHoulBoumi/repogarde@v3
+      - uses: SimBienvenueHoulBoumi/repowarden@v4
         with:
           strict: true
 ```
@@ -54,27 +54,27 @@ jobs:
 
 ```yaml title=".gitlab-ci.yml"
 include:
-  - project: outils/repogarde                # repogarde hébergé sur votre GitLab
-    ref: v3 # dernière 3.x (vX.Y.Z pour figer)
-    file: templates/gitlab/repogarde.gitlab-ci.yml
+  - project: outils/repowarden                # repowarden hébergé sur votre GitLab
+    ref: v4 # dernière 4.x (vX.Y.Z pour figer)
+    file: templates/gitlab/repowarden.gitlab-ci.yml
 
-repogarde:
+repowarden:
   image: python:3.12                         # image avec bash, git, curl et les outils du projet
   variables:
-    REPOGARDE_STRICT: "true"
+    REPOWARDEN_STRICT: "true"
   before_script:
     - pip install ruff pytest
 ```
 
-Variables : `REPOGARDE_CHECKS`, `REPOGARDE_STRICT`, `REPOGARDE_MEGALINTER`, `REPOGARDE_URL`, `REPOGARDE_REF`, `GITLEAKS_VERSION`, `GITLEAKS_SHA256`, `REPOGARDE_DOWNLOAD_MIRROR` ([sources internes](industrialisation.md#8-sources-internes-reseau-ferme-nexus-artifactory)).
+Variables : `REPOWARDEN_CHECKS`, `REPOWARDEN_STRICT`, `REPOWARDEN_MEGALINTER`, `REPOWARDEN_URL`, `REPOWARDEN_REF`, `GITLEAKS_VERSION`, `GITLEAKS_SHA256`, `REPOWARDEN_DOWNLOAD_MIRROR` ([sources internes](industrialisation.md#8-sources-internes-reseau-ferme-nexus-artifactory)).
 
 ## Mode strict
 
-Sur le poste, un outil absent est ignoré. En CI avec `strict`, il fait **échouer** la vérification : l'image de CI doit contenir l'outillage du projet. repogarde installe lui-même gitleaks et actionlint (versions figées, sommes vérifiées).
+Sur le poste, un outil absent est ignoré. En CI avec `strict`, il fait **échouer** la vérification : l'image de CI doit contenir l'outillage du projet. repowarden installe lui-même gitleaks et actionlint (versions figées, sommes vérifiées).
 
 ## MegaLinter
 
-Les linters (ESLint, Checkstyle, golangci-lint…) sont délégués à [MegaLinter](https://megalinter.io) plutôt que réimplémentés : `megalinter: true` (GitHub) ou `REPOGARDE_MEGALINTER: "true"` (GitLab). Seuls les fichiers modifiés sont analysés ; configuration dans le `.mega-linter.yml` du projet.
+Les linters (ESLint, Checkstyle, golangci-lint…) sont délégués à [MegaLinter](https://megalinter.io) plutôt que réimplémentés : `megalinter: true` (GitHub) ou `REPOWARDEN_MEGALINTER: "true"` (GitLab). Seuls les fichiers modifiés sont analysés ; configuration dans le `.mega-linter.yml` du projet.
 
 ## Règles côté serveur
 
@@ -82,7 +82,7 @@ Pour que les règles soient **non contournables** :
 
 | Hébergeur | Où | Disponibilité |
 |---|---|---|
-| GitHub | *Settings → Rules → Rulesets* : exiger le check `repogarde`, interdire le push forcé ; « Restrict branch names », « Restrict commit metadata » | gratuit sur dépôt public, Pro / Team sur dépôt privé |
+| GitHub | *Settings → Rules → Rulesets* : exiger le check `repowarden`, interdire le push forcé ; « Restrict branch names », « Restrict commit metadata » | gratuit sur dépôt public, Pro / Team sur dépôt privé |
 | GitLab | *Protected branches*, *Pipelines must succeed* ; *Push rules* (Premium) | selon offre |
 | Bitbucket | *Branch restrictions* | selon offre |
 

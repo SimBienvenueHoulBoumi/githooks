@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Prépare le suivi des tickets d'un dépôt GitHub (relançable sans risque) :
-#   repogarde tickets init [--repo propriétaire/nom]
+#   repowarden tickets init [--repo propriétaire/nom]
 #   - étiquettes : « validé » et les statuts (à valider, backlog, en cours,
 #     en relecture, préprod, done) ;
 #   - modèle de ticket .github/ISSUE_TEMPLATE/ticket.yml (créé « à valider ») ;
 #   - workflow .github/workflows/tickets.yml (s'ils n'existent pas déjà).
 # Ensuite : committer ces fichiers, exiger la vérification « ticket »
-# (repogarde proteger --checks "…,ticket") et brancher le job tickets de release.yml.
+# (repowarden proteger --checks "…,ticket") et brancher le job tickets de release.yml.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -95,7 +95,7 @@ permissions: {}
 
 jobs:
   tickets:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
     permissions: { issues: write, pull-requests: write, statuses: write }
 YAML
 

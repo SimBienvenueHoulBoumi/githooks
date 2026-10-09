@@ -28,9 +28,9 @@ Tout est automatique, sauf la validation : c'est la seule décision humaine, et 
 ## Mise en place
 
 ```bash
-repogarde tickets init          # étiquettes, modèle de ticket, workflow tickets.yml
+repowarden tickets init          # étiquettes, modèle de ticket, workflow tickets.yml
 git add .github && git cc       # puis PR
-repogarde proteger --checks "repogarde,ticket"   # vérification « ticket » exigée
+repowarden proteger --checks "repowarden,ticket"   # vérification « ticket » exigée
 ```
 
 Dans `.github/workflows/release.yml`, les tickets passent en préprod à chaque préversion et en done à chaque release :
@@ -39,7 +39,7 @@ Dans `.github/workflows/release.yml`, les tickets passent en préprod à chaque 
   tickets:
     needs: release
     if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
     permissions: { issues: write, pull-requests: write, statuses: write }
     with:
       tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
