@@ -343,6 +343,18 @@ load_engine() {
     [ "$status" -ne 0 ]
 }
 
+@test "python : tests/ importe le paquet du projet sans configuration (racine importable)" {
+    require pytest
+    load_engine
+    mkdir -p calc tests
+    printf '[project]\nname = "calc"\nversion = "0.1.0"\n' >pyproject.toml
+    printf 'def add(a, b):\n    return a + b\n' >calc/__init__.py
+    printf 'from calc import add\n\n\ndef test_add():\n    assert add(1, 2) == 3\n' >tests/test_calc.py
+    run python_test
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ModuleNotFoundError"* ]]
+}
+
 @test "config : lue une seule fois, cles insensibles a la casse, derniere valeur" {
     git config repogarde.allowedBranches "a"
     git config --add repogarde.allowedBranches "b"

@@ -70,7 +70,12 @@ choose_lang() {
     esac
     git config "$SCOPE" repogarde.lang "$LANG_CHOICE"
     REPOGARDE_LANG="$LANG_CHOICE"
-    t install.lang_set "$ROOT/install.sh"
+    # Commande à donner : celle de l'utilisateur (paquet npm ou clone)
+case "$ROOT" in
+    */node_modules/*) cmd="repogarde install" ;;
+    *) cmd="$ROOT/install.sh" ;;
+esac
+t install.lang_set "$cmd"
     ok "$REPLY"
 }
 
