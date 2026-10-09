@@ -125,7 +125,10 @@ jobs:
 
 1. À chaque merge sur `develop` : une **préversion** de test (`vX.Y.Z-next.N`, release GitHub « pre-release », entrée `preversion`) et la **PR de livraison** `develop` → `main` (version à venir, notes) tenue à jour ;
 2. la merger (décision humaine, **merge commit** : chaque commit reste visible) publie sur `main` le tag `vX.Y.Z` et la release ; la version est calculée à partir de **tous** les commits livrés (merges exclus) ;
-3. un `hotfix/…` mergé directement sur `main` publie un correctif, puis **revient seul dans `develop`** : PR validée par la CI (lancée par le workflow) et mergée, sans clé ni jeton. Une livraison n'a rien à faire revenir (`develop` a déjà tout).
+3. **aucune version stable sans préversion testée** (entrée `preversion-obligatoire`, activée par défaut) : la version publiée sur `main` doit avoir existé en `vX.Y.Z-next.N` sur `develop`. Une majeure (v3 → v4) passe donc toujours par ses `4.0.0-next.N` ;
+4. **seul `develop` entre dans `main`** : un correctif urgent est une PR `fix/…` vers `develop` (préversion aussitôt), puis une livraison immédiate. Si quelque chose arrive malgré tout directement sur `main`, il revient seul dans `develop` (PR validée par la CI, mergée, sans clé).
+
+Le rythme des versions stables est le tien : `develop` accumule (préversions), une livraison publie le tout en **une** version, mineure ou majeure selon les commits.
 
 | | `develop` : test | `main` : production |
 |---|---|---|

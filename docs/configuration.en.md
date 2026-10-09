@@ -40,7 +40,9 @@ The CI then checks the target of each PR:
 | ----------------------------------------------- | -------------------- |
 | work (`feat/…`, `fix/…`), bots (`dependabot/…`) | `develop`            |
 | `develop`                                       | `main`               |
-| `release/…`, `hotfix/…`                         | `main` or `develop`  |
+| `release/…`, `hotfix/…`                         | `develop`            |
+
+Only `develop` goes into `main`: everything, urgent fixes included, goes through its test pre-releases before production.
 
 A wrongly targeted PR is rejected, with the command to fix it (`gh pr edit --base develop`). With the action's `fix-pr: true` input, it is **retargeted automatically** (or closed if a PR from the same branch already targets the right branch), and a non-compliant title is replaced: by the compliant commit with the highest version impact (breaking, then `feat`, then `fix`/`perf`; "!" added if a `BREAKING CHANGE` footer exists), otherwise derived from the branch.
 

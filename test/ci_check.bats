@@ -188,10 +188,18 @@ setup() {
 @test "ci : flux develop, cibles de PR autorisees" {
     git config repogarde.integrationBranch develop
     git config repogarde.allowedBranches "main develop release/* release-please--* dependabot/*"
-    for paire in feat/x:develop develop:main release/1.2.0:main release/1.2.0:develop \
-        hotfix/crash:main dependabot/maven/x:develop release-please--branches--main:main; do
+    for paire in feat/x:develop develop:main release/1.2.0:develop hotfix/crash:develop \
+        dependabot/maven/x:develop release-please--branches--main:main; do
         REPOGARDE_BRANCH="${paire%%:*}" REPOGARDE_TARGET="${paire#*:}" run "$CHECK" branch
         [ "$status" -eq 0 ] || { echo "devrait passer : $paire"; echo "$output"; return 1; }
+    done
+}
+
+@test "ci : flux develop, seul develop entre dans main (hotfix et release compris)" {
+    git config repogarde.integrationBranch develop
+    for b in hotfix/crash release/1.2.0 fix/x; do
+        REPOGARDE_BRANCH="$b" REPOGARDE_TARGET=main run "$CHECK" branch
+        [ "$status" -ne 0 ] || { echo "devrait être refusée vers main : $b"; return 1; }
     done
 }
 
@@ -382,6 +390,7 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert [c["context"] for c in d["rules"][3]["parameters"]["required_status_checks"]]==["repogarde","tests (ubuntu-latest)"]; \
         assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is True; \
         assert d["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
+        assert m["bypass_actors"]==[] and d["bypass_actors"]==[]; \
         assert t["name"]=="repogarde (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]

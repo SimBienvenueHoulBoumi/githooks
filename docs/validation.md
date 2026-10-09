@@ -63,7 +63,7 @@ L'environnement n'accepte de déploiement que depuis les branches protégées et
 
 ## Projet solo
 
-GitHub interdit d'approuver sa propre PR. Avec `requiredReviews = 1` et un seul développeur, chaque merge passerait par le **contournement d'administrateur**, qui reste permis mais est explicite et tracé dans l'historique de la PR. Pour un projet solo, le réglage conseillé :
+GitHub interdit d'approuver sa propre PR, et `repogarde proteger` n'accorde **aucune exception**, pas même à l'administrateur : avec `requiredReviews = 1` et un seul développeur, aucun merge ne serait possible. Pour un projet solo, le réglage conseillé :
 - `requiredReviews = 0` : la CI fait foi sur la forme ;
 - `environment = production` avec soi-même comme approbateur : chaque publication demande un clic délibéré.
 
