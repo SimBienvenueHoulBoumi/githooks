@@ -109,6 +109,7 @@ _msg_en() {
         hook.post_merge.4) _M="  To delete it anyway: git branch -D %s" ;;
         hook.common.3) _M="%s disabled (git config repogarde.skip)." ;;
         hook.common.4) _M="lefthook project (%s) but lefthook is not installed: default repogarde rules. Install lefthook." ;;
+        hook.common.lefthook_orphan) _M="%s: orphan lefthook hook (no lefthook configuration), ignored. Remove it: lefthook uninstall" ;;
         hook.common.5) _M="Project local hook: %s" ;;
         hook.lang.1) _M="Custom formatting: %s" ;;
         hook.lang.2) _M="%s: %s file(s)" ;;

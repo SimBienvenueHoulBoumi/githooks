@@ -368,12 +368,24 @@ check_version() {
 # Désactivé sous lefthook : .git/hooks contient ses propres hooks (boucle infinie)
 # et les hooks du projet sont alors déclarés dans lefthook.yml.
 run_local_hook() {
-    local candidate real
+    local candidate real f config
     [ "${REPOGARDE_RUNNER:-}" = lefthook ] && return 0
     for candidate in ".repogarde/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
         [ -x "$candidate" ] || continue
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
+        # Reste d'un ancien « lefthook install » alors que le dépôt n'a plus de
+        # configuration lefthook : lefthook échouerait (« No config files »)
+        if grep -qs lefthook "$candidate"; then
+            config=""
+            for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
+                [ -f "$GIT_TOPLEVEL/$f" ] && config=1
+            done
+            if [ -z "$config" ]; then
+                info_t hook.common.lefthook_orphan "$candidate"
+                continue
+            fi
+        fi
         info_t hook.common.5 "$candidate"
         "$candidate" "$@" || return $?
     done

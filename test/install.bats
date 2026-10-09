@@ -100,3 +100,20 @@ setup() {
         [[ "$output" != *"demande repogarde"* ]]
     done
 }
+
+@test "hooks : hook lefthook orphelin de .git/hooks ignore (plus de configuration lefthook)" {
+    initial_commit
+    git switch -q -c feat/orphelin
+    printf '#!/bin/sh\necho LEFTHOOK-LANCE\nlefthook run pre-commit "$@"\n' >.git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+    echo a >a.txt && git add a.txt
+    run git commit -m "feat: a"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"LEFTHOOK-LANCE"* ]]
+    [[ "$output" == *"hook lefthook orphelin"* ]]
+    # Avec une configuration lefthook, le hook du dépôt reste lancé
+    printf 'pre-commit: {}\n' >lefthook.yml
+    git add lefthook.yml
+    run git -c core.hooksPath="$HOOKS" commit -m "chore: config lefthook"
+    [[ "$output" != *"hook lefthook orphelin"* ]]
+}
