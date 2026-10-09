@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Prépare le suivi des tickets d'un dépôt GitHub (relançable sans risque) :
 #   repowarden tickets init [--repo propriétaire/nom]
-#   - étiquettes : « validé » et les statuts (à valider, backlog, en cours,
-#     en relecture, préprod, done) ;
+#   - étiquettes : « validé », les statuts (à valider, backlog, en cours,
+#     en relecture, préprod, done) et les types (type: feat, type: fix…), qui
+#     donnent le préfixe de la branche du ticket ;
 #   - modèle de ticket .github/ISSUE_TEMPLATE/ticket.yml (créé « à valider ») ;
 #   - workflow .github/workflows/tickets.yml (s'ils n'existent pas déjà).
 # Ensuite : committer ces fichiers, exiger la vérification « ticket »
@@ -48,6 +49,11 @@ statut: en cours|1d76db|Travail commencé (PR en brouillon)
 statut: en relecture|5319e7|PR prête, en relecture
 statut: préprod|d93f0b|Mergé dans develop : en préversion de test
 statut: done|0e8a16|Publié en production
+type: feat|a2eeef|Nouvelle fonctionnalité (branche feat/…)
+type: fix|d73a4a|Correction de bug (branche fix/…)
+type: docs|0075ca|Documentation (branche docs/…)
+type: refactor|cfd3d7|Restructuration (branche refactor/…)
+type: chore|ededed|Maintenance (branche chore/…)
 ETIQUETTES
 
 # 2. Modèle de ticket et workflow (jamais écrasés)
@@ -81,22 +87,27 @@ body:
       description: Critères d'acceptation, vérifiables
 YAML
 ecrire .github/workflows/tickets.yml <<'YAML'
-# Suivi des tickets : chaque PR cite un ticket validé (« Ticket : #12 », ou
-# branche feat/12-sujet) ; statuts tenus à jour jusqu'à la production.
+# Suivi des tickets : le ticket d'abord, la branche en découle (créée à la
+# validation, liée au ticket), le premier push ouvre la PR en brouillon ;
+# statuts tenus à jour jusqu'à la production.
 name: tickets
 
 on:
   pull_request_target:
     types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft, closed]
+  pull_request_review:
+    types: [submitted]
   issues:
-    types: [opened, labeled]
+    types: [opened, labeled, assigned, closed]
+  push:
+    branches-ignore: [main, master, develop]
 
 permissions: {}
 
 jobs:
   tickets:
     uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
-    permissions: { issues: write, pull-requests: write, statuses: write }
+    permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
 YAML
 
 echo

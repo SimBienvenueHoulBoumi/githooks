@@ -4,8 +4,10 @@ name: repowarden
 
 on:
   pull_request:
-    # edited : revérifie quand le titre de la PR change (message du commit en squash)
-    types: [opened, synchronize, reopened, edited]
+    # edited : revérifie quand le titre de la PR change (message du commit en squash) ;
+    # ready_for_review : une PR brouillon ouverte par le suivi des tickets n'a
+    # pas encore eu de CI (jeton des Actions)
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main]
   # Lancé par le workflow de release sur sa PR (release-auto)
