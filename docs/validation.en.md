@@ -63,7 +63,7 @@ The environment only accepts deployments from protected branches and `v*` tags: 
 
 ## Solo project
 
-GitHub does not allow approving your own PR. With `requiredReviews = 1` and a single developer, every merge would go through the **administrator bypass**, which remains allowed but is explicit and recorded in the PR history. For a solo project, the recommended settings are:
+GitHub does not allow approving your own PR, and `repogarde proteger` grants **no exception**, not even to the administrator: with `requiredReviews = 1` and a single developer, no merge would be possible. For a solo project, the recommended settings:
 - `requiredReviews = 0`: CI is the authority on form;
 - `environment = production` with yourself as approver: each publication requires a deliberate click.
 

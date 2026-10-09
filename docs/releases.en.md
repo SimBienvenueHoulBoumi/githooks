@@ -125,7 +125,10 @@ jobs:
 
 1. On every merge into `develop`: a test **pre-release** (`vX.Y.Z-next.N`, GitHub "pre-release", `preversion` input) and the **delivery PR** `develop` → `main` (upcoming version, notes) kept up to date;
 2. merging it (human decision, **merge commit**: every commit stays visible) publishes the `vX.Y.Z` tag and the release on `main`; the version is computed from **all** the delivered commits (merges excluded);
-3. a `hotfix/…` merged directly into `main` publishes a fix, then **flows back into `develop` on its own**: PR validated by the CI (started by the workflow) and merged, no key or token. A delivery has nothing to bring back (`develop` already has everything).
+3. **no stable version without a tested pre-release** (`preversion-obligatoire` input, enabled by default): the version published on `main` must have existed as `vX.Y.Z-next.N` on `develop`. A major (v3 → v4) therefore always goes through its `4.0.0-next.N`;
+4. **only `develop` goes into `main`**: an urgent fix is a `fix/…` PR into `develop` (pre-release right away), then an immediate delivery. If something still lands directly on `main`, it flows back into `develop` on its own (PR validated by the CI, merged, no key).
+
+The pace of stable versions is yours: `develop` accumulates (pre-releases), a delivery publishes it all as **one** version, minor or major depending on the commits.
 
 | | `develop`: testing | `main`: production |
 |---|---|---|

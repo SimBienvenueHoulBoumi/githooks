@@ -39,7 +39,9 @@ La CI vérifie alors la cible de chaque PR :
 | -------------------------------------------------- | ------------------- |
 | travail (`feat/…`, `fix/…`), bots (`dependabot/…`) | `develop`           |
 | `develop`                                          | `main`              |
-| `release/…`, `hotfix/…`                            | `main` ou `develop` |
+| `release/…`, `hotfix/…`                            | `develop`           |
+
+Seul `develop` entre dans `main` : tout, correctif urgent compris, passe par ses préversions de test avant la production.
 
 Une PR mal ciblée est refusée, avec la commande de correction (`gh pr edit --base develop`). Avec l'entrée `fix-pr: true` de l'action, elle est **reciblée automatiquement** (ou fermée si une PR de la même branche vise déjà la bonne cible), et un titre non conforme est remplacé : par le commit conforme au plus fort impact de version (incompatible, puis `feat`, puis `fix`/`perf` ; « ! » ajouté si un pied `BREAKING CHANGE` existe), sinon déduit de la branche.
 
