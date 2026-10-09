@@ -245,6 +245,7 @@ _msg_fr() {
         ci.proteger.codeowners_invalid) _M="codeOwnerReview : true ou false." ;;
         ci.proteger.no_branch) _M="Aucune des branches « %s » n'existe sur %s." ;;
         ci.proteger.no_cleanup) _M="Suppression automatique des branches désactivée (elle supprimerait develop) : ajouter un workflow qui appelle nettoyage-branches.yml, sinon les branches mergées restent (voir En organisation)." ;;
+        ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique désactivé" ;;
         ci.proteger.methods_flow) _M="main : merge commit ; %s : squash ou merge commit" ;;
         ci.proteger.tags_org) _M="réservés aux workflows" ;;
         ci.proteger.tags_user) _M="ni déplacés ni supprimés (compte personnel : création libre)" ;;
