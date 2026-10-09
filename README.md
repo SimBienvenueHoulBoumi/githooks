@@ -81,8 +81,6 @@ L'essentiel des deux fichiers :
 
 Puis rendre la CI obligatoire pour merger : `repogarde proteger` (protection de `main`, check `repogarde` exigé).
 
-Version exacte par projet (avancé) : avec [lefthook](https://lefthook.dev) et le modèle [`lefthook.yml`](templates/project/lefthook.yml), chaque projet télécharge repogarde à sa propre version ([En organisation](https://simbienvenuehoulboumi.github.io/repogarde/industrialisation/)).
-
 Exemple complet : [repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo) · Releases automatiques : [documentation](https://simbienvenuehoulboumi.github.io/repogarde/releases/).
 
 ### 3. Contribuer à repogarde

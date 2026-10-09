@@ -45,8 +45,6 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
     ~/repogarde/install.sh --global
     ```
 
-    Un dépôt qui contient un `lefthook.yml` utilise sa propre configuration (version figée), si lefthook est installé.
-
 === "Un projet d'équipe"
 
     1. **Chaque personne** installe repogarde une fois sur son poste (onglet « Sur mon poste ») : `npm install -g @simbie/repogarde`, puis `repogarde install --global`.
@@ -63,8 +61,6 @@ Trois parcours, selon l'usage. Le plus rapide pour essayer : **Sur mon poste**.
     3. **Rendre la CI obligatoire** pour merger : `repogarde proteger` (voir [En organisation](industrialisation.md)).
 
     Un poste dont repogarde est plus ancien que la `version` du projet est prévenu à chaque commit, avec la commande de mise à jour. Sans hooks, la CI refait de toute façon toutes les vérifications.
-
-    **Version exacte par projet (avancé)** : avec [lefthook](https://lefthook.dev) et le modèle `lefthook.yml`, chaque projet télécharge repogarde à sa propre version, figée. Chaque personne installe alors lefthook une fois (`brew install lefthook`, `npm install -g lefthook`, `winget install evilmartians.lefthook`), puis `lefthook install` dans le projet ; les hooks repogarde du poste délèguent automatiquement au `lefthook.yml` du projet.
 
 === "Une organisation"
 

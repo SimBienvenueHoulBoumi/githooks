@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart LR
-    A["Developer machine<br/>hooks (lefthook)"] -->|git push| B["CI<br/>GitHub action · GitLab template"]
+    A["Developer machine<br/>repogarde hooks"] -->|git push| B["CI<br/>GitHub action · GitLab template"]
     B -->|required checks| C["Protected main branch"]
     A -. "immediate feedback<br/>automatic fixes" .-> A
     B -. "authoritative<br/>cannot be bypassed" .-> B
@@ -36,11 +36,9 @@ flowchart LR
 
 ## In 30 seconds
 
-```yaml title="lefthook.yml — project hooks"
-remotes:
-  - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v3 # latest 3.x (vX.Y.Z to pin)
-    configs: [lefthook-remote.yml]
+```bash title="Developer machine — once, for every repository"
+npm install -g @simbie/repogarde
+repogarde install --global
 ```
 
 ```yaml title=".github/workflows/repogarde.yml — CI (excerpt)"

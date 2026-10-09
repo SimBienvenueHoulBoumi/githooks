@@ -80,7 +80,7 @@ Commiter ? [O/n] :
 
 **Saisie robuste** : flèches et effacement dans un terminal, touches parasites ignorées ; une réponse oui/non invalide est redemandée ; Ctrl+D abandonne. Si un hook refuse le commit, le message est conservé (`git commit -F .git/repogarde-message` après correction).
 
-Les options de `git commit` sont transmises (`git cc --no-verify`…) ; `git cc --dry-run` affiche le message sans commiter. Réponses fournies par un script (une par ligne sur l'entrée standard) : `git cc --strict`, pour qu'une réponse refusée arrête tout au lieu de lire la ligne suivante comme une nouvelle réponse. Avec lefthook sans `install.sh` : `git config --global alias.cc '!bash /chemin/vers/repogarde/bin/commit'`.
+Les options de `git commit` sont transmises (`git cc --no-verify`…) ; `git cc --dry-run` affiche le message sans commiter. Réponses fournies par un script (une par ligne sur l'entrée standard) : `git cc --strict`, pour qu'une réponse refusée arrête tout au lieu de lire la ligne suivante comme une nouvelle réponse. Sans `install.sh` : `git config --global alias.cc '!bash /chemin/vers/repogarde/bin/commit'`.
 
 **Sans question** (scripts, agents, CI) : les réponses passent en options, avec les mêmes contrôles, et toute valeur refusée arrête tout sans rien commiter. Le type et le scope omis sont déduits de la branche, comme avec Entrée ; sur une branche protégée, aucune branche n'est créée.
 
