@@ -46,6 +46,10 @@ on:
         description: Branche d'intégration (ses PR de livraison n'exigent pas de ticket)
         type: string
         default: develop
+      auto-validate:
+        description: "Ticket ouvert par un mainteneur (droits d'écriture) validé d'office : maintainers, ou never (un mainteneur pose toujours « validé »)"
+        type: string
+        default: maintainers
       repowarden-ref:
         description: Version de repowarden dont les scripts sont utilisés
         type: string
@@ -89,6 +93,8 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           ISSUE: ${{ github.event.issue.number }}
+          ISSUE_ASSOCIATION: ${{ github.event.issue.author_association }}
+          AUTO_VALIDATE: ${{ inputs.auto-validate }}
           LABEL: ${{ github.event.label.name }}
           STATE_REASON: ${{ github.event.issue.state_reason }}
           PUSH_BRANCH: ${{ github.ref_name }}

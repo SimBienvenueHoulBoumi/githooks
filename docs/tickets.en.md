@@ -7,7 +7,7 @@ Every change starts from a **ticket** (GitHub issue): **the branch derives from 
 | Status (label) | When | Automatic effect |
 |---|---|---|
 | `statut: à valider` | ticket created (by hand, or `repowarden ticket nouveau`) | — |
-| `statut: backlog` | a maintainer adds the **`validé`** label | **branch `<type>/<n>-<title>` created** from `develop` and **linked to the ticket** (*Development* panel); comment with the command to fetch it |
+| `statut: backlog` | a maintainer adds the **`validé`** label, or opens the ticket themselves (validated straight away) | **branch `<type>/<n>-<title>` created** from `develop` and **linked to the ticket** (*Development* panel); comment with the command to fetch it |
 | `statut: en cours` | someone assigns themselves the ticket, or pushes a first commit to its branch | on the first push: **draft PR** opened to `develop`, `Ticket : #n`, assigned |
 | `statut: en relecture` | PR "Ready for review" | CI runs; a "Request changes" review moves the ticket back to in progress |
 | `statut: préprod` | PR merged into `develop` | branch deleted; comment on each pre-release `vX.Y.Z-next.N` |
@@ -15,7 +15,7 @@ Every change starts from a **ticket** (GitHub issue): **the branch derives from 
 
 Ticket closed as **abandoned** (*not planned*): its PR is closed and its branch deleted.
 
-Everything is automatic except validation: it is the only human decision, and GitHub only lets people with rights on the repository add the `validé` label. The branch type comes from the ticket's `type: …` label (`feat` by default), its name from the title (lowercase, no accents).
+Everything is automatic except validation: it is the only human decision, and GitHub only lets people with rights on the repository add the `validé` label. A ticket **opened by a maintainer** (write access: owner, member, collaborator) is **validated straight away**: opening it is already their decision. Only community tickets wait for the label. To always require a separate validation: `auto-validate: never` input of the `tickets.yml` workflow. The branch type comes from the ticket's `type: …` label (`feat` by default), its name from the title (lowercase, no accents).
 
 ## On the developer machine
 
@@ -32,7 +32,7 @@ repowarden ticket                             # ticket of the current branch
 ## The rules
 
 - **No PR without a ticket**: a PR references its ticket in its description (`Ticket : #12`), or its branch carries it (`feat/12-cart`). Otherwise, the ticket is **created automatically** from the PR, linked to its description, and "à valider".
-- **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, without re-running anything.
+- **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, without re-running anything. The `tickets` job stays green while waiting: a red job means a real failure.
 - Dependency bots, release PRs and `develop` → `main` deliveries do not need a ticket.
 - The draft PR is opened by the Actions token, which does not trigger other workflows: CI runs on the next push, or when marked "Ready for review" (`ready_for_review` in the CI triggers, as in the project template).
 

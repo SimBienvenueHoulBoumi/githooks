@@ -92,7 +92,8 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
 @test "tickets : PR sans ticket -> ticket cree a valider, relie, PR bloquee" {
     printf 'Ajoute le panier.' >"$F/pr_body"
     ACTION=opened run "$TICKETS" pr
-    [ "$status" -ne 0 ]
+    # bloquee par le statut « ticket », le job reste vert (pas une panne)
+    [ "$status" -eq 0 ]
     grep -qxF "statut: à valider" "$F/issues/42.labels"
     grep -q "Ticket : #42" "$F/pr_body"
     grep -qx "statut-pr failure" "$F/events"
@@ -117,6 +118,30 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     [ "$status" -eq 0 ]
     [ "$(labels 12 | grep statut)" = "statut: backlog" ]
     grep -qx "statut-pr success" "$F/events"
+}
+
+@test "tickets : ouvert par un mainteneur -> valide d'office, backlog, branche ; sinon a valider" {
+    echo "Corrige le total à payer" >"$F/issues/12.title"
+    N=12 ticket "type: fix"
+    ISSUE=12 ACTION=opened ISSUE_ASSOCIATION=OWNER run "$TICKETS" issue
+    [ "$status" -eq 0 ]
+    grep -qxF "validé" "$F/issues/12.labels"
+    [ "$(labels 12 | grep statut)" = "statut: backlog" ]
+    grep -qx "branche-creee fix/12-corrige-le-total-a-payer" "$F/events"
+    # PR deja ouverte pour ce ticket : debloquee, pas de seconde branche
+    N=14 ticket "type: fix"
+    printf 'Ticket : #14' >"$F/pr_body"
+    : >"$F/events"
+    FAKE_PRS=$'7\tfix/14-total\tabc' ISSUE=14 ACTION=opened ISSUE_ASSOCIATION=COLLABORATOR run "$TICKETS" issue
+    grep -qx "statut-pr success" "$F/events"
+    ! grep -q "branche-creee" "$F/events"
+    # contributeur externe, ou validation automatique desactivee : a valider
+    for cas in "ISSUE_ASSOCIATION=NONE" "ISSUE_ASSOCIATION=CONTRIBUTOR" "ISSUE_ASSOCIATION=OWNER AUTO_VALIDATE=never"; do
+        N=13 ticket "type: feat"
+        env $cas ISSUE=13 ACTION=opened "$TICKETS" issue
+        ! grep -qxF "validé" "$F/issues/13.labels"
+        [ "$(labels 13 | grep statut)" = "statut: à valider" ]
+    done
 }
 
 @test "tickets : PR mergee -> preprod ; release -> done et ferme ; preversion -> commentaire" {
