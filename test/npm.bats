@@ -87,6 +87,14 @@ setup() {
     [[ "$output" == *"Tout est prêt"* ]]
 }
 
+@test "statut : lefthook.yml present -> signale comme non pris en charge" {
+    printf 'pre-commit: {}\n' >lefthook.yml
+    run "$PKG/bin/repogarde" statut
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lefthook.yml présent : lefthook n'est plus pris en charge"* ]]
+    [[ "$output" != *"absents : "*"lefthook"* ]]
+}
+
 @test "statut : installation locale (sans --global) -> hooks et git cc reconnus" {
     git config --unset core.hooksPath
     "$PKG/install.sh" --lang fr >/dev/null

@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart LR
-    A["Poste développeur<br/>hooks (lefthook)"] -->|git push| B["CI<br/>action GitHub · template GitLab"]
+    A["Poste développeur<br/>hooks repogarde"] -->|git push| B["CI<br/>action GitHub · template GitLab"]
     B -->|vérifications obligatoires| C["Branche main protégée"]
     A -. "retour immédiat<br/>corrections automatiques" .-> A
     B -. "fait foi<br/>non contournable" .-> B
@@ -36,11 +36,9 @@ flowchart LR
 
 ## En 30 secondes
 
-```yaml title="lefthook.yml — hooks du projet"
-remotes:
-  - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v3 # dernière 3.x (vX.Y.Z pour figer)
-    configs: [lefthook-remote.yml]
+```bash title="Poste développeur — une fois, pour tous les dépôts"
+npm install -g @simbie/repogarde
+repogarde install --global
 ```
 
 ```yaml title=".github/workflows/repogarde.yml — CI (extrait)"

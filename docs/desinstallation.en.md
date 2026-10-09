@@ -28,11 +28,11 @@ cd my-project
 repogarde uninstall
 ```
 
-## Project configured with lefthook
+## Project still configured with lefthook (repogarde 3)
 
 ```bash
 cd my-project
 lefthook uninstall
 ```
 
-Then remove the repogarde `remotes` entry from `lefthook.yml`, or the file itself.
+Then remove the repogarde `remotes` entry from `lefthook.yml`, or the file itself. Since repogarde 4, lefthook is no longer supported: the project's own commands go in `.repogarde/<hook>` ([Configuration](configuration.md#project-specific-hooks)).
