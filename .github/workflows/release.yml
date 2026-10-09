@@ -1,21 +1,22 @@
-# Releases rythmées, sans jeton personnel : le travail s'intègre dans develop,
-# où le job « release » (workflow réutilisable release-auto.yml, mode cycle,
-# le même que pour les projets) tient à jour la PR de livraison develop → main.
-# La merger (décision humaine) lance sur main la PR de release, validée par la
-# CI puis mergée, le tag, et le retour de la release dans develop ;
-# les jobs suivants déplacent le tag majeur, signent l'archive, attestent sa
-# provenance et republient la documentation.
+# Releases rythmées, sans jeton personnel ni fichier écrit : le travail
+# s'intègre dans develop, où le job « release » (workflow réutilisable
+# release-auto.yml en mode tag, le même que pour les projets) publie une
+# préversion next et tient à jour la PR de livraison develop → main. La merger
+# (décision humaine) pose sur main le tag vX.Y.Z et crée la release ; les jobs
+# suivants déplacent le tag majeur, signent l'archive, attestent sa provenance,
+# publient sur npm et republient la documentation.
 name: release
 
 on:
   push:
-    # Cycle develop → main : livraison tenue à jour sur develop, release sur main
+    # develop : préversion et livraison ; main : release
     branches: [main, develop]
   workflow_dispatch:
 
-# Une release à la fois ; un nouveau push attend la fin de la précédente
+# Une release à la fois par branche ; un nouveau push attend la précédente
 concurrency:
-  group: release
+  # Une file par branche : un run sur main n'annule pas celui de develop
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 # Aucun droit par défaut : chaque job déclare le strict nécessaire
@@ -33,16 +34,18 @@ jobs:
       checks: read
       statuses: write
     with:
-      # Cycle : le travail s'intègre dans develop ; merger la PR de livraison
-      # develop → main déclenche la release, puis main revient dans develop
-      mode: cycle
+      # Mode tag : le travail s'intègre dans develop (préversions next) ;
+      # merger la PR de livraison develop → main publie le tag vX.Y.Z et la
+      # release (version calculée depuis tous les commits livrés, aucun
+      # fichier écrit). Un correctif urgent sur main revient seul dans develop.
+      mode: tag
       integration-branch: develop
-      # docs.yml déploierait le site depuis la branche de release : exclu
+      # CI lancée sur la PR de retour vers develop (docs.yml : site, exclu)
       workflows: ci.yml codeql.yml
-      # repogarde s'utilise lui-même au commit publié, pas au tag v2
+      # repogarde s'utilise lui-même au commit publié, pas au tag v3
       repogarde-ref: ${{ github.sha }}
 
-  # Le merge fait par GITHUB_TOKEN ne déclenche pas le site : on le relance
+  # Site republié après la release (notes de version de la page Changelog)
   docs:
     needs: release
     if: needs.release.outputs.release_created == 'true'

@@ -39,14 +39,14 @@ flowchart LR
 ```yaml title="lefthook.yml — hooks du projet"
 remotes:
   - git_url: https://github.com/SimBienvenueHoulBoumi/repogarde
-    ref: v3.5.0 # x-release-please-version
+    ref: v3 # dernière 3.x (vX.Y.Z pour figer)
     configs: [lefthook-remote.yml]
 ```
 
 ```yaml title=".github/workflows/repogarde.yml — CI (extrait)"
 - uses: actions/checkout@v7
   with: { fetch-depth: 0 }
-- uses: SimBienvenueHoulBoumi/repogarde@v3 # x-release-please-major
+- uses: SimBienvenueHoulBoumi/repogarde@v3
   with: { strict: true }
 ```
 

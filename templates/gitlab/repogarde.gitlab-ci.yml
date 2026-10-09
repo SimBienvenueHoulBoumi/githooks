@@ -5,10 +5,10 @@
 #   include:
 #     # repogarde hébergé sur votre GitLab (recommandé) :
 #     - project: outils/repogarde
-#       ref: v3.5.0 # x-release-please-version
+#       ref: v3 # dernière 3.x (vX.Y.Z pour figer)
 #       file: templates/gitlab/repogarde.gitlab-ci.yml
 #     # ou depuis GitHub (dépôt public) :
-#     # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repogarde/v1.0.0/templates/gitlab/repogarde.gitlab-ci.yml
+#     # - remote: https://raw.githubusercontent.com/SimBienvenueHoulBoumi/repogarde/v3/templates/gitlab/repogarde.gitlab-ci.yml
 #
 #   repogarde:
 #     image: votre-image-avec-les-outils-du-projet  # JDK, node, python…
@@ -24,7 +24,7 @@
   variables:
     GIT_DEPTH: "0"
     REPOGARDE_URL: https://github.com/SimBienvenueHoulBoumi/repogarde.git
-    REPOGARDE_REF: v3.5.0 # x-release-please-version
+    REPOGARDE_REF: v3 # dernière 3.x (vX.Y.Z pour figer)
     REPOGARDE_CHECKS: commits branch secrets format tests deadcode
     REPOGARDE_STRICT: "false"
     GITLEAKS_VERSION: 8.30.1

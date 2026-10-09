@@ -29,6 +29,6 @@ jobs:
       #   with: { node-version: 24, cache: npm }
       # - run: npm ci
 
-      - uses: SimBienvenueHoulBoumi/repogarde@v3 # x-release-please-major
+      - uses: SimBienvenueHoulBoumi/repogarde@v3
         with:
           strict: true
