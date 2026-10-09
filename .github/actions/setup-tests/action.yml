@@ -1,6 +1,6 @@
 # Outillage des tests bats (partagé par les jobs Linux, macOS et Windows)
 name: setup-tests
-description: Installe go, node, python, bats, lefthook, ruff et gitleaks
+description: Installe go, node, python, bats, ruff et gitleaks
 runs:
   using: composite
   steps:
@@ -13,12 +13,12 @@ runs:
     - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: "3.x"
-    - name: Installer bats, lefthook, ruff, gitleaks
+    - name: Installer bats, ruff, gitleaks
       shell: bash
       env:
         REPOGARDE_BIN: ${{ runner.temp }}/bin
       run: |
-        npm install -g bats@1.13.0 lefthook@2.1.17
+        npm install -g bats@1.13.0
         pip install --require-hashes -r ci/requirements/tests.txt
         ci/install-tool.sh gitleaks
         echo "$REPOGARDE_BIN" >>"$GITHUB_PATH"

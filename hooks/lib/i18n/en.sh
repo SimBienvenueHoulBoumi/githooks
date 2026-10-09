@@ -109,8 +109,7 @@ _msg_en() {
         hook.post_merge.3) _M="%s: deleted on the server but some changes are missing here, kept." ;;
         hook.post_merge.4) _M="  To delete it anyway: git branch -D %s" ;;
         hook.common.3) _M="%s disabled (git config repogarde.skip)." ;;
-        hook.common.4) _M="lefthook project (%s) but lefthook is not installed: default repogarde rules. Install lefthook." ;;
-        hook.common.lefthook_orphan) _M="%s: orphan lefthook hook (no lefthook configuration), ignored. Remove it: lefthook uninstall" ;;
+        hook.common.lefthook_ignored) _M="%s: hook installed by lefthook, ignored (lefthook is no longer supported since repogarde 4). Move its commands to .repogarde/%s, then: lefthook uninstall" ;;
         hook.common.5) _M="Project local hook: %s" ;;
         hook.lang.1) _M="Custom formatting: %s" ;;
         hook.lang.2) _M="%s: %s file(s)" ;;
@@ -208,7 +207,7 @@ _msg_en() {
         ci.check.19) _M="gitleaks not installed: run ci/install-tool.sh gitleaks before this script." ;;
         ci.check.20) _M="Working tree modified before the check: formatting cannot be verified." ;;
         ci.check.21) _M="A formatter failed (syntax error, or tool / dependency unavailable): see the log above." ;;
-        ci.check.22) _M="Fix: install the hooks (lefthook install) or run the formatter, then commit." ;;
+        ci.check.22) _M="Fix: install the hooks (repogarde install --global) or run the formatter, then commit." ;;
         ci.check.23) _M="Changed files are correctly formatted." ;;
         ci.check.24) _M="repogarde CI — base: %s — checks: %s" ;;
         ci.check.25) _M="Disabled by .repogarde.conf (skip %s)." ;;
@@ -245,6 +244,7 @@ _msg_en() {
         ci.proteger.codeowners_invalid) _M="codeOwnerReview: true or false." ;;
         ci.proteger.no_branch) _M="None of the branches \"%s\" exists on %s." ;;
         ci.proteger.no_cleanup) _M="Automatic branch deletion disabled (it would delete develop): add a workflow calling nettoyage-branches.yml, otherwise merged branches remain (see In an organisation)." ;;
+        ci.proteger.delivery) _M="  delivery into main: %s approval(s) required (moving to a new version); auto-merge disabled" ;;
         ci.proteger.methods_flow) _M="main: merge commit; %s: squash or merge commit" ;;
         ci.proteger.tags_org) _M="reserved for workflows" ;;
         ci.proteger.tags_user) _M="neither moved nor deleted (personal account: creation allowed)" ;;
@@ -327,8 +327,7 @@ _msg_en() {
         st.lang) _M="Message language: %s" ;;
         st.repo) _M="Repository: %s" ;;
         st.repo_local) _M="Repository-specific hooks (local core.hooksPath = %s), take precedence" ;;
-        st.repo_lefthook) _M="%s present: hooks delegate to lefthook (project pinned version)" ;;
-        st.repo_lefthook_missing) _M="%s present but lefthook missing: default rules, without the project version" ;;
+        st.repo_lefthook) _M="%s present: lefthook is no longer supported since repogarde 4, its commands are not run. Move them to .repogarde/<hook>, the expected version to .repogarde.conf (version)" ;;
         st.repo_version_old) _M="The project requires repogarde %s; installed: %s" ;;
         st.repo_version_ok) _M="Version required by the project (%s): met" ;;
         st.repo_forge) _M="Platform: %s" ;;

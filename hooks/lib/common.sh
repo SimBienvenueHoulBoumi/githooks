@@ -293,49 +293,6 @@ exit_if_skipped() {
     fi
 }
 
-# lefthook refuse de fonctionner (gros avertissement) quand core.hooksPath est
-# défini globalement. Pour lui seul, on présente une copie de la config globale
-# de l'utilisateur SANS core.hooksPath : il récupère ses remotes et installe ses
-# hooks dans .git/hooks, sans jamais toucher au dossier repogarde global.
-lefthook_without_global_hookspath() {
-    local global cfg key value
-    git config --global --get core.hooksPath >/dev/null 2>&1 || return 0
-    global="${GIT_CONFIG_GLOBAL:-$HOME/.gitconfig}"
-    cfg="$(git rev-parse --absolute-git-dir)/repogarde-lefthook.gitconfig"
-    # Copie régénérée seulement si la config globale a changé
-    if [ ! -f "$cfg" ] || [ "$global" -nt "$cfg" ]; then
-        : >"$cfg.tmp"
-        git config --global --list --includes -z | while IFS= read -r -d '' entry; do
-            key="${entry%%$'\n'*}"
-            value="${entry#*$'\n'}"
-            [ "$key" = "$entry" ] && value=""
-            [ "$(echo "$key" | tr '[:upper:]' '[:lower:]')" = core.hookspath ] && continue
-            git config -f "$cfg.tmp" --add "$key" "$value"
-        done
-        mv "$cfg.tmp" "$cfg"
-    fi
-    export GIT_CONFIG_GLOBAL="$cfg"
-}
-
-# Projet géré par lefthook (lefthook.yml) : lui déléguer le hook, pour appliquer
-# sa config (remote repogarde à la version figée + jobs du projet) même quand
-# repogarde est installé globalement (core.hooksPath, que lefthook refuse).
-delegate_to_lefthook() {
-    local f
-    [ -n "${REPOGARDE_RUNNER:-}" ] && return 0
-    [ -n "$GIT_TOPLEVEL" ] || return 0
-    for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
-        [ -f "$GIT_TOPLEVEL/$f" ] || continue
-        if has lefthook; then
-            export REPOGARDE_RUNNER=lefthook
-            lefthook_without_global_hookspath
-            exec lefthook run "$HOOK_NAME" "$@"
-        fi
-        warn_t hook.common.4 "$f"
-        return 0
-    done
-}
-
 # Version minimale de repogarde demandée par le projet (repogarde.version,
 # ex. 3.1.4 ou 3) : le poste prévenu s'il est en retard, avec la commande de
 # mise à jour. Avertissement seulement : la CI, à sa propre version, fait foi.
@@ -366,26 +323,18 @@ check_version() {
 
 # Exécute les hooks propres au projet (.repogarde/<hook> ou .git/hooks/<hook>),
 # ignorés par git dès que core.hooksPath pointe ici.
-# Désactivé sous lefthook : .git/hooks contient ses propres hooks (boucle infinie)
-# et les hooks du projet sont alors déclarés dans lefthook.yml.
 run_local_hook() {
-    local candidate real f config
-    [ "${REPOGARDE_RUNNER:-}" = lefthook ] && return 0
+    local candidate real
     for candidate in ".repogarde/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
         [ -x "$candidate" ] || continue
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
-        # Reste d'un ancien « lefthook install » alors que le dépôt n'a plus de
-        # configuration lefthook : lefthook échouerait (« No config files »)
+        # Hook installé par lefthook (« lefthook install ») : lefthook n'est plus
+        # pris en charge depuis repogarde 4. Ses commandes se déclarent dans
+        # .repogarde/<hook>, lancé juste avant.
         if grep -qs lefthook "$candidate"; then
-            config=""
-            for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
-                [ -f "$GIT_TOPLEVEL/$f" ] && config=1
-            done
-            if [ -z "$config" ]; then
-                info_t hook.common.lefthook_orphan "$candidate"
-                continue
-            fi
+            attention_t hook.common.lefthook_ignored "$candidate" "$HOOK_NAME"
+            continue
         fi
         info_t hook.common.5 "$candidate"
         "$candidate" "$@" || return $?

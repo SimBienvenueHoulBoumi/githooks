@@ -4,7 +4,7 @@ repogarde impose les mêmes règles à tous les projets (messages de commit, nom
 
 | Niveau | Rôle | Contournable ? |
 |---|---|---|
-| Poste développeur — hooks via [lefthook](https://lefthook.dev) | Retour immédiat, corrections automatiques (formatage, préfixe de commit) | Oui (`--no-verify`) |
+| Poste développeur — hooks repogarde (installation globale) | Retour immédiat, corrections automatiques (formatage, préfixe de commit) | Oui (`--no-verify`) |
 | CI — action GitHub / template GitLab | **Fait foi** : mêmes vérifications sur chaque merge request | Non |
 | Serveur — protection des branches | Interdit de merger si la CI échoue, interdit le push direct sur `main` | Non |
 
@@ -45,52 +45,18 @@ Politique conseillée pour les projets : **figer une version exacte** (`ref: v1.
 
 ## 3. Poste développeur
 
-Installer lefthook une fois :
+Installer repogarde une fois par poste, pour tous les dépôts :
 
 ```bash
-brew install lefthook          # macOS
-winget install evilmartians.lefthook   # Windows
-npm install -g lefthook        # tout système avec Node
-go install github.com/evilmartians/lefthook/v2@latest
+npm install -g @simbie/repogarde   # registre interne : voir « Sources internes » plus bas
+repogarde install --global
 ```
 
-Puis, dans chaque projet : `lefthook install` (une fois après le clone).
+La version minimale attendue par un projet se déclare dans son `.repogarde.conf` (`version`) : un poste en retard est prévenu à chaque commit, avec la commande de mise à jour. Les commandes propres au projet se déclarent dans `.repogarde/<hook>` ([Configuration](configuration.md#hooks-propres-au-projet)).
 
 Outils recommandés : `gitleaks` (secrets) et les formateurs des langages utilisés (voir [Technologies](technologies.md)).
 
-**Installation automatique** au premier build, pour ne dépendre de personne :
-
-- Node : `npm install --save-dev lefthook` → les hooks s'installent à chaque `npm install`.
-- Maven :
-  ```xml
-  <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>exec-maven-plugin</artifactId>
-    <executions>
-      <execution>
-        <id>lefthook-install</id>
-        <phase>initialize</phase>
-        <goals><goal>exec</goal></goals>
-        <configuration>
-          <executable>lefthook</executable>
-          <arguments><argument>install</argument></arguments>
-          <skip>${env.CI}</skip>
-        </configuration>
-      </execution>
-    </executions>
-  </plugin>
-  ```
-- Gradle (Kotlin DSL) :
-  ```kotlin
-  val lefthookInstall by tasks.registering(Exec::class) {
-      commandLine("lefthook", "install")
-      isIgnoreExitValue = true
-      onlyIf { System.getenv("CI") == null }
-  }
-  tasks.named("compileJava") { dependsOn(lefthookInstall) }
-  ```
-  Ces deux snippets **font échouer le build si lefthook n'est pas installé** : c'est voulu (le poste doit être équipé). Hors CI uniquement.
-- Python / autres : documenter `lefthook install` dans le README du projet, ou l'ajouter à `make setup`.
+Un poste sans hooks ne bloque personne : la CI refait toutes les vérifications et fait foi. `repogarde` (sans argument) affiche l'état du poste et l'étape suivante.
 
 ## 4. Adopter repogarde dans un projet
 
@@ -98,7 +64,6 @@ Copier depuis `templates/project/` :
 
 | Fichier | Rôle |
 |---|---|
-| `lefthook.yml` | Hooks locaux : règles repogarde (version figée) + jobs propres au projet |
 | `.github/workflows/repogarde.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
 | `gitlab-ci.yml` | À fusionner dans `.gitlab-ci.yml` (choisir une image avec les outils du projet) |
 | `.repogarde.conf` | Réglages partagés : exceptions de branches, étapes désactivées, commandes personnalisées |
@@ -170,7 +135,9 @@ Les erreurs apparaissent en annotations sur GitHub et dans le log du job sur Git
 
 ## 7. Poste avec l'installation globale repogarde
 
-`install.sh --global` (usage personnel) et lefthook cohabitent : dans un dépôt contenant un `lefthook.yml`, les hooks globaux délèguent à lefthook (config du projet, version figée), sans `lefthook install` et sans conflit de `core.hooksPath`.
+Avec `install.sh --global` ou `repogarde install --global`, les hooks s'appliquent à tous les dépôts du poste, sans rien ajouter aux projets.
+
+Un projet encore configuré avec lefthook (repogarde 3) : depuis repogarde 4, lefthook n'est plus pris en charge. Un hook installé par lefthook dans `.git/hooks` est ignoré, avec un avertissement. Déplacer les commandes du projet dans `.repogarde/<hook>`, la version attendue dans `.repogarde.conf` (`version`), puis `lefthook uninstall` ([Désinstallation](desinstallation.md)).
 
 ## 8. Sources internes (réseau fermé, Nexus, Artifactory…)
 
@@ -189,7 +156,7 @@ Ce que repogarde récupère lui-même :
 
 | Élément | Source interne |
 |---|---|
-| repogarde (installation par clone, lefthook) | miroir Git interne du dépôt : `git_url` du `lefthook.yml`, variable `REPOGARDE_URL` du modèle GitLab |
+| repogarde (installation par clone) | miroir Git interne du dépôt : URL du `git clone`, variable `REPOGARDE_URL` du modèle GitLab |
 | Action GitHub `repogarde@v3` (GitHub Enterprise Server) | dépôt synchronisé dans l'organisation ([actions-sync](https://docs.github.com/en/enterprise-server/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/manually-syncing-actions-from-githubcom)), puis `uses: <organisation>/repogarde@v3` |
 | Outils installés en CI (gitleaks, PMD, actionlint) | **recommandé** : déjà présents dans l'image du runner, rien n'est alors téléchargé ; sinon `REPOGARDE_DOWNLOAD_MIRROR` |
 

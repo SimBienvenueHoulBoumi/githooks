@@ -101,19 +101,28 @@ setup() {
     done
 }
 
-@test "hooks : hook lefthook orphelin de .git/hooks ignore (plus de configuration lefthook)" {
+@test "hooks : hook installe par lefthook ignore, meme avec une configuration lefthook" {
     initial_commit
-    git switch -q -c feat/orphelin
+    git switch -q -c feat/lefthook
     printf '#!/bin/sh\necho LEFTHOOK-LANCE\nlefthook run pre-commit "$@"\n' >.git/hooks/pre-commit
     chmod +x .git/hooks/pre-commit
-    echo a >a.txt && git add a.txt
+    printf 'pre-commit: {}\n' >lefthook.yml
+    echo a >a.txt && git add a.txt lefthook.yml
     run git commit -m "feat: a"
     [ "$status" -eq 0 ]
     [[ "$output" != *"LEFTHOOK-LANCE"* ]]
-    [[ "$output" == *"hook lefthook orphelin"* ]]
-    # Avec une configuration lefthook, le hook du dépôt reste lancé
-    printf 'pre-commit: {}\n' >lefthook.yml
-    git add lefthook.yml
-    run git -c core.hooksPath="$HOOKS" commit -m "chore: config lefthook"
-    [[ "$output" != *"hook lefthook orphelin"* ]]
+    [[ "$output" == *"hook installé par lefthook, ignoré"* ]]
+    [[ "$output" == *".repogarde/pre-commit"* ]]
+}
+
+@test "hooks : .repogarde/<hook> du projet lance a la place de lefthook" {
+    initial_commit
+    git switch -q -c feat/hook-projet
+    mkdir -p .repogarde
+    printf '#!/bin/sh\necho HOOK-PROJET-LANCE\n' >.repogarde/pre-commit
+    chmod +x .repogarde/pre-commit
+    echo a >a.txt && git add a.txt
+    run git commit -m "feat: a"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HOOK-PROJET-LANCE"* ]]
 }

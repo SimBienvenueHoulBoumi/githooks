@@ -68,7 +68,7 @@ git config repogarde.skip "node"                  # disables a language
 
 ## Project-specific hooks
 
-An executable script `.repogarde/<hook>` (or `.git/hooks/<hook>`) is also run, before the common checks. With lefthook, declare the project's jobs in `lefthook.yml` instead.
+An executable script `.repogarde/<hook>` (or `.git/hooks/<hook>`) is also run, before the common checks. This is where the project's own commands go (lefthook is no longer supported since repogarde 4: a hook installed by lefthook in `.git/hooks` is ignored, with a warning).
 
 ## Output
 

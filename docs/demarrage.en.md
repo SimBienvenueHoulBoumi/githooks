@@ -45,8 +45,6 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
     ~/repogarde/install.sh --global
     ```
 
-    A repository that contains a `lefthook.yml` uses its own configuration (pinned version), if lefthook is installed.
-
 === "A team project"
 
     1. **Everyone** installs repogarde once on their machine ("On my machine" tab): `npm install -g @simbie/repogarde`, then `repogarde install --global`.
@@ -63,8 +61,6 @@ Three paths, depending on your use case. The fastest way to try it: **On my mach
     3. **Make the CI required** to merge: `repogarde proteger` (see [In an organisation](industrialisation.md)).
 
     A machine whose repogarde is older than the project `version` is warned on every commit, with the update command. Without hooks, the CI re-runs every check anyway.
-
-    **Exact version per project (advanced)**: with [lefthook](https://lefthook.dev) and the `lefthook.yml` template, each project downloads repogarde at its own pinned version. Everyone then installs lefthook once (`brew install lefthook`, `npm install -g lefthook`, `winget install evilmartians.lefthook`), then runs `lefthook install` in the project; the machine's repogarde hooks automatically delegate to the project's `lefthook.yml`.
 
 === "An organisation"
 

@@ -4,7 +4,7 @@ repogarde enforces the same rules on every project (commit messages, branch nami
 
 | Level | Role | Can be bypassed? |
 |---|---|---|
-| Developer machine — hooks via [lefthook](https://lefthook.dev) | Immediate feedback, automatic fixes (formatting, commit prefix) | Yes (`--no-verify`) |
+| Developer machine — repogarde hooks (global installation) | Immediate feedback, automatic fixes (formatting, commit prefix) | Yes (`--no-verify`) |
 | CI — GitHub action / GitLab template | **Authoritative**: the same checks on every merge request | No |
 | Server — branch protection | Blocks merging when CI fails, blocks direct pushes to `main` | No |
 
@@ -45,52 +45,18 @@ Recommended policy for projects: **pin an exact version** (`ref: v1.4.2`) and up
 
 ## 3. Developer machine
 
-Install lefthook once:
+Install repogarde once per machine, for every repository:
 
 ```bash
-brew install lefthook          # macOS
-winget install evilmartians.lefthook   # Windows
-npm install -g lefthook        # any system with Node
-go install github.com/evilmartians/lefthook/v2@latest
+npm install -g @simbie/repogarde   # internal registry: see "Internal sources" below
+repogarde install --global
 ```
 
-Then, in each project: `lefthook install` (once after cloning).
+The minimum version a project expects goes in its `.repogarde.conf` (`version`): an outdated machine is warned on every commit, with the update command. The project's own commands go in `.repogarde/<hook>` ([Configuration](configuration.md#project-specific-hooks)).
 
 Recommended tools: `gitleaks` (secrets) and the formatters for the languages in use (see [Technologies](technologies.md)).
 
-**Automatic installation** on the first build, so nobody has to remember it:
-
-- Node: `npm install --save-dev lefthook` → hooks are installed on every `npm install`.
-- Maven:
-  ```xml
-  <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>exec-maven-plugin</artifactId>
-    <executions>
-      <execution>
-        <id>lefthook-install</id>
-        <phase>initialize</phase>
-        <goals><goal>exec</goal></goals>
-        <configuration>
-          <executable>lefthook</executable>
-          <arguments><argument>install</argument></arguments>
-          <skip>${env.CI}</skip>
-        </configuration>
-      </execution>
-    </executions>
-  </plugin>
-  ```
-- Gradle (Kotlin DSL):
-  ```kotlin
-  val lefthookInstall by tasks.registering(Exec::class) {
-      commandLine("lefthook", "install")
-      isIgnoreExitValue = true
-      onlyIf { System.getenv("CI") == null }
-  }
-  tasks.named("compileJava") { dependsOn(lefthookInstall) }
-  ```
-  These two snippets **fail the build if lefthook is not installed**: this is intentional (the machine must be set up). Outside CI only.
-- Python / others: document `lefthook install` in the project README, or add it to `make setup`.
+A machine without hooks blocks no one: CI runs every check again and is authoritative. `repogarde` (no argument) shows the machine's status and the next step.
 
 ## 4. Adopting repogarde in a project
 
@@ -98,7 +64,6 @@ Copy from `templates/project/`:
 
 | File | Role |
 |---|---|
-| `lefthook.yml` | Local hooks: repogarde rules (pinned version) + project-specific jobs |
 | `.github/workflows/repogarde.yml` | GitHub CI (add the `setup-*` steps for the project's tools) |
 | `gitlab-ci.yml` | To merge into `.gitlab-ci.yml` (choose an image with the project's tools) |
 | `.repogarde.conf` | Shared settings: branch exceptions, disabled steps, custom commands |
@@ -170,7 +135,9 @@ Errors appear as annotations on GitHub and in the job log on GitLab, with the co
 
 ## 7. Machine with the global repogarde installation
 
-`install.sh --global` (personal use) and lefthook coexist: in a repository containing a `lefthook.yml`, the global hooks delegate to lefthook (project config, pinned version), without `lefthook install` and without a `core.hooksPath` conflict.
+With `install.sh --global` or `repogarde install --global`, the hooks apply to every repository on the machine, without adding anything to the projects.
+
+A project still configured with lefthook (repogarde 3): since repogarde 4, lefthook is no longer supported. A hook installed by lefthook in `.git/hooks` is ignored, with a warning. Move the project's commands to `.repogarde/<hook>`, the expected version to `.repogarde.conf` (`version`), then run `lefthook uninstall` ([Uninstallation](desinstallation.md)).
 
 ## 8. Internal sources (closed network, Nexus, Artifactory…)
 
@@ -189,7 +156,7 @@ What repogarde fetches itself:
 
 | Item | Internal source |
 |---|---|
-| repogarde (clone installation, lefthook) | internal Git mirror of the repository: `git_url` in `lefthook.yml`, `REPOGARDE_URL` variable of the GitLab template |
+| repogarde (clone installation) | internal Git mirror of the repository: `git clone` URL, `REPOGARDE_URL` variable of the GitLab template |
 | GitHub Action `repogarde@v3` (GitHub Enterprise Server) | repository synced into the organisation ([actions-sync](https://docs.github.com/en/enterprise-server/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/manually-syncing-actions-from-githubcom)), then `uses: <organisation>/repogarde@v3` |
 | Tools installed in CI (gitleaks, PMD, actionlint) | **recommended**: already present in the runner image, nothing is downloaded then; otherwise `REPOGARDE_DOWNLOAD_MIRROR` |
 

@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-# Point d'entrée lefthook : relaie vers le hook repogarde du même nom
-# (.lefthook/<hook>/repogarde → hooks/<hook>).
-set -euo pipefail
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-export REPOGARDE_RUNNER=lefthook
-exec "$here/../../hooks/$(basename "$here")" "$@"

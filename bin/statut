@@ -67,9 +67,7 @@ if [ -n "$GIT_TOPLEVEL" ]; then
     fi
     for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
         [ -f "$GIT_TOPLEVEL/$f" ] || continue
-        if has lefthook; then info_t st.repo_lefthook "$f"
-        else attention_t st.repo_lefthook_missing "$f"
-        fi
+        attention_t st.repo_lefthook "$f"
         break
     done
     cfg_r version ""
@@ -87,7 +85,7 @@ fi
 
 # Outils : secrets, code mort (selon les langages)
 presents="" absents=""
-for outil in gitleaks ruff vulture staticcheck pmd lefthook; do
+for outil in gitleaks ruff vulture staticcheck pmd; do
     if has "$outil"; then presents="$presents $outil"; else absents="$absents $outil"; fi
 done
 info_t st.tools "${presents# }" "${absents# }"

@@ -107,8 +107,7 @@ _msg_fr() {
         hook.post_merge.3) _M="%s : supprimée sur le serveur mais des modifications manquent ici, conservée." ;;
         hook.post_merge.4) _M="  Pour la supprimer quand même : git branch -D %s" ;;
         hook.common.3) _M="%s désactivé (git config repogarde.skip)." ;;
-        hook.common.4) _M="Projet lefthook (%s) mais lefthook absent : règles repogarde par défaut. Installe lefthook." ;;
-        hook.common.lefthook_orphan) _M="%s : hook lefthook orphelin (aucune configuration lefthook), ignoré. Le retirer : lefthook uninstall" ;;
+        hook.common.lefthook_ignored) _M="%s : hook installé par lefthook, ignoré (lefthook n'est plus pris en charge depuis repogarde 4). Déplacer ses commandes dans .repogarde/%s, puis : lefthook uninstall" ;;
         hook.common.5) _M="Hook local du projet : %s" ;;
         hook.lang.1) _M="Formatage personnalisé : %s" ;;
         hook.lang.2) _M="%s : %s fichier(s)" ;;
@@ -208,7 +207,7 @@ _msg_fr() {
         ci.check.19) _M="gitleaks absent : lancer ci/install-tool.sh gitleaks avant ce script." ;;
         ci.check.20) _M="Dossier de travail modifié avant la vérification : impossible de contrôler le formatage." ;;
         ci.check.21) _M="Un formateur a échoué (erreur de syntaxe, ou outil / dépendance indisponible) : voir le log ci-dessus." ;;
-        ci.check.22) _M="Corriger : installer les hooks (lefthook install) ou lancer le formateur, puis commiter." ;;
+        ci.check.22) _M="Corriger : installer les hooks (repogarde install --global) ou lancer le formateur, puis commiter." ;;
         ci.check.23) _M="Fichiers modifiés correctement formatés." ;;
         ci.check.24) _M="repogarde CI — base : %s — vérifications : %s" ;;
         ci.check.25) _M="Désactivé par .repogarde.conf (skip %s)." ;;
@@ -245,6 +244,7 @@ _msg_fr() {
         ci.proteger.codeowners_invalid) _M="codeOwnerReview : true ou false." ;;
         ci.proteger.no_branch) _M="Aucune des branches « %s » n'existe sur %s." ;;
         ci.proteger.no_cleanup) _M="Suppression automatique des branches désactivée (elle supprimerait develop) : ajouter un workflow qui appelle nettoyage-branches.yml, sinon les branches mergées restent (voir En organisation)." ;;
+        ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique désactivé" ;;
         ci.proteger.methods_flow) _M="main : merge commit ; %s : squash ou merge commit" ;;
         ci.proteger.tags_org) _M="réservés aux workflows" ;;
         ci.proteger.tags_user) _M="ni déplacés ni supprimés (compte personnel : création libre)" ;;
@@ -327,8 +327,7 @@ _msg_fr() {
         st.lang) _M="Langue des messages : %s" ;;
         st.repo) _M="Dépôt : %s" ;;
         st.repo_local) _M="Hooks propres à ce dépôt (core.hooksPath local = %s), prioritaires" ;;
-        st.repo_lefthook) _M="%s présent : les hooks délèguent à lefthook (version figée du projet)" ;;
-        st.repo_lefthook_missing) _M="%s présent mais lefthook absent : règles par défaut, sans la version du projet" ;;
+        st.repo_lefthook) _M="%s présent : lefthook n'est plus pris en charge depuis repogarde 4, ses commandes ne sont pas lancées. Les déplacer dans .repogarde/<hook>, la version attendue dans .repogarde.conf (version)" ;;
         st.repo_version_old) _M="Le projet demande repogarde %s ; installé : %s" ;;
         st.repo_version_ok) _M="Version demandée par le projet (%s) : respectée" ;;
         st.repo_forge) _M="Plateforme : %s" ;;

@@ -86,7 +86,8 @@ refs_json() { # branches → "refs/heads/a", "refs/heads/b"
 }
 
 # Ruleset de branches : $1 nom, $2 branches (liste), $3 méthodes de merge (JSON),
-# $4 PR à jour exigée (défaut true)
+# $4 PR à jour exigée (défaut true), $5 approbations (défaut REVIEWS),
+# $6 dernier push approuvé par un autre (défaut selon REVIEWS)
 branch_ruleset() {
     # shellcheck disable=SC2086 # liste de branches volontairement découpée
     cat <<JSON
@@ -103,8 +104,8 @@ branch_ruleset() {
       "allowed_merge_methods": [$3],
       "dismiss_stale_reviews_on_push": true,
       "require_code_owner_review": $CODEOWNERS,
-      "require_last_push_approval": $last_push,
-      "required_approving_review_count": $REVIEWS,
+      "require_last_push_approval": ${6:-$last_push},
+      "required_approving_review_count": ${5:-$REVIEWS},
       "required_review_thread_resolution": true}},
     {"type": "required_status_checks", "parameters": {
       "strict_required_status_checks_policy": ${4:-true},
@@ -147,7 +148,12 @@ if [ -n "$integration" ]; then
     # develop : travail en squash, merge commit pour release/… et hotfix/…
     others=""
     for b in $existing; do [ "$b" = "$integration" ] || others="$others $b"; done
-    [ -z "$others" ] || rulesets+=("$(branch_ruleset repogarde "$others" '"merge"')")
+    # Livraison vers main = passage à une nouvelle version : approbation
+    # humaine obligatoire (la PR de livraison est ouverte par le workflow,
+    # le mainteneur peut donc l'approuver), sans exiger un autre approbateur
+    # que l'auteur du dernier push sauf si des relectures sont configurées
+    livraison=$((REVIEWS > 0 ? REVIEWS : 1))
+    [ -z "$others" ] || rulesets+=("$(branch_ruleset repogarde "$others" '"merge"' true "$livraison" "$last_push")")
     # Branche d'intégration : PR à jour non exigée. Le retour de main (après
     # une release) serait sinon presque toujours en retard, et « mettre à jour »
     # fusionnerait develop dans main en contournant la livraison ; la CI
@@ -158,6 +164,8 @@ if [ -n "$integration" ]; then
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)
     delete_on_merge=false
+    # Merge automatique désactivé : aucune livraison programmée sans décision
+    auto_merge=false
     # Sans ce workflow, les branches mergées ne seraient plus supprimées
     if ! grep -qs "nettoyage-branches.yml" "$GIT_TOPLEVEL"/.github/workflows/*.y*ml; then
         attention_t ci.proteger.no_cleanup
@@ -167,6 +175,7 @@ if [ -n "$integration" ]; then
 else
     rulesets+=("$(branch_ruleset repogarde "$existing" '"squash"')")
     merge_commit=false
+    auto_merge=true
     delete_on_merge=true
     methods="squash"
 fi
@@ -189,6 +198,7 @@ echo_t ci.proteger.1 "$REPO"
 echo_t ci.proteger.2 "$existing"
 echo_t ci.proteger.3 "$CHECKS"
 echo_t ci.proteger.4 "$methods" "$delete_on_merge"
+[ -z "$integration" ] || echo_t ci.proteger.delivery "$livraison"
 echo_t ci.proteger.5 "$tags_msg"
 [ -z "$integration" ] || echo_t ci.proteger.6 "$integration"
 echo_t ci.proteger.7 "$REVIEWS" "$CODEOWNERS"
@@ -232,7 +242,7 @@ if [ -n "$DRY_RUN" ]; then
 fi
 
 settings=(-F allow_squash_merge=true -F allow_merge_commit="$merge_commit" -F allow_rebase_merge=false
-    -F delete_branch_on_merge="$delete_on_merge" -F allow_auto_merge=true
+    -F delete_branch_on_merge="$delete_on_merge" -F allow_auto_merge="$auto_merge"
     -f squash_merge_commit_title=PR_TITLE -f squash_merge_commit_message=PR_BODY)
 [ -z "$integration" ] || settings+=(-f default_branch="$integration")
 gh api -X PATCH "repos/$REPO" --silent "${settings[@]}"

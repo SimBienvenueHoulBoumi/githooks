@@ -67,7 +67,7 @@ git config repogarde.skip "node"                  # désactive un langage
 
 ## Hooks propres au projet
 
-Un script exécutable `.repogarde/<hook>` (ou `.git/hooks/<hook>`) est lancé en plus, avant les vérifications communes. Avec lefthook, déclarer plutôt les jobs du projet dans `lefthook.yml`.
+Un script exécutable `.repogarde/<hook>` (ou `.git/hooks/<hook>`) est lancé en plus, avant les vérifications communes. C'est là que se déclarent les commandes propres au projet (lefthook n'est plus pris en charge depuis repogarde 4 : un hook installé par lefthook dans `.git/hooks` est ignoré, avec un avertissement).
 
 ## Affichage
 
