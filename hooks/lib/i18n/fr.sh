@@ -231,6 +231,9 @@ _msg_fr() {
         ci.check.25) _M="Désactivé par .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Échec :%s" ;;
         ci.check.27) _M="Toutes les vérifications repowarden sont passées." ;;
+        ci.check.inverted) _M="PR de « %s » vers « %s » : une branche persistante ne part que pour une livraison (develop → main) ou un retour (main → develop). PR sans objet : rien à vérifier, elle est fermée automatiquement." ;;
+        ci.check.inverted_fix) _M="Pour mettre une branche de travail à jour : sur cette branche, git merge origin/%s, puis git push." ;;
+        ci.check.back_merge) _M="Retour de %s dans %s (merge commit) : le titre de la PR n'est pas vérifié." ;;
         ci.fix_pr.1) _M="PR #%s fermée : doublon de #%s (cible %s)" ;;
         ci.fix_pr.2) _M="PR #%s reciblée : %s → %s (flux %s)" ;;
         ci.fix_pr.3) _M="Titre conforme : %s" ;;
@@ -360,6 +363,8 @@ _msg_fr() {
         tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
         tk.branch_created) _M="Ticket validé : sa branche \`%s\` est créée depuis \`%s\`.\n\nPour y travailler :\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(ou \`git fetch && git switch %s\`). Le premier push ouvre la PR en brouillon." ;;
         tk.branch_notice) _M="Branche %s créée pour le ticket #%s" ;;
+        tk.pr_inverted) _M="PR fermée automatiquement : une PR de \`%s\` vers \`%s\` est sans objet. Une branche persistante ne part que pour une livraison (develop → main) ou un retour (main → develop). Pour mettre une branche de travail à jour : sur cette branche, \`git merge origin/%s\`, puis \`git push\`." ;;
+        tk.pr_backmerge_empty) _M="PR fermée automatiquement : \`%s\` n'apporte aucun contenu à \`%s\`. Le retour est fait automatiquement après une release, seulement quand il y a quelque chose à rapporter." ;;
         tk.branch_registered) _M="Branche du ticket : \`%s\`." ;;
         tk.branch_second) _M="Seconde branche pour ce ticket : \`%s\` (déjà : %s). Un ticket, une branche : regrouper le travail, ou ouvrir un ticket séparé." ;;
         tk.adopted) _M="Tickets existants : %s rangé(s), %s branche(s) inscrite(s)." ;;

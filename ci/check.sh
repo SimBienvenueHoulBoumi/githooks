@@ -225,6 +225,26 @@ fi
 BASE="$(detect_base)"
 echo_t ci.check.24 "${BASE:-aucune (historique complet)}" "$CHECKS"
 
+# PR partant de main ou de develop : ses vérifications s'accrochent au commit
+# de cette branche persistante, qui ne doit jamais apparaître en rouge
+persistent_pr_r "$(detect_branch)" "$(detect_target)"
+case "$REPLY" in
+    inversee)
+        # Sans objet (develop → branche de ticket, main → autre que develop) :
+        # rien à vérifier, la PR est fermée par le suivi des tickets
+        section_t ci.section.branch
+        attention_t ci.check.inverted "$(detect_branch)" "$(detect_target)"
+        echo_t ci.check.inverted_fix "$(cfg integrationBranch)"
+        exit 0
+        ;;
+    retour)
+        # Retour de main dans develop : merge commit, le titre de la PR n'est
+        # pas un message de commit
+        info_t ci.check.back_merge "$(detect_branch)" "$(detect_target)"
+        REPOWARDEN_PR_TITLE="" CI_MERGE_REQUEST_TITLE=""
+        ;;
+esac
+
 failed=""
 for check in $CHECKS; do
     # Étapes désactivables par le projet (.repowarden.conf versionné)

@@ -271,6 +271,27 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     [ "$(labels 24 | grep statut)" = "statut: à valider" ]
 }
 
+@test "tickets : PR sans objet depuis main ou develop -> fermee avec la marche a suivre ; retour utile garde" {
+    ACTION=opened HEAD=develop BASE=feat/184-x run "$TICKETS" pr
+    [ "$status" -eq 0 ]
+    grep -qx "pr-fermee 7" "$F/events"
+    [[ "$output" == *"git merge origin/develop"* ]]
+    grep -qx "statut-pr success" "$F/events"
+    # retour main -> develop sans contenu : ferme
+    : >"$F/events"
+    FAKE_AHEAD=0 ACTION=opened HEAD=main BASE=develop run "$TICKETS" pr
+    grep -qx "pr-fermee 7" "$F/events"
+    # retour avec contenu propre a main : garde, sans ticket exige
+    : >"$F/events"
+    FAKE_AHEAD=3 ACTION=opened HEAD=main BASE=develop run "$TICKETS" pr
+    ! grep -q "pr-fermee" "$F/events"
+    grep -qx "statut-pr success" "$F/events"
+    # livraison develop -> main : inchangee
+    : >"$F/events"
+    ACTION=opened HEAD=develop BASE=main run "$TICKETS" pr
+    ! grep -q "pr-fermee" "$F/events"
+}
+
 @test "tickets : nom de branche du ticket (type, numero, titre sans accents, tronque)" {
     source "$BATS_TEST_DIRNAME/../hooks/lib/tickets.sh"
     ticket_branch_r 12 "Élargir l'accès à la façade : ÉTAPE 2" fix

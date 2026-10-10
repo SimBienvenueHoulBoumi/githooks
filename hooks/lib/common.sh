@@ -151,6 +151,24 @@ pr_targets_r() {
     esac
 }
 
+# Nature d'une PR partant d'une branche persistante (flux integrationBranch),
+# source $1, cible $2 : REPLY = livraison (intégration → principale), retour
+# (principale → intégration), inversee (persistante vers autre chose : sans
+# objet), ou vide (PR de travail, ou hors PR)
+persistent_pr_r() {
+    local integration main
+    cfg_r integrationBranch ""
+    integration="$REPLY"
+    cfg_r mainBranch main
+    main="$REPLY"
+    REPLY=""
+    [ -n "$integration" ] && [ -n "$2" ] || return 0
+    case "$1" in
+        "$integration") if [ "$2" = "$main" ]; then REPLY=livraison; else REPLY=inversee; fi ;;
+        "$main") if [ "$2" = "$integration" ]; then REPLY=retour; else REPLY=inversee; fi ;;
+    esac
+}
+
 # Vrai si $1 est un en-tête conforme (format et 72 caractères)
 header_valid() {
     [[ "$1" =~ $CC_PATTERN ]] || return 1

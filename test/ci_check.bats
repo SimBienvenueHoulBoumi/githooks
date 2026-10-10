@@ -209,7 +209,23 @@ setup() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"cible attendue develop"* ]]
     [[ "$output" == *"gh pr edit --base develop"* ]]
-    REPOWARDEN_BRANCH=develop REPOWARDEN_TARGET=release/1.0.0 run "$CHECK" branch
+}
+
+@test "ci : PR depuis une branche persistante -> jamais rouge (inversee sans objet, retour sans titre)" {
+    git config repowarden.integrationBranch develop
+    # develop vers une branche de travail, main vers autre que develop : sans objet
+    for paire in develop:feat/184-x develop:release/1.0.0 main:feat/x; do
+        REPOWARDEN_BRANCH="${paire%%:*}" REPOWARDEN_TARGET="${paire#*:}" run "$CHECK"
+        [ "$status" -eq 0 ] || { echo "devrait passer : $paire"; echo "$output"; return 1; }
+        [[ "$output" == *"sans objet"* && "$output" == *"git merge origin/develop"* ]]
+    done
+    # retour main -> develop : titre libre (merge commit), le reste verifie
+    git commit -q --no-verify --allow-empty -m "fix: a"
+    REPOWARDEN_BRANCH=main REPOWARDEN_TARGET=develop REPOWARDEN_PR_TITLE="Main" run "$CHECK" commits branch
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"titre de la PR n'est pas vérifié"* ]]
+    # une PR de travail garde la verification du titre
+    REPOWARDEN_TARGET=develop REPOWARDEN_PR_TITLE="Main" run "$CHECK" commits
     [ "$status" -ne 0 ]
 }
 

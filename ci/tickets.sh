@@ -167,8 +167,26 @@ verifier() {
 cmd_pr() {
     local body tickets n url
     : "${PR:?}" "${HEAD:?}" "${HEAD_SHA:?}" "${ACTION:?}"
-    # Bots de dépendances et PR de release : pas de ticket exigé
-    if [[ "${AUTHOR:-}" =~ \[bot\]$ || "$HEAD" == release-please--* || "$HEAD" == "${INTEGRATION:-develop}" ]]; then
+    # PR partant d'une branche persistante : seules la livraison (develop →
+    # main) et le retour (main → develop, si main a un contenu propre) ont un
+    # sens ; les autres sont fermées, avec la marche à suivre
+    if [[ "$HEAD" == "${INTEGRATION:-develop}" || "$HEAD" == "${MAIN:-main}" ]] &&
+        [[ "$ACTION" == opened || "$ACTION" == reopened ]]; then
+        if [[ "$HEAD" == "${INTEGRATION:-develop}" && "${BASE:-}" != "${MAIN:-main}" ]] ||
+            [[ "$HEAD" == "${MAIN:-main}" && "${BASE:-}" != "${INTEGRATION:-develop}" ]]; then
+            _tr tk.pr_inverted "$HEAD" "${BASE:-}" "${INTEGRATION:-develop}"
+            gh pr close "$PR" --comment "$_T" >/dev/null
+            notice "$_T"
+        elif [ "$HEAD" = "${MAIN:-main}" ] &&
+            [ "$(gh api "repos/$GH_REPO/compare/$BASE...$HEAD" -q '.files | length')" = 0 ]; then
+            _tr tk.pr_backmerge_empty "$HEAD" "$BASE"
+            gh pr close "$PR" --comment "$_T" >/dev/null
+            notice "$_T"
+        fi
+    fi
+    # Bots de dépendances, PR de release, livraisons et retours : pas de ticket exigé
+    if [[ "${AUTHOR:-}" =~ \[bot\]$ || "$HEAD" == release-please--* || "$HEAD" == "${INTEGRATION:-develop}" ||
+        "$HEAD" == "${MAIN:-main}" ]]; then
         gh api "repos/$GH_REPO/statuses/$HEAD_SHA" -f state=success -f context=ticket \
             -f description="Sans ticket (bot, release ou livraison)" >/dev/null
         return 0

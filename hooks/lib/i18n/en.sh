@@ -231,6 +231,9 @@ _msg_en() {
         ci.check.25) _M="Disabled by .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Failed:%s" ;;
         ci.check.27) _M="All repowarden checks passed." ;;
+        ci.check.inverted) _M="PR from \"%s\" to \"%s\": a persistent branch only goes out for a delivery (develop → main) or a back-merge (main → develop). Pointless PR: nothing to check, it is closed automatically." ;;
+        ci.check.inverted_fix) _M="To update a work branch: on that branch, git merge origin/%s, then git push." ;;
+        ci.check.back_merge) _M="Back-merge of %s into %s (merge commit): the PR title is not checked." ;;
         ci.fix_pr.1) _M="PR #%s closed: duplicate of #%s (target %s)" ;;
         ci.fix_pr.2) _M="PR #%s retargeted: %s → %s (%s flow)" ;;
         ci.fix_pr.3) _M="Title follows the convention: %s" ;;
@@ -360,6 +363,8 @@ _msg_en() {
         tk.merged) _M="Merged by PR #%s into %s: in pre-production, available in the next pre-release." ;;
         tk.branch_created) _M="Ticket validated: its branch \`%s\` is created from \`%s\`.\n\nTo work on it:\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(or \`git fetch && git switch %s\`). The first push opens the draft PR." ;;
         tk.branch_notice) _M="Branch %s created for ticket #%s" ;;
+        tk.pr_inverted) _M="PR closed automatically: a PR from \`%s\` to \`%s\` is pointless. A persistent branch only goes out for a delivery (develop → main) or a back-merge (main → develop). To update a work branch: on that branch, \`git merge origin/%s\`, then \`git push\`." ;;
+        tk.pr_backmerge_empty) _M="PR closed automatically: \`%s\` brings no content to \`%s\`. The back-merge is done automatically after a release, only when there is something to bring back." ;;
         tk.branch_registered) _M="Ticket branch: \`%s\`." ;;
         tk.branch_second) _M="Second branch for this ticket: \`%s\` (already: %s). One ticket, one branch: group the work, or open a separate ticket." ;;
         tk.adopted) _M="Existing tickets: %s sorted, %s branch(es) registered." ;;
