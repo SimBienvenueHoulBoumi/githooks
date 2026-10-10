@@ -254,7 +254,7 @@ _msg_en() {
         ci.proteger.4) _M="  merges: %s; automatic branch deletion: %s" ;;
         ci.proteger.5) _M="  v* tags: %s" ;;
         ci.proteger.6) _M="  default branch: %s" ;;
-        ci.proteger.7) _M="  required approvals: %s; CODEOWNERS review: %s" ;;
+        ci.proteger.7) _M="  required approvals: %s; CODEOWNERS review: %s; approval of unattributed changes: %s" ;;
         ci.proteger.8) _M="  (admins keep an explicit bypass, recorded in the PR history)" ;;
         ci.proteger.9) _M="  \"%s\" environment: approval by %s; protected branches and v* tags" ;;
         ci.proteger.10) _M="Ruleset \"%s\" updated." ;;
@@ -263,6 +263,7 @@ _msg_en() {
         ci.proteger.13) _M="Settings applied." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs: a number from 0 to 9 is expected." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview: true or false." ;;
+        ci.proteger.unattributed_invalid) _M="unattributedApproval: true or false." ;;
         ci.proteger.no_branch) _M="None of the branches \"%s\" exists on %s." ;;
         ci.proteger.no_cleanup) _M="Automatic branch deletion disabled (it would delete develop): add a workflow calling nettoyage-branches.yml, otherwise merged branches remain (see In an organisation)." ;;
         ci.proteger.delivery) _M="  delivery into main: %s approval(s) required (moving to a new version); auto-merge disabled" ;;
