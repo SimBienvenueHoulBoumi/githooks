@@ -559,8 +559,26 @@ jobs:
     concurrency:
       group: livraison-${{ github.repository }}
       cancel-in-progress: true
-    permissions: {}
+    permissions:
+      actions: read # approbations du run (vérification ci-dessous)
     steps:
+      # Garde-fou : un environnement sans approbateur (ex. créé par GitHub au
+      # premier run, avant repowarden proteger) laisserait passer ce job sans
+      # personne ; rien n'est armé sans une approbation humaine de ce run
+      - name: Approbation humaine
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.run_id }}
+          ENV: ${{ inputs.delivery-environment }}
+        run: |
+          qui="$(gh api "repos/$GH_REPO/actions/runs/$RUN/approvals" \
+            -q "[.[] | select(.state == \"approved\" and ([.environments[].name] | index(\"$ENV\"))) | .user.login] | join(\", \")")"
+          if [ -z "$qui" ]; then
+            echo "::error::Livraison non approuvée : l'environnement $ENV n'exige aucune approbation. Lancer repowarden proteger (approbateurs de l'environnement, règle de main), puis relancer ce run."
+            exit 1
+          fi
+          echo "::notice::Livraison approuvée par $qui."
       - name: Jeton de l'App
         id: app
         if: inputs.app-client-id != ''
