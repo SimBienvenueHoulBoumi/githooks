@@ -40,10 +40,16 @@ jobs:
       # fichier écrit). Un correctif urgent sur main revient seul dans develop.
       mode: tag
       integration-branch: develop
+      # Livraison validée par « Approve and deploy » (environnement
+      # production), puis mergée par la GitHub App
+      delivery-environment: production
+      app-client-id: ${{ vars.REPOWARDEN_APP_CLIENT_ID }}
       # CI lancée sur la PR de retour vers develop (docs.yml : site, exclu)
       workflows: ci.yml codeql.yml
       # repowarden s'utilise lui-même au commit publié, pas au tag v4
       repowarden-ref: ${{ github.sha }}
+    secrets:
+      app-key: ${{ secrets.REPOWARDEN_APP_KEY }}
 
   # Site republié après la release (notes de version de la page Changelog)
   docs:

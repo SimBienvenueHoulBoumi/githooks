@@ -17,6 +17,7 @@ Versioned at the project root, in `git config` format, read **by the hooks and b
     protectedBranches = main develop    # direct commit and push forbidden; default: main master
     allowedBranches = main develop release/*
     exclude = vendor/* generated/*      # paths neither formatted nor tested
+    allowAgentSignatures = false        # AI agents (author, Co-Authored-By) refused; default false
 ```
 
 

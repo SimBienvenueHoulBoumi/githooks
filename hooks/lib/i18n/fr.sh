@@ -231,6 +231,13 @@ _msg_fr() {
         ci.check.25) _M="Désactivé par .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Échec :%s" ;;
         ci.check.27) _M="Toutes les vérifications repowarden sont passées." ;;
+        hook.agent_stripped) _M="Signature d'agent IA retirée du message : %s" ;;
+        hook.agent_identity) _M="Commit refusé : l'auteur ou le committer est un agent IA (%s). Les commits portent l'identité d'une personne." ;;
+        hook.agent_identity_fix) _M="  Corriger : git config user.name \"Ton Nom\" && git config user.email ton@mail, puis recommencer le commit. Pour autoriser les agents : git config repowarden.allowAgentSignatures true" ;;
+        ci.check.agent_identity) _M="Commit %s : auteur ou committer agent IA (%s) ; les commits portent l'identité d'une personne." ;;
+        ci.check.agent_line) _M="Commit %s : signature d'agent IA dans le message (%s)." ;;
+        ci.check.agent_pr_body) _M="Description de la PR : signature d'agent IA (%s) ; elle deviendrait le message du commit en squash, à retirer." ;;
+        ci.check.agent_fix) _M="Réécrire les commits concernés avec l'identité d'une personne, sans signature d'agent (réglage repowarden.allowAgentSignatures = true pour les autoriser)." ;;
         ci.check.inverted) _M="PR de « %s » vers « %s » : une branche persistante ne part que pour une livraison (develop → main) ou un retour (main → develop). PR sans objet : rien à vérifier, elle est fermée automatiquement." ;;
         ci.check.inverted_fix) _M="Pour mettre une branche de travail à jour : sur cette branche, git merge origin/%s, puis git push." ;;
         ci.check.back_merge) _M="Retour de %s dans %s (merge commit) : le titre de la PR n'est pas vérifié." ;;
@@ -263,10 +270,13 @@ _msg_fr() {
         ci.proteger.13) _M="Réglages appliqués." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs : nombre de 0 à 9 attendu." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview : true ou false." ;;
+        ci.proteger.delivery_deploy) _M="  livraison vers main : approbation du déploiement « %s » (Approve and deploy), puis merge par la GitHub App ; merge automatique des PR de travail vers develop : %s" ;;
+        ci.proteger.delivery_invalid) _M="deliveryApproval : deployment ou review." ;;
+        ci.proteger.automerge_invalid) _M="autoMergeWork : true ou false." ;;
         ci.proteger.unattributed_invalid) _M="unattributedApproval : true ou false." ;;
         ci.proteger.no_branch) _M="Aucune des branches « %s » n'existe sur %s." ;;
         ci.proteger.no_cleanup) _M="Suppression automatique des branches désactivée (elle supprimerait develop) : ajouter un workflow qui appelle nettoyage-branches.yml, sinon les branches mergées restent (voir En organisation)." ;;
-        ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique désactivé" ;;
+        ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique des PR de travail vers develop : %s" ;;
         ci.proteger.methods_flow) _M="main : merge commit ; %s : squash ou merge commit" ;;
         ci.proteger.tags_org) _M="réservés aux workflows" ;;
         ci.proteger.tags_user) _M="ni déplacés ni supprimés (compte personnel : création libre)" ;;
@@ -364,6 +374,9 @@ _msg_fr() {
         tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
         tk.branch_created) _M="Ticket validé : sa branche \`%s\` est créée depuis \`%s\`.\n\nPour y travailler :\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(ou \`git fetch && git switch %s\`). Le premier push ouvre la PR en brouillon." ;;
         tk.branch_notice) _M="Branche %s créée pour le ticket #%s" ;;
+        tk.automerge_armed) _M="PR #%s : merge automatique armé (squash), dès que les vérifications sont vertes." ;;
+        tk.automerge_no_app) _M="PR #%s : merge automatique non armé, pas de GitHub App (repowarden app init) : avec le jeton des Actions, le merge ne déclencherait aucun workflow." ;;
+        tk.automerge_failed) _M="PR #%s : merge automatique non armé (dépôt sans merge automatique autorisé : repowarden proteger)." ;;
         app.no_node) _M="node est nécessaire (page locale de création de l'App) : https://nodejs.org" ;;
         app.step_create) _M="Création de la GitHub App" ;;
         app.exists) _M="App déjà configurée pour ce dépôt (client %s) : rien à recréer." ;;

@@ -33,6 +33,11 @@ case "$1 $2" in
         echo "pr-creee $*" >>"$F/events"
         echo "https://github.com/o/r/pull/9" ;;
     "pr close") echo "pr-fermee $3" >>"$F/events" ;;
+    "pr merge")
+        case "$*" in
+            *--disable-auto*) echo "merge-desarme $3" >>"$F/events" ;;
+            *"--auto --squash"*) echo "merge-auto $3" >>"$F/events" ;;
+        esac ;;
     "api graphql")
         case "$*" in *closer*) printf '%s\n' "${FAKE_CLOSER:-}"; exit 0 ;; esac
         for a in "$@"; do case "$a" in name=*) echo "branche-creee ${a#name=}" >>"$F/events" ;; esac; done ;;
@@ -342,6 +347,43 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
         [ "$status" -eq 0 ]
     done
     ! grep -q "branche-creee" "$F/events"
+}
+
+@test "tickets : merge automatique (squash) arme sur PR prete vers develop, ticket valide, avec l'App seulement" {
+    N=12 ticket "validé" "statut: en cours"
+    printf 'Ticket : #12' >"$F/pr_body"
+    # prete, vers develop, ticket valide, jeton de l'App -> arme
+    APP_TOKEN=true ACTION=ready_for_review DRAFT=false run "$TICKETS" pr
+    [ "$status" -eq 0 ]
+    grep -qx "merge-auto 7" "$F/events"
+    [[ "$output" == *"merge automatique armé"* ]]
+    # sans App : rien d'arme, explication
+    : >"$F/events"
+    APP_TOKEN=false ACTION=synchronize DRAFT=false run "$TICKETS" pr
+    ! grep -q "merge-auto" "$F/events"
+    [[ "$output" == *"pas de GitHub App"* ]]
+    # repassee en brouillon -> desarme
+    : >"$F/events"
+    APP_TOKEN=true ACTION=converted_to_draft DRAFT=true run "$TICKETS" pr
+    grep -qx "merge-desarme 7" "$F/events"
+    ! grep -q "merge-auto" "$F/events"
+    # autre cible que develop, ou merge automatique desactive : rien
+    : >"$F/events"
+    APP_TOKEN=true ACTION=synchronize BASE=release/2.0 run "$TICKETS" pr
+    APP_TOKEN=true AUTO_MERGE=false ACTION=synchronize run "$TICKETS" pr
+    ! grep -q "merge-" "$F/events"
+    # ticket non valide : verification en echec, rien d'arme
+    N=12 ticket "statut: à valider"
+    APP_TOKEN=true ACTION=synchronize run "$TICKETS" pr
+    ! grep -q "merge-auto" "$F/events"
+}
+
+@test "tickets : ticket valide plus tard -> merge automatique arme sur sa PR prete" {
+    N=12 ticket "statut: à valider" "validé"
+    printf 'Ticket : #12' >"$F/pr_body"
+    FAKE_PRS=$'7\tfeat/panier\tabc\tdevelop\tfalse' APP_TOKEN=true ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
+    [ "$status" -eq 0 ]
+    grep -qx "merge-auto 7" "$F/events"
 }
 
 @test "tickets : nom de branche du ticket (type, numero, titre sans accents, tronque)" {

@@ -6,7 +6,7 @@ The CI re-runs all the hook checks on each PR / MR: **it is the authoritative so
 
 | Check | Fails if |
 |---|---|
-| `commits` | a message is not Conventional Commits, exceeds 72 characters, or is an unsquashed `fixup!`/`squash!`; non-compliant **PR title** (it becomes the commit message on squash merge) |
+| `commits` | a message is not Conventional Commits, exceeds 72 characters, or is an unsquashed `fixup!`/`squash!`; non-compliant **PR title** (it becomes the commit message on squash merge); a commit whose **author or committer is an AI agent**, or an **agent signature** (`Co-Authored-By: Claude …`, "Generated with …") in a message or in the PR description (`allowAgentSignatures` setting) |
 | `branch` | the branch name does not follow `<type>/<topic>` (outside the exceptions) |
 | `secrets` | gitleaks finds a secret in the branch's commits |
 | `format` | a modified file is not formatted (the formatter is run, nothing is committed) |

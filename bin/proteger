@@ -14,7 +14,7 @@
 #                [--sans-tags] [--dry-run]
 # --sans-tags : dépôt qui déplace lui-même un tag (tag majeur flottant v2…).
 # Réglages équivalents dans .repowarden.conf (requiredReviews, codeOwnerReview,
-# unattributedApproval, environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
+# unattributedApproval, deliveryApproval, environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -94,7 +94,8 @@ refs_json() { # branches → "refs/heads/a", "refs/heads/b"
 
 # Ruleset de branches : $1 nom, $2 branches (liste), $3 méthodes de merge (JSON),
 # $4 PR à jour exigée (défaut true), $5 approbations (défaut REVIEWS),
-# $6 dernier push approuvé par un autre (défaut selon REVIEWS)
+# $6 dernier push approuvé par un autre (défaut selon REVIEWS),
+# $7 règle supplémentaire (JSON), ex. déploiement réussi exigé
 branch_ruleset() {
     # shellcheck disable=SC2086 # liste de branches volontairement découpée
     cat <<JSON
@@ -118,7 +119,8 @@ branch_ruleset() {
     {"type": "required_status_checks", "parameters": {
       "strict_required_status_checks_policy": ${4:-true},
       "do_not_enforce_on_create": false,
-      "required_status_checks": [$contexts]}}
+      "required_status_checks": [$contexts]}}${7:+,
+    $7}
   ]
 }
 JSON
@@ -161,12 +163,25 @@ if [ -n "$integration" ]; then
     # le mainteneur peut donc l'approuver), sans exiger un autre approbateur
     # que l'auteur du dernier push sauf si des relectures sont configurées
     livraison=$((REVIEWS > 0 ? REVIEWS : 1))
+    # deliveryApproval = deployment (défaut) : la validation humaine est
+    # l'approbation de l'environnement de livraison (« Approve and deploy »),
+    # exigée par une règle de main (déploiement réussi) ; la revue de PR n'est
+    # plus nécessaire (relectures configurées : gardées). review : revue de PR.
+    cfg_r deliveryApproval deployment
+    DELIVERY="$REPLY"
+    [[ "$DELIVERY" =~ ^(deployment|review)$ ]] || { err_t ci.proteger.delivery_invalid; exit 1; }
+    deploiement=""
+    if [ "$DELIVERY" = deployment ]; then
+        ENVIRONMENT="${ENVIRONMENT:-production}"
+        livraison="$REVIEWS"
+        deploiement="{\"type\": \"required_deployments\", \"parameters\": {\"required_deployment_environments\": [\"$ENVIRONMENT\"]}}"
+    fi
     # PR à jour non exigée non plus : le merge commit d'une livraison n'existe
     # que sur main ; strict, la livraison suivante serait bloquée tant que
     # develop ne l'a pas reçu (retour main → develop vide après chaque
     # release). Une livraison n'apporte que develop, vérifiée par la CI ; le
     # retour reste fait quand main a un contenu propre (correctif direct).
-    [ -z "$others" ] || rulesets+=("$(branch_ruleset repowarden "$others" '"merge"' false "$livraison" "$last_push")")
+    [ -z "$others" ] || rulesets+=("$(branch_ruleset repowarden "$others" '"merge"' false "$livraison" "$last_push" "$deploiement")")
     # Branche d'intégration : PR à jour non exigée. Le retour de main (après
     # une release) serait sinon presque toujours en retard, et « mettre à jour »
     # fusionnerait develop dans main en contournant la livraison ; la CI
@@ -177,8 +192,12 @@ if [ -n "$integration" ]; then
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)
     delete_on_merge=false
-    # Merge automatique désactivé : aucune livraison programmée sans décision
-    auto_merge=false
+    # Merge automatique autorisé pour les PR de travail vers develop (armé par
+    # le suivi des tickets) ; une livraison vers main ne passe jamais sans son
+    # approbation humaine, merge automatique ou non. autoMergeWork = false : aucun.
+    cfg_r autoMergeWork true
+    auto_merge="$REPLY"
+    [[ "$auto_merge" =~ ^(true|false)$ ]] || { err_t ci.proteger.automerge_invalid; exit 1; }
     # Sans ce workflow, les branches mergées ne seraient plus supprimées
     if ! grep -qs "nettoyage-branches.yml" "$GIT_TOPLEVEL"/.github/workflows/*.y*ml; then
         attention_t ci.proteger.no_cleanup
@@ -211,7 +230,11 @@ echo_t ci.proteger.1 "$REPO"
 echo_t ci.proteger.2 "$existing"
 echo_t ci.proteger.3 "$CHECKS"
 echo_t ci.proteger.4 "$methods" "$delete_on_merge"
-[ -z "$integration" ] || echo_t ci.proteger.delivery "$livraison"
+if [ -n "$integration" ] && [ "$DELIVERY" = deployment ]; then
+    echo_t ci.proteger.delivery_deploy "$ENVIRONMENT" "$auto_merge"
+elif [ -n "$integration" ]; then
+    echo_t ci.proteger.delivery "$livraison" "$auto_merge"
+fi
 echo_t ci.proteger.5 "$tags_msg"
 [ -z "$integration" ] || echo_t ci.proteger.6 "$integration"
 echo_t ci.proteger.7 "$REVIEWS" "$CODEOWNERS" "$UNATTRIBUTED"

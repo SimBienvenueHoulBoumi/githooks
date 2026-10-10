@@ -54,6 +54,10 @@ on:
         description: "Ticket ouvert par un mainteneur (droits d'écriture) validé d'office : maintainers, ou never (un mainteneur pose toujours « validé »)"
         type: string
         default: maintainers
+      auto-merge:
+        description: "Merge automatique (squash) des PR de travail prêtes vers la branche d'intégration, ticket validé ; seulement avec la GitHub App"
+        type: boolean
+        default: true
       app-client-id:
         description: "GitHub App des workflows (repowarden app init : vars.REPOWARDEN_APP_CLIENT_ID) ; vide : jeton des Actions"
         type: string
@@ -122,6 +126,8 @@ jobs:
           ISSUE: ${{ github.event.issue.number }}
           ISSUE_ASSOCIATION: ${{ github.event.issue.author_association }}
           AUTO_VALIDATE: ${{ inputs.auto-validate }}
+          AUTO_MERGE: ${{ inputs.auto-merge }}
+          APP_TOKEN: ${{ steps.app.outputs.token != '' }}
           LABEL: ${{ github.event.label.name }}
           STATE_REASON: ${{ github.event.issue.state_reason }}
           PUSH_BRANCH: ${{ github.ref_name }}

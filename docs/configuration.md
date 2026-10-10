@@ -17,6 +17,7 @@ Versionné à la racine du projet, au format `git config`, lu **par les hooks et
     protectedBranches = main develop    # commit et push directs interdits ; défaut : main master
     allowedBranches = main develop release/*
     exclude = vendor/* generated/*      # chemins ni formatés ni testés
+    allowAgentSignatures = false        # agents IA (auteur, Co-Authored-By) refusés ; défaut false
 ```
 
 `version` : si repowarden est plus ancien sur un poste, les hooks le signalent avec la commande de mise à jour (`npm update -g repowarden`, ou `git pull` pour un clone). C'est un avertissement seulement : la CI vérifie chaque PR à sa propre version.

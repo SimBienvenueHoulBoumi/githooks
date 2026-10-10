@@ -10,6 +10,7 @@
 #   REPOWARDEN_BRANCH   nom de branche à vérifier
 #   REPOWARDEN_TARGET   branche cible de la PR / MR (flux integrationBranch)
 #   REPOWARDEN_STRICT   "true" : un outil de formatage/test manquant fait échouer
+#   REPOWARDEN_PR_BODY  description de la PR (sans signature d'agent IA)
 #   REPOWARDEN_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
 #   REPOWARDEN_BIN      dossier des outils installés (gitleaks), ajouté au PATH
 set -euo pipefail
@@ -114,6 +115,31 @@ check_commits() {
             bad=1
         fi
     done < <(git rev-list --no-merges "$BASE..HEAD")
+    # Agents IA : ni auteur ni committer, ni signature (messages, description
+    # de PR qui devient le message du commit en squash)
+    if agents_refused; then
+        local an ae cn ce agents=0
+        while IFS=$'\t' read -r sha an ae cn ce; do
+            [ -n "$sha" ] || continue
+            if agent_identity "$an" "$ae"; then
+                ci_error_t ci.check.agent_identity "${sha:0:7}" "$an <$ae>"; agents=1
+            elif agent_identity "$cn" "$ce"; then
+                ci_error_t ci.check.agent_identity "${sha:0:7}" "$cn <$ce>"; agents=1
+            fi
+            agent_lines_r "$(git log -1 --format=%B "$sha")"
+            if [ -n "$REPLY" ]; then
+                ci_error_t ci.check.agent_line "${sha:0:7}" "${REPLY%%$'\n'*}"; agents=1
+            fi
+        done < <(git log --format='%H%x09%an%x09%ae%x09%cn%x09%ce' "$BASE..HEAD")
+        agent_lines_r "${REPOWARDEN_PR_BODY:-${CI_MERGE_REQUEST_DESCRIPTION:-}}"
+        if [ -n "$REPLY" ]; then
+            ci_error_t ci.check.agent_pr_body "${REPLY%%$'\n'*}"; agents=1
+        fi
+        if [ "$agents" = 1 ]; then
+            echo_t ci.check.agent_fix
+            [ "$bad" = 1 ] || return 1
+        fi
+    fi
     # Titre de la PR : message du commit final en cas de merge squash
     local title="${REPOWARDEN_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
     if [ -n "$title" ]; then

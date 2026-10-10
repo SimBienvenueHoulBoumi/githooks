@@ -231,6 +231,13 @@ _msg_en() {
         ci.check.25) _M="Disabled by .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Failed:%s" ;;
         ci.check.27) _M="All repowarden checks passed." ;;
+        hook.agent_stripped) _M="AI agent signature removed from the message: %s" ;;
+        hook.agent_identity) _M="Commit refused: the author or committer is an AI agent (%s). Commits carry a person's identity." ;;
+        hook.agent_identity_fix) _M="  Fix: git config user.name \"Your Name\" && git config user.email you@mail, then commit again. To allow agents: git config repowarden.allowAgentSignatures true" ;;
+        ci.check.agent_identity) _M="Commit %s: AI agent author or committer (%s); commits carry a person's identity." ;;
+        ci.check.agent_line) _M="Commit %s: AI agent signature in the message (%s)." ;;
+        ci.check.agent_pr_body) _M="PR description: AI agent signature (%s); it would become the commit message when squashing, remove it." ;;
+        ci.check.agent_fix) _M="Rewrite the affected commits with a person's identity, without agent signature (setting repowarden.allowAgentSignatures = true to allow them)." ;;
         ci.check.inverted) _M="PR from \"%s\" to \"%s\": a persistent branch only goes out for a delivery (develop → main) or a back-merge (main → develop). Pointless PR: nothing to check, it is closed automatically." ;;
         ci.check.inverted_fix) _M="To update a work branch: on that branch, git merge origin/%s, then git push." ;;
         ci.check.back_merge) _M="Back-merge of %s into %s (merge commit): the PR title is not checked." ;;
@@ -263,10 +270,13 @@ _msg_en() {
         ci.proteger.13) _M="Settings applied." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs: a number from 0 to 9 is expected." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview: true or false." ;;
+        ci.proteger.delivery_deploy) _M="  delivery into main: approval of the \"%s\" deployment (Approve and deploy), then merged by the GitHub App; auto-merge of work PRs into develop: %s" ;;
+        ci.proteger.delivery_invalid) _M="deliveryApproval: deployment or review." ;;
+        ci.proteger.automerge_invalid) _M="autoMergeWork: true or false." ;;
         ci.proteger.unattributed_invalid) _M="unattributedApproval: true or false." ;;
         ci.proteger.no_branch) _M="None of the branches \"%s\" exists on %s." ;;
         ci.proteger.no_cleanup) _M="Automatic branch deletion disabled (it would delete develop): add a workflow calling nettoyage-branches.yml, otherwise merged branches remain (see In an organisation)." ;;
-        ci.proteger.delivery) _M="  delivery into main: %s approval(s) required (moving to a new version); auto-merge disabled" ;;
+        ci.proteger.delivery) _M="  delivery into main: %s approval(s) required (moving to a new version); auto-merge of work PRs into develop: %s" ;;
         ci.proteger.methods_flow) _M="main: merge commit; %s: squash or merge commit" ;;
         ci.proteger.tags_org) _M="reserved for workflows" ;;
         ci.proteger.tags_user) _M="neither moved nor deleted (personal account: creation allowed)" ;;
@@ -364,6 +374,9 @@ _msg_en() {
         tk.merged) _M="Merged by PR #%s into %s: in pre-production, available in the next pre-release." ;;
         tk.branch_created) _M="Ticket validated: its branch \`%s\` is created from \`%s\`.\n\nTo work on it:\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(or \`git fetch && git switch %s\`). The first push opens the draft PR." ;;
         tk.branch_notice) _M="Branch %s created for ticket #%s" ;;
+        tk.automerge_armed) _M="PR #%s: auto-merge armed (squash), as soon as the checks are green." ;;
+        tk.automerge_no_app) _M="PR #%s: auto-merge not armed, no GitHub App (repowarden app init): with the Actions token, the merge would trigger no workflow." ;;
+        tk.automerge_failed) _M="PR #%s: auto-merge not armed (auto-merge not allowed on the repository: repowarden proteger)." ;;
         app.no_node) _M="node is required (local page creating the App): https://nodejs.org" ;;
         app.step_create) _M="Creating the GitHub App" ;;
         app.exists) _M="App already set up for this repository (client %s): nothing to recreate." ;;

@@ -8,6 +8,29 @@ exit_if_skipped
 run_local_hook "$@"
 
 MSG_FILE="$1"
+
+# Agents IA : signatures retirées du message, identité d'agent refusée
+if agents_refused; then
+    agent_lines_r "$(cat "$MSG_FILE")"
+    if [ -n "$REPLY" ]; then
+        while IFS= read -r ligne; do attention_t hook.agent_stripped "$ligne"; done <<<"$REPLY"
+        # grep -a : texte même avec un emoji (Windows le croirait binaire) ;
+        # contenu réécrit dans le même fichier (git le garde ouvert sous Windows)
+        filtre="$(LC_ALL=C grep -aviE "$AGENT_LINE_ERE" "$MSG_FILE" || true)"
+        printf '%s\n' "$filtre" >"$MSG_FILE"
+    fi
+    for ident in GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT; do
+        id="$(git var "$ident" 2>/dev/null || true)"
+        nom="${id%% <*}"
+        mail="${id#*<}"
+        mail="${mail%%>*}"
+        if agent_identity "$nom" "$mail"; then
+            err_t hook.agent_identity "$nom <$mail>"
+            echo_t hook.agent_identity_fix
+            exit 1
+        fi
+    done
+fi
 # Première ligne non commentée
 SUBJECT="$(grep -v '^#' "$MSG_FILE" | sed -n 1p)"
 

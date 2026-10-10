@@ -401,7 +401,7 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     git config repowarden.protectedBranches "main develop"
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repowarden, tests (ubuntu-latest)"
     [ "$status" -eq 0 ]
-    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==3; m,d,t=r; \
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==4; m,d,t,e=r; \
         assert m["conditions"]["ref_name"]["include"]==["refs/heads/main"]; \
         assert m["rules"][2]["parameters"]["allowed_merge_methods"]==["merge"]; \
         assert d["name"]=="repowarden (develop)" and d["conditions"]["ref_name"]["include"]==["refs/heads/develop"]; \
@@ -410,19 +410,41 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
         assert m["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert d["rules"][3]["parameters"]["strict_required_status_checks_policy"] is False; \
         assert m["bypass_actors"]==[] and d["bypass_actors"]==[]; \
-        assert m["rules"][2]["parameters"]["required_approving_review_count"]==1; \
+        assert m["rules"][2]["parameters"]["required_approving_review_count"]==0; \
+        assert m["rules"][4]=={"type":"required_deployments","parameters":{"required_deployment_environments":["production"]}}; \
         assert m["rules"][2]["parameters"]["require_last_push_approval"] is False; \
         assert d["rules"][2]["parameters"]["required_approving_review_count"]==0; \
+        assert len(d["rules"])==4; \
+        assert e["reviewers"]==[{"type":"User","id":101}] and e["prevent_self_review"] is False; \
         assert t["name"]=="repowarden (tags)"' "$(rulesets_json "$output")"
     [[ "$output" == *"suppression auto des branches : false"* ]]
     [[ "$output" == *"branche par défaut : develop"* ]]
-    [[ "$output" == *"livraison vers main : 1 approbation(s) exigée(s)"* ]]
+    [[ "$output" == *"livraison vers main : approbation du déploiement « production »"* ]]
     # sans workflow de nettoyage : avertissement ; avec : rien
     [[ "$output" == *"ajouter un workflow qui appelle nettoyage-branches.yml"* ]]
     mkdir -p .github/workflows
     printf 'jobs:\n  n:\n    uses: o/r/.github/workflows/nettoyage-branches.yml@v4\n' >.github/workflows/nettoyage.yml
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repowarden"
     [[ "$output" != *"nettoyage-branches.yml"* ]]
+    [[ "$output" == *"merge automatique des PR de travail vers develop : true"* ]]
+    git config repowarden.autoMergeWork false
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [[ "$output" == *"merge automatique des PR de travail vers develop : false"* ]]
+    git config repowarden.autoMergeWork peut-etre
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [ "$status" -ne 0 ]
+    # deliveryApproval = review : revue de PR, ni règle de déploiement ni environnement
+    git config --unset repowarden.autoMergeWork
+    git config repowarden.deliveryApproval review
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repowarden"
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); assert len(r)==3; m=r[0]; \
+        assert m["rules"][2]["parameters"]["required_approving_review_count"]==1 and len(m["rules"])==4' \
+        "$(rulesets_json "$output")"
+    [[ "$output" == *"livraison vers main : 1 approbation(s) exigée(s)"* ]]
+    git config repowarden.deliveryApproval peut-etre
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [ "$status" -ne 0 ]
+    git config --unset repowarden.deliveryApproval
 }
 
 @test "proteger : approbation des changements non attribues posee explicitement (false par defaut, reglable)" {
@@ -432,13 +454,13 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
     [ "$status" -eq 0 ]
     python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
-        assert all(x["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] is False for x in r if x["target"]=="branch")' \
+        assert all(x["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] is False for x in r if x.get("target")=="branch")' \
         "$(rulesets_json "$output")"
     [[ "$output" == *"changements non attribués : false"* ]]
     git config repowarden.unattributedApproval true
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
     python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
-        assert all(x["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] is True for x in r if x["target"]=="branch")' \
+        assert all(x["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] is True for x in r if x.get("target")=="branch")' \
         "$(rulesets_json "$output")"
     git config repowarden.unattributedApproval peut-etre
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
@@ -526,6 +548,39 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     GH_BRANCHES="" run "$PROTEGER" --dry-run
     [ "$status" -ne 0 ]
     [[ "$output" == *"Aucune des branches"* ]]
+}
+
+@test "ci : agents IA -> auteur, committer ou signature refuses (commits et description de PR), bots acceptes" {
+    GIT_AUTHOR_NAME=Claude GIT_AUTHOR_EMAIL=noreply@anthropic.com \
+        git commit -q --no-verify --allow-empty -m "fix: par un agent"
+    run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"agent IA (Claude <noreply@anthropic.com>)"* ]]
+    [[ "$output" != *"nouvelle fonctionnalité"* ]]
+    # signature dans le message
+    git reset -q --hard "$REPOWARDEN_BASE"
+    git commit -q --no-verify --allow-empty -m "fix: a" -m "Co-Authored-By: Claude Opus <noreply@anthropic.com>"
+    run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"signature d'agent IA dans le message"* ]]
+    # description de PR (corps du commit en squash)
+    git reset -q --hard "$REPOWARDEN_BASE"
+    git commit -q --no-verify --allow-empty -m "fix: b"
+    REPOWARDEN_PR_BODY=$'Corrige b.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)' run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Description de la PR"* ]]
+    # bots d'automatisation : acceptes
+    git reset -q --hard "$REPOWARDEN_BASE"
+    GIT_AUTHOR_NAME='github-actions[bot]' GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com' \
+        git commit -q --no-verify --allow-empty -m "chore: par le bot"
+    run "$CHECK" commits
+    [ "$status" -eq 0 ]
+    # reglage : agents autorises
+    GIT_AUTHOR_NAME=Claude GIT_AUTHOR_EMAIL=noreply@anthropic.com \
+        git commit -q --no-verify --allow-empty -m "fix: agent autorise"
+    git config repowarden.allowAgentSignatures true
+    run "$CHECK" commits
+    [ "$status" -eq 0 ]
 }
 
 @test "ci : bots (Dependabot, Renovate) -> format exige, longueur libre" {

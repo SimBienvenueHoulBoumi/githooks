@@ -84,6 +84,7 @@ runs:
         GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         # Valeurs corrigées par l'étape précédente (fix-pr), sinon celles de la PR
         REPOWARDEN_PR_TITLE: ${{ env.REPOWARDEN_FIXED_TITLE || github.event.pull_request.title }}
+        REPOWARDEN_PR_BODY: ${{ github.event.pull_request.body }}
         REPOWARDEN_TARGET: ${{ env.REPOWARDEN_FIXED_TARGET }}
         REPOWARDEN_BASE: ${{ env.REPOWARDEN_FIXED_BASE }}
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

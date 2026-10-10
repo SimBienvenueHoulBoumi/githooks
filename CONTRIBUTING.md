@@ -1,5 +1,7 @@
 # Contribuer
 
+Règles de travail (tickets, commits, interdits) : [`AGENTS.md`](https://github.com/SimBienvenueHoulBoumi/repowarden/blob/develop/AGENTS.md), à lire avant tout changement.
+
 ## Mise en place
 
 ```bash
@@ -10,7 +12,7 @@ brew install bats-core shellcheck actionlint gitleaks   # ou équivalents apt / 
 ## Avant chaque PR
 
 ```bash
-shellcheck bin/* ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lang/*.sh install.sh
+shellcheck bin/* ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lib/i18n/*.sh hooks/lang/*.sh install.sh
 actionlint .github/workflows/*.yml
 bats test/                      # tests unitaires et d'intégration
 test/e2e/run.sh python go       # tests réels (les langages dont l'outillage est installé)
@@ -36,7 +38,6 @@ La CI relance tout sur Linux, macOS et Windows, plus un job e2e par langage avec
 
 ## Branches et releases
 
-- Les PR visent **`develop`** (branche par défaut) ; une PR ouverte vers `main` est reciblée automatiquement. Seuls les correctifs urgents (`hotfix/…`) peuvent viser `main`.
+- Les PR visent **`develop`** (branche par défaut) ; une PR ouverte vers `main` est reciblée automatiquement. **Seul `develop` entre dans `main`**, par la PR de livraison, toujours avec une approbation humaine.
 - À chaque merge sur `develop` : une **préversion** `vX.Y.Z-next.N` (npm `next`) et la **PR de livraison** `develop` → `main` tenue à jour (version à venir, notes). La merger, en merge commit, publie : tag `vX.Y.Z`, release GitHub (notes de version), `v4`, npm `latest`, site. Aucun fichier n'est écrit : la version est portée par le tag.
-- Un correctif urgent (`hotfix/…`) mergé sur `main` revient seul dans `develop`.
 - Détail : [Versions et releases, mode tag](https://simbienvenuehoulboumi.github.io/repowarden/releases/#flux-develop-main-mode-tag-recommande).
