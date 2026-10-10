@@ -173,3 +173,13 @@ gere() {
     PATH="$F/bin:$PATH" git switch -q feat/1-a
     [ "$(grep -c "^issue list" "$F/log")" -eq 1 ]
 }
+
+@test "tickets sync : ticket assigne deja livre (preprod, done) -> aucune branche recreee" {
+    gere
+    git push -q --no-verify origin main
+    export FAKE_ASSIGNED="$(printf '184\tLivre\tvalidé\\nstatut: préprod\n185\tEn prod\tvalidé\\nstatut: done')"
+    PATH="$F/bin:$PATH" run "$BATS_TEST_DIRNAME/../bin/tickets" sync
+    [ "$status" -eq 0 ]
+    ! grep -q "issue develop" "$F/log"
+    [ -z "$(git branch --list 'feat/18*')" ]
+}

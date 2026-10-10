@@ -13,6 +13,10 @@ S_RELECTURE="statut: en relecture"
 S_PREPROD="statut: préprod"
 S_DONE="statut: done"
 
+# Vrai si les étiquettes $1 (une par ligne) disent le travail terminé : mergé
+# (préprod) ou en production (done). Un tel ticket n'a plus de branche à créer.
+travail_termine() { grep -qxF -e "$S_PREPROD" -e "$S_DONE" <<<"$1"; }
+
 # REPLY = numéro du ticket porté par la branche $1 (type/12-sujet, type/12),
 # vide sinon
 branch_ticket_r() {
@@ -151,6 +155,7 @@ tickets_sync() {
         [ -n "$n" ] || continue
         miens="$miens$n "
         etiquettes="${etiquettes//\\n/$'\n'}"
+        travail_termine "$etiquettes" && continue
         ticket_remote_branch_r "$n"
         branche="$REPLY"
         if [ -z "$branche" ]; then
