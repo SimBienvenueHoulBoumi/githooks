@@ -16,9 +16,9 @@ runs:
     - name: Installer bats, ruff, gitleaks
       shell: bash
       env:
-        REPOGARDE_BIN: ${{ runner.temp }}/bin
+        REPOWARDEN_BIN: ${{ runner.temp }}/bin
       run: |
         npm install -g bats@1.13.0
         pip install --require-hashes -r ci/requirements/tests.txt
         ci/install-tool.sh gitleaks
-        echo "$REPOGARDE_BIN" >>"$GITHUB_PATH"
+        echo "$REPOWARDEN_BIN" >>"$GITHUB_PATH"

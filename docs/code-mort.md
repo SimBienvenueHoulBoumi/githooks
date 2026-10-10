@@ -1,8 +1,8 @@
 # Code mort
 
-Du code est **mort** quand on peut **prouver** qu'il n'a aucun effet sur le comportement du programme. repogarde distingue trois cas, qui ne se prouvent pas de la même façon :
+Du code est **mort** quand on peut **prouver** qu'il n'a aucun effet sur le comportement du programme. repowarden distingue trois cas, qui ne se prouvent pas de la même façon :
 
-| Catégorie | Définition | Exemples | Preuve | repogarde |
+| Catégorie | Définition | Exemples | Preuve | repowarden |
 |---|---|---|---|---|
 | **Inaccessible** | instructions qu'aucun chemin d'exécution n'atteint | code après un `return`, `if (false)` | analyse du flot de contrôle | **prouvé** : bloquant |
 | **Inutilisé dans sa portée** | déclaration jamais référencée là où elle est visible | import, variable locale, paramètre ou membre **privé** jamais lus | analyse des références du fichier | **prouvé** : bloquant |
@@ -18,7 +18,7 @@ C'est pourquoi un **candidat** n'est jamais bloquant par défaut : un humain con
 
 ## Seulement le nouveau code mort
 
-repogarde ne signale que le code mort **introduit** par la PR (lignes ajoutées ou modifiées depuis la base). Un projet existant n'est pas noyé sous son historique : la dette ne grossit plus, et on la réduit à son rythme.
+repowarden ne signale que le code mort **introduit** par la PR (lignes ajoutées ou modifiées depuis la base). Un projet existant n'est pas noyé sous son historique : la dette ne grossit plus, et on la réduit à son rythme.
 
 ## Outils, par langage
 
@@ -34,12 +34,12 @@ En CI, l'action installe PMD pour un projet Java (version et empreinte figées).
 ## Utilisation
 
 - **CI** : vérification `deadcode`, incluse par défaut dans l'action (`checks:`).
-- **Poste** : `repogarde code-mort [base]` analyse ta branche comme la CI : commits, modifications en cours et nouveaux fichiers. Base par défaut : `origin/main` ; sur une branche sans modification, rien n'est analysé.
+- **Poste** : `repowarden code-mort [base]` analyse ta branche comme la CI : commits, modifications en cours et nouveaux fichiers. Base par défaut : `origin/main` ; sur une branche sans modification, rien n'est analysé.
 
 ## Réglages
 
 ```ini
-[repogarde]
+[repowarden]
     deadcode = block               # défaut : le prouvé bloque, les candidats avertissent
     # deadcode = warn              # rien ne bloque
     # deadcode = strict            # candidats bloquants aussi

@@ -1,6 +1,6 @@
 # Human approval
 
-repogarde automates what is **mechanical and verifiable**:
+repowarden automates what is **mechanical and verifiable**:
 - formatting;
 - checking a message, a branch name or a PR target;
 - computing a version, writing a changelog, creating a tag;
@@ -17,11 +17,11 @@ The risk is not the machine. It is human approval that is too light. This page d
 
 ## Decision points
 
-| Decision | GitHub mechanism | repogarde |
+| Decision | GitHub mechanism | repowarden |
 |---|---|---|
-| Review code before it gets in | required approvals; approval dismissed by a new commit; the last pusher cannot approve their own push | `repogarde proteger --relecteurs N` |
-| Have sensitive areas reviewed by their owners | `CODEOWNERS` file + required code owner review | `repogarde proteger --codeowners` |
-| Decide to publish | deployment environment: the job waits for approval from a designated person | `repogarde proteger --environnement production` |
+| Review code before it gets in | required approvals; approval dismissed by a new commit; the last pusher cannot approve their own push | `repowarden proteger --relecteurs N` |
+| Have sensitive areas reviewed by their owners | `CODEOWNERS` file + required code owner review | `repowarden proteger --codeowners` |
+| Decide to publish | deployment environment: the job waits for approval from a designated person | `repowarden proteger --environnement production` |
 | Decide to deliver (`develop` flow) | `develop` → `main` delivery PR, always merged by a human | `tag` mode |
 | Keep control over the release PR (`pr` mode) | human merge | `release-auto` with `merge-auto: false` |
 
@@ -29,10 +29,10 @@ With a required review, the release PR is never merged by the bot. The bot prepa
 
 ## Setup
 
-Settings versioned in `.repogarde.conf`, applied by `repogarde proteger` (can be re-run):
+Settings versioned in `.repowarden.conf`, applied by `repowarden proteger` (can be re-run):
 
 ```ini
-[repogarde]
+[repowarden]
     requiredReviews = 1              # approvals per PR
     codeOwnerReview = true           # CODEOWNERS review on their files
     environment = production         # deployments subject to approval
@@ -63,7 +63,7 @@ The environment only accepts deployments from protected branches and `v*` tags: 
 
 ## Solo project
 
-GitHub does not allow approving your own PR, and `repogarde proteger` grants **no exception**, not even to the administrator: with `requiredReviews = 1` and a single developer, no merge would be possible. For a solo project, the recommended settings:
+GitHub does not allow approving your own PR, and `repowarden proteger` grants **no exception**, not even to the administrator: with `requiredReviews = 1` and a single developer, no merge would be possible. For a solo project, the recommended settings:
 - `requiredReviews = 0`: CI is the authority on form;
 - `environment = production` with yourself as approver: each publication requires a deliberate click.
 
@@ -75,7 +75,7 @@ Recipients are designated by **GitHub account or team**, never by email address:
 |---|---|---|
 | Reviewers, per code area | `.github/CODEOWNERS` | `/.github/  @acme/platform` |
 | Release approvers | `environmentReviewers` | `alice @acme/release` |
-| Team channel (optional) | `REPOGARDE_WEBHOOK` secret | Slack, Teams, Discord, Mattermost… |
+| Team channel (optional) | `REPOWARDEN_WEBHOOK` secret | Slack, Teams, Discord, Mattermost… |
 
 A team (`@organisation/team`) is managed in GitHub: people joining or leaving change no file.
 
@@ -84,15 +84,15 @@ A team (`@organisation/team`) is managed in GitHub: people joining or leaving ch
 The release workflow can post to a channel: release published, release PR waiting for approval, failure. The incoming webhook address is a **secret**, never stored in the repository:
 
 ```bash
-gh secret set REPOGARDE_WEBHOOK      # address pasted with masked input
+gh secret set REPOWARDEN_WEBHOOK      # address pasted with masked input
 ```
 
 ```yaml
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
     secrets:
-      webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
+      webhook: ${{ secrets.REPOWARDEN_WEBHOOK }}
     with:
       notify: release attente echec   # default: all three
 ```
@@ -102,5 +102,5 @@ The format follows the platform recognised from the address (Slack, Discord, Mic
 ## Traceability and emergency stop
 
 - Every merge, approval, deployment and bypass is recorded (PR history, *Environments* tab, audit log).
-- `v*` tags can only be created by the workflows (ruleset "repogarde (tags)"); each published package carries a verifiable provenance attestation.
+- `v*` tags can only be created by the workflows (ruleset "repowarden (tags)"); each published package carries a verifiable provenance attestation.
 - Suspend automatic releases: *Actions → release → Disable workflow*.

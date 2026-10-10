@@ -32,9 +32,9 @@ setup() { setup_repo; initial_commit; }
     done
 }
 
-@test "repogarde.allowedBranches remplace les exceptions" {
+@test "repowarden.allowedBranches remplace les exceptions" {
     source "$HOOKS/lib/common.sh"
-    git config repogarde.allowedBranches "main"
+    git config repowarden.allowedBranches "main"
     cfg_load
     ! branch_name_valid develop
     branch_name_valid main
@@ -81,8 +81,8 @@ setup() { setup_repo; initial_commit; }
     [[ "$output" == *"Commit direct sur 'main' interdit"* ]]
 }
 
-@test "main : repogarde.skip protect-branch l'autorise" {
-    git config repogarde.skip "secrets protect-branch"
+@test "main : repowarden.skip protect-branch l'autorise" {
+    git config repowarden.skip "secrets protect-branch"
     run git commit -q --allow-empty -m "fix: x"
     [ "$status" -eq 0 ]
 }
@@ -97,7 +97,7 @@ setup() { setup_repo; initial_commit; }
 }
 
 @test "pre-push : protectedBranches s'applique a develop, pas aux autres branches" {
-    git config repogarde.protectedBranches "main develop"
+    git config repowarden.protectedBranches "main develop"
     git push -q -u origin main
     git switch -q -c develop
     git push -q -u origin develop
@@ -110,10 +110,10 @@ setup() { setup_repo; initial_commit; }
     [ "$status" -eq 0 ]
 }
 
-@test "pre-push : repogarde.skip protect-branch autorise le push sur main" {
+@test "pre-push : repowarden.skip protect-branch autorise le push sur main" {
     git push -q -u origin main
     git commit -q --no-verify --allow-empty -m "fix: x"
-    git config repogarde.skip "secrets protect-branch"
+    git config repowarden.skip "secrets protect-branch"
     run git push -q origin main
     [ "$status" -eq 0 ]
 }
@@ -164,7 +164,7 @@ push_branch() {
 }
 
 @test "post-merge : desactivable (skip prune-branches)" {
-    git config repogarde.skip "secrets prune-branches"
+    git config repowarden.skip "secrets prune-branches"
     git push -q -u origin main
     push_branch feat/z
     server_merge_and_delete feat/z
@@ -214,7 +214,7 @@ server_squash_and_delete() {
 }
 
 @test "en anglais : commit direct sur main et branche mal nommee expliques en anglais" {
-    export REPOGARDE_LANG=en
+    export REPOWARDEN_LANG=en
     run git commit -q --allow-empty -m "fix: x"
     [ "$status" -ne 0 ]
     [[ "$output" == *"Direct commit on 'main' forbidden"* ]]

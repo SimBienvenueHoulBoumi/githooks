@@ -12,17 +12,18 @@ source "$(dirname "${BASH_SOURCE[0]}")/ui.sh"
 # shellcheck source=i18n.sh
 source "$(dirname "${BASH_SOURCE[0]}")/i18n.sh"
 
-# Avertissement ; si REPOGARDE_WARN_FILE est défini (CI), il est aussi journalisé
+# Avertissement ; si REPOWARDEN_WARN_FILE est défini (CI), il est aussi journalisé
 # pour le mode strict (outil manquant = échec)
 warn() {
     echo "${UI_Y}⚠${UI_N} $*" >&2
-    if [ -n "${REPOGARDE_WARN_FILE:-}" ]; then echo "$*" >>"$REPOGARDE_WARN_FILE"; fi
+    if [ -n "${REPOWARDEN_WARN_FILE:-}" ]; then echo "$*" >>"$REPOWARDEN_WARN_FILE"; fi
 }
 has() { command -v "$1" >/dev/null 2>&1; }
 
-# Config repogarde.* chargée UNE fois par processus : chaque appel git coûte cher
+# Config repowarden.* chargée UNE fois par processus : chaque appel git coûte cher
 # (20 à 50 ms sous Windows), et un hook lit la config des dizaines de fois.
-# Priorité : git config (local puis global), puis .repogarde.conf versionné.
+# Priorité : git config (local puis global), puis .repowarden.conf versionné.
+# Anciens noms (repogarde.*, .repogarde.conf) lus aussi, le nouveau l'emporte.
 CFG_GIT=""
 CFG_FILE=""
 CFG_LOADED=""
@@ -32,16 +33,21 @@ GIT_TOPLEVEL=""
 cfg_load() {
     local file=""
     GIT_TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-    CFG_GIT="$(git config --get-regexp '^repogarde\.' 2>/dev/null || true)"
+    # Anciennes clés d'abord : cfg_lookup garde la dernière valeur trouvée
+    CFG_GIT="$(git config --get-regexp '^(repogarde|repowarden)\.' 2>/dev/null || true)"
+    case "$CFG_GIT" in repogarde.* | *$'\n'repogarde.*) compat_note 'repogarde.*' ;; esac
     CFG_FILE=""
-    file="$GIT_TOPLEVEL/.repogarde.conf"
-    if [ -n "$GIT_TOPLEVEL" ] && [ -f "$file" ]; then
-        CFG_FILE="$(git config -f "$file" --get-regexp '^repogarde\.' 2>/dev/null || true)"
+    if [ -n "$GIT_TOPLEVEL" ]; then
+        for file in "$GIT_TOPLEVEL/.repogarde.conf" "$GIT_TOPLEVEL/.repowarden.conf"; do
+            [ -f "$file" ] || continue
+            [ "${file##*/}" = .repogarde.conf ] && compat_note .repogarde.conf
+            CFG_FILE="$CFG_FILE${CFG_FILE:+$'\n'}$(git config -f "$file" --get-regexp '^(repogarde|repowarden)\.' 2>/dev/null || true)"
+        done
     fi
     CFG_LOADED=1
 }
 
-# REPLY = dernière valeur de repogarde.<$1> dans $2 (sortie de --get-regexp, où git
+# REPLY = dernière valeur de repowarden.<$1> dans $2 (sortie de --get-regexp, où git
 # met les noms en minuscules : comparaison insensible à la casse). Échec si absente.
 cfg_lookup() {
     local line found="" nocase=""
@@ -49,10 +55,10 @@ cfg_lookup() {
     shopt -q nocasematch && nocase=1
     shopt -s nocasematch
     while IFS= read -r line; do
-        if [[ "$line" == "repogarde.$1 "* ]]; then
+        if [[ "$line" == "repowarden.$1 "* || "$line" == "repogarde.$1 "* ]]; then
             REPLY="${line#* }"
             found=1
-        elif [[ "$line" == "repogarde.$1" ]]; then
+        elif [[ "$line" == "repowarden.$1" || "$line" == "repogarde.$1" ]]; then
             REPLY=true # clé sans valeur
             found=1
         fi
@@ -61,7 +67,7 @@ cfg_lookup() {
     [ -n "$found" ]
 }
 
-# REPLY = réglage repogarde.<$1>, ou $2 par défaut (sans sous-processus)
+# REPLY = réglage repowarden.<$1>, ou $2 par défaut (sans sous-processus)
 cfg_r() {
     [ -n "$CFG_LOADED" ] || cfg_load
     cfg_lookup "$1" "$CFG_GIT" || cfg_lookup "$1" "$CFG_FILE" || REPLY="${2-}"
@@ -145,6 +151,24 @@ pr_targets_r() {
     esac
 }
 
+# Nature d'une PR partant d'une branche persistante (flux integrationBranch),
+# source $1, cible $2 : REPLY = livraison (intégration → principale), retour
+# (principale → intégration), inversee (persistante vers autre chose : sans
+# objet), ou vide (PR de travail, ou hors PR)
+persistent_pr_r() {
+    local integration main
+    cfg_r integrationBranch ""
+    integration="$REPLY"
+    cfg_r mainBranch main
+    main="$REPLY"
+    REPLY=""
+    [ -n "$integration" ] && [ -n "$2" ] || return 0
+    case "$1" in
+        "$integration") if [ "$2" = "$main" ]; then REPLY=livraison; else REPLY=inversee; fi ;;
+        "$main") if [ "$2" = "$integration" ]; then REPLY=retour; else REPLY=inversee; fi ;;
+    esac
+}
+
 # Vrai si $1 est un en-tête conforme (format et 72 caractères)
 header_valid() {
     [[ "$1" =~ $CC_PATTERN ]] || return 1
@@ -223,7 +247,7 @@ branch_help() {
     local branch="$1" suggested allowed
     suggested="$(suggest_branch_name "$branch")"
     allowed="$(cfg allowedBranches "$DEFAULT_ALLOWED_BRANCHES")"
-    if [ "${REPOGARDE_LANG:-}" = en ]; then
+    if [ "${REPOWARDEN_LANG:-}" = en ]; then
         cat >&2 <<EOF
 
 Invalid branch name: "$branch"
@@ -243,8 +267,8 @@ EOF
         cat >&2 <<EOF
 
 Allowed exceptions: $allowed
-  (change: git config repogarde.allowedBranches "main develop release/*")
-Disable for this repository: git config repogarde.skip branch-name
+  (change: git config repowarden.allowedBranches "main develop release/*")
+Disable for this repository: git config repowarden.skip branch-name
 EOF
     else
         cat >&2 <<EOF
@@ -266,13 +290,13 @@ EOF
         cat >&2 <<EOF
 
 Exceptions autorisées : $allowed
-  (modifier : git config repogarde.allowedBranches "main develop release/*")
-Désactiver pour ce dépôt : git config repogarde.skip branch-name
+  (modifier : git config repowarden.allowedBranches "main develop release/*")
+Désactiver pour ce dépôt : git config repowarden.skip branch-name
 EOF
     fi
 }
 
-# Vrai si l'élément est désactivé (repogarde.skip, git config ou .repogarde.conf).
+# Vrai si l'élément est désactivé (repowarden.skip, git config ou .repowarden.conf).
 # Valeurs : true|all, ou liste séparée par espaces/virgules parmi
 # pre-commit prepare-commit-msg commit-msg pre-push post-checkout
 # branch-name protect-branch secrets format tests, ou un langage (node, python…)
@@ -293,7 +317,7 @@ exit_if_skipped() {
     fi
 }
 
-# Version minimale de repogarde demandée par le projet (repogarde.version,
+# Version minimale de repowarden demandée par le projet (repowarden.version,
 # ex. 3.1.4 ou 3) : le poste prévenu s'il est en retard, avec la commande de
 # mise à jour. Avertissement seulement : la CI, à sa propre version, fait foi.
 check_version() {
@@ -302,7 +326,7 @@ check_version() {
     wanted="${REPLY#v}"
     [ -n "$wanted" ] || return 0
     root="${HOOKS_DIR%/hooks}"
-    repogarde_version_r "$root"
+    repowarden_version_r "$root"
     installed="$REPLY"
     [ -n "$installed" ] || return 0
     local IFS=.
@@ -314,31 +338,38 @@ check_version() {
         [ "$n" = 2 ] && return 0
     done
     unset IFS
-    if [[ "$root" == */node_modules/* ]]; then REPLY="npm update -g @simbie/repogarde"
+    if [[ "$root" == */node_modules/* ]]; then REPLY="npm update -g repowarden"
     elif [ -d "$root/.git" ]; then REPLY="git -C $root pull"
     else REPLY="$root"
     fi
     attention_t hook.version_old "$wanted" "$installed" "$REPLY" >&2
 }
 
-# Exécute les hooks propres au projet (.repogarde/<hook> ou .git/hooks/<hook>),
+# Exécute les hooks propres au projet (.repowarden/<hook> ou .git/hooks/<hook>),
 # ignorés par git dès que core.hooksPath pointe ici.
 run_local_hook() {
     local candidate real
-    for candidate in ".repogarde/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
+    for candidate in ".repowarden/$HOOK_NAME" ".repogarde/$HOOK_NAME" "$(git rev-parse --git-common-dir)/hooks/$HOOK_NAME"; do
         [ -x "$candidate" ] || continue
+        # Ancien dossier (.repogarde/) : lancé seulement sans le nouveau
+        if [ "$candidate" = ".repogarde/$HOOK_NAME" ]; then
+            [ -x ".repowarden/$HOOK_NAME" ] && continue
+            compat_note .repogarde/
+        fi
         real="$(cd "$(dirname "$candidate")" && pwd -P)"
         [ "$real" = "$HOOKS_DIR" ] && continue
         # Hook installé par lefthook (« lefthook install ») : lefthook n'est plus
-        # pris en charge depuis repogarde 4. Ses commandes se déclarent dans
-        # .repogarde/<hook>, lancé juste avant.
+        # pris en charge depuis repowarden 4. Ses commandes se déclarent dans
+        # .repowarden/<hook>, lancé juste avant.
         if grep -qs lefthook "$candidate"; then
             attention_t hook.common.lefthook_ignored "$candidate" "$HOOK_NAME"
             continue
         fi
         info_t hook.common.5 "$candidate"
+        compat_warn
         "$candidate" "$@" || return $?
     done
+    compat_warn
 }
 
 # Chargement immédiat dans le processus qui source ce fichier : un appel $(cfg …)
@@ -347,5 +378,16 @@ cfg_load
 
 # Langue confirmée et plateforme, une fois la configuration lue
 i18n_init
+
+# Anciens noms rencontrés (REPOGARDE_*, repogarde.*, .repogarde.conf) : un
+# avertissement par processus, avec les nouveaux noms
+compat_warn() {
+    [ -n "$REPOWARDEN_OLD_NAMES" ] || return 0
+    # Un seul avertissement par commit ou push : pas dans les hooks qui suivent
+    case "$HOOK_NAME" in prepare-commit-msg | commit-msg | post-checkout | post-merge) return 0 ;; esac
+    attention_t compat.old_names "$REPOWARDEN_OLD_NAMES"
+    REPOWARDEN_OLD_NAMES=""
+}
+compat_warn
 # shellcheck source=forge.sh
 source "$(dirname "${BASH_SOURCE[0]}")/forge.sh"

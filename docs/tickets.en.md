@@ -1,37 +1,60 @@
 # Tickets
 
-Every change is tied to a **ticket** (GitHub issue): you know why it exists, who validated it, and where it stands, from the idea to production.
+Every change starts from a **ticket** (GitHub issue): **the branch derives from the ticket**, and each step of the ticket's life moves the branch and the PR forward, from idea to production, without manual tracking.
 
-## A ticket's life cycle
+## A ticket's lifecycle
 
-| Status (label) | When | Trigger |
+| Status (label) | When | Automatic effect |
 |---|---|---|
-| `statut: à valider` | ticket created, by hand or automatically | creation |
-| `statut: backlog` | ticket accepted | a maintainer adds the **`validé`** label |
-| `statut: en cours` | work started | draft PR citing the ticket |
-| `statut: en relecture` | PR ready | PR "Ready for review" |
-| `statut: préprod` | merged into `develop`, testable | PR merged; comment on each `vX.Y.Z-next.N` pre-release |
-| `statut: done` | in production | release on `main`: ticket **closed**, with the version |
+| `statut: à valider` | ticket created (by hand, or `repowarden ticket nouveau`) | — |
+| `statut: backlog` | a maintainer adds the **`validé`** label, or opens the ticket themselves (validated straight away) | ticket ready to be taken; comment with the command to take it |
+| `statut: en cours` | someone assigns themselves the ticket (or `repowarden ticket N`), or pushes a first commit to its branch | on assignment: **branch `<type>/<n>-<title>` created** from `develop` and **linked to the ticket** (*Development* panel), so a ticket validated for later has no branch going stale; on the first push: **draft PR** opened to `develop`, `Ticket : #n`, assigned |
+| `statut: en relecture` | PR "Ready for review" | CI runs; a "Request changes" review moves the ticket back to in progress |
+| `statut: préprod` | PR merged into `develop` | branch deleted; comment on each pre-release `vX.Y.Z-next.N` |
+| `statut: done` | release on `main` | ticket **closed**, with the version |
 
-Everything is automatic except validation: it is the only human decision, and GitHub only lets people with rights on the repository add the `validé` label.
+Ticket closed as **abandoned** (*not planned*): its PR is closed and its branch deleted.
+
+Everything is automatic except validation: it is the only human decision, and GitHub only lets people with rights on the repository add the `validé` label. A ticket **opened by a maintainer** (write access: owner, member, collaborator) is **validated straight away**: opening it is already their decision. Only community tickets wait for the label. To always require a separate validation: `auto-validate: never` input of the `tickets.yml` workflow. The branch type comes from the ticket's `type: …` label (`feat` by default), its name from the title (lowercase, no accents).
+
+## On the developer machine
+
+```bash
+repowarden ticket 12                          # switch to ticket #12's branch
+repowarden ticket nouveau "Add the cart"       # create a ticket (awaiting validation)
+repowarden ticket                             # ticket of the current branch
+```
+
+- `repowarden ticket <n>` **takes the ticket** (assigned to you) and switches to its branch; creates it and links it to the ticket (`gh issue develop`) if it does not exist yet.
+- **Assigned tickets → local branches**: on every `git pull` or branch switch (at most every 15 min, only with `gh` logged in), repowarden creates the local branch of each ticket assigned to you, without changing your current branch. A ticket reassigned to someone else is flagged, its local branch kept. On demand: `repowarden tickets sync`; setting `ticketSync = auto | manual | off`.
+- **Branch without a ticket**: `repowarden` warns (when arriving on the branch and in `git cc`), **never blocking**: not everyone works with tickets. If the project's tickets are managed by repowarden, it **offers to create one** (`git cc` creates and references it on "yes"); otherwise it shows how to silence it: `git config repowarden.skip tickets`.
+- `git cc` references `Ticket : #12` on a `feat/12-…` branch.
 
 ## The rules
 
-- **No PR without a ticket**: a PR cites its ticket in its description (`Ticket: #12`), or its branch carries it (`feat/12-cart`). Otherwise the ticket is **created automatically** from the PR, linked in its description, and "to be validated".
-- **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, nothing to re-run.
-- **`git cc`** suggests `Ticket : #12` as a reference on a `feat/12-…` branch.
-- Dependency bots, release PRs and `develop` → `main` deliveries need no ticket.
+- **No PR without a ticket**: a PR references its ticket in its description (`Ticket : #12`), or its branch carries it (`feat/12-cart`). Otherwise, the ticket is **created automatically** from the PR, linked to its description, and "à valider".
+- **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, without re-running anything. The `tickets` job stays green while waiting: a red job means a real failure.
+- **One ticket, one branch, and the ticket remembers it**: the branch created by the ticket is linked to it (*Development* panel). GitHub can only link a branch when creating it, and a deleted linked branch loses its name there: the bot therefore **writes the branch name on the ticket** ("Ticket branch" comment), when it is created as well as on the first push of a hand-made `type/12-…` branch. A second branch for the same ticket is registered and flagged.
+- **`main` and `develop` are never red**: GitHub attaches a PR's checks to the commit of its source branch. A PR only leaves `develop` to deliver (`develop` → `main`), and `main` for a useful back-merge (`main` → `develop`). Any other PR leaving them is pointless: the CI flags it without failing, and it is closed with the way forward (to update a work branch: `git merge origin/develop` on that branch).
+- Dependency bots, release PRs and `develop` → `main` deliveries do not need a ticket.
+- The draft PR is opened by the Actions token, which does not trigger other workflows: CI runs on the next push, or when marked "Ready for review" (`ready_for_review` in the CI triggers, as in the project template).
 
-!!! note "Why `Ticket: #12` and not `Closes #12`"
-    `Closes #12` closes the ticket as soon as it is merged into the default branch, that is `develop`: it would be "done" before reaching production. Here, the release on `main` closes it.
+!!! note "Why `Ticket : #12` and not `Closes #12`"
+    `Closes #12` closes the ticket as soon as it is merged into the default branch, i.e. `develop`: it would be "done" before reaching production. Here, the release on `main` closes it.
 
 ## Setup
 
 ```bash
-repogarde tickets init          # labels, ticket template, tickets.yml workflow
+repowarden tickets init          # labels, template, workflow, existing tickets and branches
 git add .github && git cc       # then a PR
-repogarde proteger --checks "repogarde,ticket"   # "ticket" check required
+repowarden proteger --checks "repowarden,ticket"   # "ticket" check required
 ```
+
+On a repository that already has tickets, `tickets init` takes them over (re-runnable, nothing is done twice):
+
+- open tickets **without a status**: those labelled `validé` or opened by a maintainer go to **backlog**, the others **to validate** (`--sans-validation-auto`: all to validate);
+- **branches of open and merged PRs**: registered on the tickets they reference, to know which ticket handled which branch, even deleted;
+- no mass branch creation: the branch is born when the ticket is taken (`repowarden ticket N`).
 
 In `.github/workflows/release.yml`, tickets move to pre-production on each pre-release and to done on each release:
 
@@ -39,11 +62,13 @@ In `.github/workflows/release.yml`, tickets move to pre-production on each pre-r
   tickets:
     needs: release
     if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
-    permissions: { issues: write, pull-requests: write, statuses: write }
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
+    permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
     with:
       tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
 ```
+
+An existing `tickets.yml` is never overwritten: for the branch created on validation and the draft PR, add the `pull_request_review`, `issues` (`assigned`, `closed`) and `push` events to it, and the `contents: write` permission (see the template written by `repowarden tickets init`).
 
 No key or token: everything goes through the Actions token. The workflow uses `pull_request_target` without ever fetching the PR's code: PRs from forks are handled safely.
 

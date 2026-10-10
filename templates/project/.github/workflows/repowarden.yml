@@ -1,11 +1,13 @@
-# Vérifications repogarde en CI (obligatoires pour merger : à déclarer en
+# Vérifications repowarden en CI (obligatoires pour merger : à déclarer en
 # "required status check" dans les règles de protection de la branche).
-name: repogarde
+name: repowarden
 
 on:
   pull_request:
-    # edited : revérifie quand le titre de la PR change (message du commit en squash)
-    types: [opened, synchronize, reopened, edited]
+    # edited : revérifie quand le titre de la PR change (message du commit en squash) ;
+    # ready_for_review : une PR brouillon ouverte par le suivi des tickets n'a
+    # pas encore eu de CI (jeton des Actions)
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main]
   # Lancé par le workflow de release sur sa PR (release-auto)
@@ -15,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  repogarde:
+  repowarden:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -29,6 +31,6 @@ jobs:
       #   with: { node-version: 24, cache: npm }
       # - run: npm ci
 
-      - uses: SimBienvenueHoulBoumi/repogarde@v3
+      - uses: SimBienvenueHoulBoumi/repowarden@v4
         with:
           strict: true

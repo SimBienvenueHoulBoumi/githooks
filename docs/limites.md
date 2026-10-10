@@ -8,5 +8,5 @@
 - **Fichiers isolés** (hors projet) : formatés, mais sans tests.
 - **`pre-push` hors de la branche courante** : tests dans un worktree temporaire, où seul `node_modules` est relié.
 - **Premier lancement** sur Helm, Kubernetes ou Terraform : téléchargement des schémas et providers, ensuite en cache.
-- **Dossier repogarde déplacé ou renommé** : Git ignore *sans aucun message* un `core.hooksPath` qui n'existe plus, et les hooks cessent de tourner. Relancer `install.sh` (avec `--global` si besoin) depuis le nouvel emplacement ; vérifier avec `git config --show-origin --get-all core.hooksPath` (un réglage local du dépôt l'emporte sur le global).
+- **Dossier repowarden déplacé ou renommé** : Git ignore *sans aucun message* un `core.hooksPath` qui n'existe plus, et les hooks cessent de tourner. Relancer `install.sh` (avec `--global` si besoin) depuis le nouvel emplacement ; vérifier avec `git config --show-origin --get-all core.hooksPath` (un réglage local du dépôt l'emporte sur le global).
 

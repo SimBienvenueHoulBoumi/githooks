@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Installe ou retire les hooks repogarde.
+# Installe ou retire les hooks repowarden.
 #   ./install.sh                       active les hooks pour le dépôt courant
 #   ./install.sh --global              active les hooks pour tous les dépôts
 #                                      (et l'assistant de commit : git cc)
 #   ./install.sh --global --lang en    langue des messages (fr, en) ; demandée une fois sinon
 #   ./install.sh --uninstall [--global]
-#                                      retire les hooks (seulement s'ils sont ceux de repogarde)
+#                                      retire les hooks (seulement s'ils sont ceux de repowarden)
 #   ./install.sh --uninstall --global --purge [--scan DOSSIER]
 #                                      retire aussi les caches et liste les dépôts
-#                                      de DOSSIER encore branchés sur repogarde
+#                                      de DOSSIER encore branchés sur repowarden
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd -P)"
@@ -53,14 +53,16 @@ done
 # si aucune n'est encore choisie ; enregistrée dans la config git
 choose_lang() {
     local current
-    current="$(git config "$SCOPE" --get repogarde.lang 2>/dev/null || true)"
+    # Langue déjà choisie, sous le nouveau nom ou l'ancien (repogarde.lang)
+    current="$(git config "$SCOPE" --get repowarden.lang 2>/dev/null ||
+        git config "$SCOPE" --get repogarde.lang 2>/dev/null || true)"
     if [ -z "$LANG_CHOICE" ] && [ -z "$current" ] && [ -t 0 ]; then
         printf '%s\n' "Langue des messages / Message language :" "  1) Français" "  2) English" >&2
-        read -r -p "[$([ "$REPOGARDE_LANG" = fr ] && echo 1 || echo 2)] : " LANG_CHOICE || true
+        read -r -p "[$([ "$REPOWARDEN_LANG" = fr ] && echo 1 || echo 2)] : " LANG_CHOICE || true
         case "${LANG_CHOICE:-}" in
             1 | fr*) LANG_CHOICE=fr ;;
             2 | en*) LANG_CHOICE=en ;;
-            *) LANG_CHOICE="$REPOGARDE_LANG" ;;
+            *) LANG_CHOICE="$REPOWARDEN_LANG" ;;
         esac
     fi
     [ -n "$LANG_CHOICE" ] || return 0
@@ -68,11 +70,11 @@ choose_lang() {
         fr | en) ;;
         *) t install.lang_invalid; err "$REPLY"; exit 1 ;;
     esac
-    git config "$SCOPE" repogarde.lang "$LANG_CHOICE"
-    REPOGARDE_LANG="$LANG_CHOICE"
+    git config "$SCOPE" repowarden.lang "$LANG_CHOICE"
+    REPOWARDEN_LANG="$LANG_CHOICE"
     # Commande à donner : celle de l'utilisateur (paquet npm ou clone)
 case "$ROOT" in
-    */node_modules/*) cmd="repogarde install" ;;
+    */node_modules/*) cmd="repowarden install" ;;
     *) cmd="$ROOT/install.sh" ;;
 esac
 t install.lang_set "$cmd"
@@ -85,17 +87,17 @@ if [ "$SCOPE" = --local ] && ! git rev-parse --git-dir >/dev/null 2>&1; then
     exit 1
 fi
 
-# Vrai si le chemin $1 désigne des hooks repogarde : ce dossier, ou un ancien
-# emplacement disparu (dossier déplacé).
-is_repogarde_hooks() {
+# Vrai si le chemin $1 désigne des hooks repowarden : ce dossier, ou un ancien
+# emplacement disparu (dossier déplacé), y compris sous l'ancien nom repogarde.
+is_repowarden_hooks() {
     local path="$1"
     [ -n "$path" ] || return 1
     if [ -d "$path" ]; then
         [ "$(cd "$path" && pwd -P)" = "$HOOKS" ] && return 0
-        [ -f "$path/lib/common.sh" ] && grep -qs repogarde "$path/lib/common.sh"
+        [ -f "$path/lib/common.sh" ] && grep -qsE 'repowarden|repogarde' "$path/lib/common.sh"
         return
     fi
-    case "$path" in */repogarde/hooks) return 0 ;; esac
+    case "$path" in */repowarden/hooks | */repogarde/hooks) return 0 ;; esac
     return 1
 }
 
@@ -130,7 +132,7 @@ uninstall_scope() {
     if [ -z "$current" ]; then
         t install.nothing "$1"
         info "$REPLY"
-    elif is_repogarde_hooks "$current"; then
+    elif is_repowarden_hooks "$current"; then
         git config "$1" --unset core.hooksPath
         t install.removed "$1"
         ok "$REPLY"
@@ -143,12 +145,13 @@ uninstall_scope() {
 
 purge() {
     local cache dir repo path
-    cache="${XDG_CACHE_HOME:-$HOME/.cache}/repogarde"
-    if [ -d "$cache" ]; then
+    # Cache actuel et cache de l'ancien nom (repogarde)
+    for cache in "${XDG_CACHE_HOME:-$HOME/.cache}/repowarden" "${XDG_CACHE_HOME:-$HOME/.cache}/repogarde"; do
+        [ -d "$cache" ] || continue
         rm -rf -- "$cache"
         t install.cache_removed "$cache"
         ok "$REPLY"
-    fi
+    done
     if [ -n "$SCAN" ]; then
         t install.scan "$SCAN"
         step "$REPLY"
@@ -158,12 +161,12 @@ purge() {
             path="$(git -C "$repo" config --local --get core.hooksPath 2>/dev/null || true)"
             if [ -n "$path" ]; then
                 case "$path" in /*) ;; *) path="$repo/$path" ;; esac
-                if is_repogarde_hooks "$path"; then
+                if is_repowarden_hooks "$path"; then
                     echo "  $repo  →  git -C \"$repo\" config --unset core.hooksPath"
                     found=1
                 fi
             fi
-            if grep -qs repogarde "$repo/lefthook.yml" "$repo/lefthook.yaml" "$repo/.lefthook.yml"; then
+            if grep -qsE 'repowarden|repogarde' "$repo/lefthook.yml" "$repo/lefthook.yaml" "$repo/.lefthook.yml"; then
                 echo "  $repo (lefthook)  →  cd \"$repo\" && lefthook uninstall"
                 found=1
             fi
@@ -199,6 +202,27 @@ if [ -n "$PURGE$SCAN" ]; then
     err "$REPLY"
     exit 1
 fi
+
+# Clés de l'ancien nom (repogarde.*, posées par repogarde 3, dont la langue) :
+# renommées en repowarden.*, sans écraser une clé déjà définie sous le
+# nouveau nom
+migrate_old_keys() {
+    local old key value
+    old="$(git config "$SCOPE" --get-regexp '^repogarde\.' 2>/dev/null || true)"
+    [ -n "$old" ] || return 0
+    if git config "$SCOPE" --get-regexp '^repowarden\.' >/dev/null 2>&1; then
+        while read -r key value; do
+            git config "$SCOPE" --get "repowarden.${key#repogarde.}" >/dev/null 2>&1 ||
+                git config "$SCOPE" "repowarden.${key#repogarde.}" "$value"
+        done <<<"$old"
+        git config "$SCOPE" --remove-section repogarde
+    else
+        git config "$SCOPE" --rename-section repogarde repowarden
+    fi
+    t install.keys_migrated "$SCOPE"
+    ok "$REPLY"
+}
+migrate_old_keys
 
 choose_lang
 

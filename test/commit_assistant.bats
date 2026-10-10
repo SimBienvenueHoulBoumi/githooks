@@ -77,8 +77,8 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
     [ "$(subject)" = "feat(panier): ajoute le panier" ]
 }
 
-@test "assistant : en anglais (REPOGARDE_LANG=en), reponses y/yes acceptees" {
-    export REPOGARDE_LANG=en
+@test "assistant : en anglais (REPOWARDEN_LANG=en), reponses y/yes acceptees" {
+    export REPOWARDEN_LANG=en
     run answer "" "" "y" "the cart response is now an object" "change the cart API" "" "" "y"
     [ "$status" -eq 0 ]
     [[ "$output" == *"Type of change"* ]]
@@ -101,7 +101,7 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
             [ "$FORGE|$FORGE_PR|$FORGE_REFS" = "$attendu|$pr|$refs" ] || { echo "$url -> $FORGE|$FORGE_PR|$FORGE_REFS"; exit 1; }
         )
     done
-    git config repogarde.forge gitlab
+    git config repowarden.forge gitlab
     (unset GITHUB_ACTIONS; source "$HOOKS/lib/common.sh"; [ "$FORGE" = gitlab ])
 }
 
@@ -118,13 +118,13 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
 }
 
 @test "assistant : commit refuse par un hook -> message conserve" {
-    mkdir -p .repogarde
-    printf '#!/bin/sh\nexit 1\n' >.repogarde/pre-commit
-    chmod +x .repogarde/pre-commit
+    mkdir -p .repowarden
+    printf '#!/bin/sh\nexit 1\n' >.repowarden/pre-commit
+    chmod +x .repowarden/pre-commit
     run answer "" "" "" "ajoute le panier" "" "" ""
     [ "$status" -ne 0 ]
     [[ "$output" == *"ton message est conservé"* ]]
-    grep -qx "feat(panier): ajoute le panier" "$(git rev-parse --git-dir)/repogarde-message"
+    grep -qx "feat(panier): ajoute le panier" "$(git rev-parse --git-dir)/repowarden-message"
 }
 
 @test "assistant : scope invalide -> version corrigee proposee, Entree l'accepte" {
@@ -249,7 +249,7 @@ answer() { printf '%s\n' "$@" | "$CC" 2>&1; }
 }
 
 @test "assistant : branche hors convention -> ni type ni scope proposes" {
-    git config repogarde.allowedBranches "main wip/*"
+    git config repowarden.allowedBranches "main wip/*"
     git switch -q -c wip/essai
     run answer "" "docs" "" "" "ajoute la note" "" "" ""
     [ "$status" -eq 0 ]

@@ -1,10 +1,10 @@
-# repogarde
+# repowarden
 
-**repogarde** garde l'entrée de vos dépôts Git : messages de commit, nommage des branches, secrets, formatage et tests, **quel que soit le langage**. Les mêmes règles s'appliquent sur les postes (hooks) et en CI, et `main` est protégée côté serveur.
+**repowarden** garde l'entrée de vos dépôts Git : messages de commit, nommage des branches, secrets, formatage et tests, **quel que soit le langage**. Les mêmes règles s'appliquent sur les postes (hooks) et en CI, et `main` est protégée côté serveur.
 
 ```mermaid
 flowchart LR
-    A["Poste développeur<br/>hooks repogarde"] -->|git push| B["CI<br/>action GitHub · template GitLab"]
+    A["Poste développeur<br/>hooks repowarden"] -->|git push| B["CI<br/>action GitHub · template GitLab"]
     B -->|vérifications obligatoires| C["Branche main protégée"]
     A -. "retour immédiat<br/>corrections automatiques" .-> A
     B -. "fait foi<br/>non contournable" .-> B
@@ -16,7 +16,7 @@ flowchart LR
 | **CI** | Refait toutes les vérifications sur chaque PR / MR | non |
 | **Serveur** | Merge interdit si la CI échoue, push direct sur `main` interdit | non |
 
-## Ce que fait repogarde
+## Ce que fait repowarden
 
 <div class="grid cards" markdown>
 
@@ -32,26 +32,26 @@ flowchart LR
 
 **Plus de 25 technologies** détectées automatiquement — Java, JavaScript/TypeScript, Python, Go, Rust, PHP, Ruby, .NET, Flutter, Swift, Elixir, C/C++, Terraform, Helm, Kubernetes, Ansible, Docker… → [la liste complète](technologies.md).
 
-**Dans VS Code** — l'extension [repogarde-vscode](https://github.com/SimBienvenueHoulBoumi/repogarde-vscode) applique les mêmes règles dans l'éditeur : assistant de commit, nom de branche vérifié dans la barre d'état, alerte si les hooks ne s'exécutent plus.
+**Dans VS Code** — l'extension [repowarden-vscode](https://github.com/SimBienvenueHoulBoumi/repowarden-vscode) applique les mêmes règles dans l'éditeur : assistant de commit, nom de branche vérifié dans la barre d'état, alerte si les hooks ne s'exécutent plus.
 
 ## En 30 secondes
 
 ```bash title="Poste développeur — une fois, pour tous les dépôts"
-npm install -g @simbie/repogarde
-repogarde install --global
+npm install -g repowarden
+repowarden install --global
 ```
 
-```yaml title=".github/workflows/repogarde.yml — CI (extrait)"
+```yaml title=".github/workflows/repowarden.yml — CI (extrait)"
 - uses: actions/checkout@v7
   with: { fetch-depth: 0 }
-- uses: SimBienvenueHoulBoumi/repogarde@v3
+- uses: SimBienvenueHoulBoumi/repowarden@v4
   with: { strict: true }
 ```
 
-→ [Démarrage rapide](demarrage.md) · [exemple complet : repogarde-demo](https://github.com/SimBienvenueHoulBoumi/repogarde-demo)
+→ [Démarrage rapide](demarrage.md) · [exemple complet : repowarden-demo](https://github.com/SimBienvenueHoulBoumi/repowarden-demo)
 
 ## Fiabilité
 
 - Chaque langage et outil est vérifié en CI sur **un vrai projet** avec son outillage.
 - Tests sur **Linux, macOS et Windows** ; releases **signées** ([vérifier une release](securite.md)).
-- Projet évalué par [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/SimBienvenueHoulBoumi/repogarde).
+- Projet évalué par [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/SimBienvenueHoulBoumi/repowarden).

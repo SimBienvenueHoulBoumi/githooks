@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# État de repogarde sur ce poste et dans le dépôt courant, puis la commande
+# État de repowarden sur ce poste et dans le dépôt courant, puis la commande
 # suivante à lancer (l'équivalent de « gh auth status » ou « brew doctor ») :
-#   repogarde statut        (ou repogarde, sans argument)
+#   repowarden statut        (ou repowarden, sans argument)
 # Lecture seule : rien n'est modifié.
 set -euo pipefail
 
@@ -12,7 +12,7 @@ exec 2>&1 # une seule sortie, dans l'ordre (avertissements compris)
 # shellcheck disable=SC2034 # lu par check_version (common.sh)
 HOOKS_DIR="$ROOT/hooks"
 
-repogarde_version_r "$ROOT"
+repowarden_version_r "$ROOT"
 version="$REPLY"
 case "$ROOT" in
     */node_modules/*) mode=npm ;;
@@ -32,12 +32,12 @@ if [ -z "$global" ] && [ -n "$local_hooks" ] && [ "$(reel "$local_hooks")" = "$R
     ok_t st.hooks_repo
 elif [ -z "$global" ]; then
     err_t st.hooks_off
-    suivant="${suivant:-repogarde install --global}"
+    suivant="${suivant:-repowarden install --global}"
 elif [ "$(reel "$global")" = "$ROOT/hooks" ]; then
     ok_t st.hooks_on
-elif [ -f "$global/lib/common.sh" ] && grep -qs repogarde "$global/lib/common.sh"; then
+elif [ -f "$global/lib/common.sh" ] && grep -qsE "repowarden|repogarde" "$global/lib/common.sh"; then
     attention_t st.hooks_other "$global"
-    suivant="${suivant:-repogarde install --global}"
+    suivant="${suivant:-repowarden install --global}"
 else
     info_t st.hooks_foreign "$global"
 fi
@@ -48,15 +48,15 @@ if [[ "$alias_cc" == *"$ROOT/bin/commit"* ]]; then
     ok_t st.cc_on
 elif [[ "$alias_cc" == *"/bin/commit"* ]]; then
     attention_t st.cc_other
-    suivant="${suivant:-repogarde install --global}"
+    suivant="${suivant:-repowarden install --global}"
 elif [ -n "$alias_cc" ]; then
     info_t st.cc_foreign "$alias_cc"
 else
     err_t st.cc_off
-    suivant="${suivant:-repogarde install --global}"
+    suivant="${suivant:-repowarden install --global}"
 fi
 
-info_t st.lang "$REPOGARDE_LANG"
+info_t st.lang "$REPOWARDEN_LANG"
 
 # Dépôt courant
 if [ -n "$GIT_TOPLEVEL" ]; then
@@ -75,7 +75,7 @@ if [ -n "$GIT_TOPLEVEL" ]; then
         attendue="${REPLY#v}"
         if [ -n "$(check_version 2>&1)" ]; then
             attention_t st.repo_version_old "$attendue" "${version:-?}"
-            [ "$mode" = npm ] && suivant="${suivant:-npm update -g @simbie/repogarde}"
+            [ "$mode" = npm ] && suivant="${suivant:-npm update -g repowarden}"
         else
             ok_t st.repo_version_ok "$attendue"
         fi

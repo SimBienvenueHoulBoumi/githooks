@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
-# Hook post-checkout : avertit dès qu'on arrive sur une branche mal nommée.
+# Hook post-checkout : avertit dès qu'on arrive sur une branche mal nommée,
+# ou sur une branche de travail sans ticket.
 # Non bloquant (git ne permet pas d'empêcher la création d'une branche) :
 # le blocage se fait au commit (pre-commit) et au push (pre-push).
 set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
+source "$(dirname "$0")/lib/tickets.sh"
 exit_if_skipped
 run_local_hook "$@"
 
 # $3 = 1 pour un changement de branche, 0 pour un checkout de fichier
 [ "${3:-0}" = 1 ] || exit 0
-skipped branch-name && exit 0
 
 BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"
-if ! branch_name_valid "$BRANCH"; then
+if ! skipped branch-name && ! branch_name_valid "$BRANCH"; then
+    # Un problème à la fois : le nom d'abord (le ticket viendra au commit)
     branch_hint "$BRANCH"
+    exit 0
 fi
+# Branche de travail sans ticket : prévenu, jamais bloqué
+ticket_hint "$BRANCH"
+# Branches locales des tickets qui me sont assignés (au plus toutes les 15 min)
+tickets_sync || true
 exit 0

@@ -33,7 +33,7 @@ Pour écrire un message conforme sans retenir le format, `git cc` guide pas à p
 
 ```text
 $ git cc
-◆ repogarde · commit conventionnel
+◆ repowarden · commit conventionnel
 Entrée = valeur proposée entre [crochets] · Ctrl+C pour abandonner
 
 ◇ 1/5  Type de changement
@@ -78,9 +78,9 @@ Commiter ? [O/n] :
 
 **Sur une branche protégée** (`main`…), le commit serait refusé : l'assistant le dit dès l'étape 2 et propose une branche `<type>/<scope>` (Entrée pour la créer, tes modifications suivent ; « n » pour abandonner). Une réponse incomplète est complétée (`feat` → `feat/<scope>`), un nom approximatif corrigé (`Mon Essai` → `feat/mon-essai`).
 
-**Saisie robuste** : flèches et effacement dans un terminal, touches parasites ignorées ; une réponse oui/non invalide est redemandée ; Ctrl+D abandonne. Si un hook refuse le commit, le message est conservé (`git commit -F .git/repogarde-message` après correction).
+**Saisie robuste** : flèches et effacement dans un terminal, touches parasites ignorées ; une réponse oui/non invalide est redemandée ; Ctrl+D abandonne. Si un hook refuse le commit, le message est conservé (`git commit -F .git/repowarden-message` après correction).
 
-Les options de `git commit` sont transmises (`git cc --no-verify`…) ; `git cc --dry-run` affiche le message sans commiter. Réponses fournies par un script (une par ligne sur l'entrée standard) : `git cc --strict`, pour qu'une réponse refusée arrête tout au lieu de lire la ligne suivante comme une nouvelle réponse. Sans `install.sh` : `git config --global alias.cc '!bash /chemin/vers/repogarde/bin/commit'`.
+Les options de `git commit` sont transmises (`git cc --no-verify`…) ; `git cc --dry-run` affiche le message sans commiter. Réponses fournies par un script (une par ligne sur l'entrée standard) : `git cc --strict`, pour qu'une réponse refusée arrête tout au lieu de lire la ligne suivante comme une nouvelle réponse. Sans `install.sh` : `git config --global alias.cc '!bash /chemin/vers/repowarden/bin/commit'`.
 
 **Sans question** (scripts, agents, CI) : les réponses passent en options, avec les mêmes contrôles, et toute valeur refusée arrête tout sans rien commiter. Le type et le scope omis sont déduits de la branche, comme avec Entrée ; sur une branche protégée, aucune branche n'est créée.
 

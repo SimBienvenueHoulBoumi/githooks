@@ -1,0 +1,26 @@
+# Suivi des tickets de repowarden lui-même : le ticket d'abord, la branche en
+# découle (créée à la validation, liée au ticket), le premier push ouvre la PR
+# en brouillon ; statuts tenus à jour jusqu'à la production (job tickets de
+# release.yml). Scripts du dépôt lui-même, au commit de l'événement : repowarden
+# se suit avec son propre code, quel que soit le nom du dépôt.
+name: suivi-tickets
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft, closed]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, labeled, assigned, closed]
+  push:
+    branches-ignore: [main, develop]
+
+permissions: {}
+
+jobs:
+  tickets:
+    uses: ./.github/workflows/tickets.yml
+    permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
+    with:
+      repowarden-repository: ${{ github.repository }}
+      repowarden-ref: ${{ github.sha }}

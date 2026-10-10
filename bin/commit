@@ -19,6 +19,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
 source "$ROOT/hooks/lib/common.sh"
+# shellcheck source=../hooks/lib/tickets.sh
+source "$ROOT/hooks/lib/tickets.sh"
 
 # Charte visuelle commune (hooks/lib/ui.sh, chargée par common.sh)
 B="$UI_B" D="$UI_D" G="$UI_G" R="$UI_R" C="$UI_C" N="$UI_N"
@@ -330,7 +332,23 @@ while [ -z "$BATCH" ]; do
 done
 # Branche type/12-sujet : ticket #12 proposé (Entrée l'accepte, « - » : aucun)
 ticket=""
-[[ "$branch" =~ ^[a-z]+/([0-9]+)(-|$) ]] && ticket="Ticket : #${BASH_REMATCH[1]}"
+branch_ticket_r "$branch"
+[ -z "$REPLY" ] || ticket="Ticket : #$REPLY"
+# Branche de travail sans ticket : prévenu, jamais bloqué. Création proposée
+# seulement si repowarden gère la vie des tickets du projet (et sans -m)
+if [ -z "$ticket" ] && [ -z "$DRY_RUN" ] && ! skipped tickets && work_branch "$branch"; then
+    if [ -z "$BATCH" ] && tickets_managed && has gh; then
+        t cc.ticket_offer
+        ask_yn "$REPLY" n
+        if [ -n "$YN" ] && n="$(bash "$ROOT/bin/ticket" nouveau "$description" --type "$type" --porcelain)" && [ -n "$n" ]; then
+            ticket="Ticket : #$n"
+            t cc.ticket_created "$n"
+            hint "$REPLY"
+        fi
+    else
+        ticket_hint "$branch"
+    fi
+fi
 if [ -n "$ticket" ]; then
     t cc.refs_prompt_ticket "$ticket"
 else
@@ -371,7 +389,7 @@ if [ -z "$YN" ]; then
 fi
 
 # Message gardé dans le dépôt si le commit est refusé (hook, secret…) : rien à ressaisir
-file="$(git rev-parse --git-dir)/repogarde-message"
+file="$(git rev-parse --git-dir)/repowarden-message"
 printf '%s' "$message" >"$file"
 if ! git commit -F "$file" ${PASS[@]+"${PASS[@]}"}; then
     t cc.kept "$file"

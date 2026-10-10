@@ -1,6 +1,6 @@
 # Versions et releases
 
-Les commits d'un projet repogarde sont conventionnels : la version suivante et le changelog s'en déduisent. Un workflow réutilisable en fait des **releases automatiques**, sans jeton à créer ni étape manuelle.
+Les commits d'un projet repowarden sont conventionnels : la version suivante et le changelog s'en déduisent. Un workflow réutilisable en fait des **releases automatiques**, sans jeton à créer ni étape manuelle.
 
 ## Mise en place
 
@@ -20,7 +20,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
     permissions:
       contents: write
       pull-requests: write
@@ -29,12 +29,12 @@ jobs:
       statuses: write
 ```
 
-Modèle complet : [`templates/project/.github/workflows/release.yml`](https://github.com/SimBienvenueHoulBoumi/repogarde/blob/main/templates/project/.github/workflows/release.yml).
+Modèle complet : [`templates/project/.github/workflows/release.yml`](https://github.com/SimBienvenueHoulBoumi/repowarden/blob/main/templates/project/.github/workflows/release.yml).
 
 Deux prérequis :
 
 1. *Settings → Actions → General → Workflow permissions* : cocher **Allow GitHub Actions to create and approve pull requests** ;
-2. les workflows de CI du projet acceptent `workflow_dispatch` (déjà le cas du modèle `repogarde.yml`) : c'est ainsi que la CI est lancée sur la PR de release.
+2. les workflows de CI du projet acceptent `workflow_dispatch` (déjà le cas du modèle `repowarden.yml`) : c'est ainsi que la CI est lancée sur la PR de release.
 
 ## Fonctionnement
 
@@ -85,14 +85,14 @@ Le type de projet est détecté d'après les fichiers à la racine :
 | autre | `version.txt` |
 
 !!! tip "Changelog en français, monorepo, options"
-    Un fichier `release-please-config.json` à la racine (avec `.release-please-manifest.json`) prend le pas sur la détection : sections du changelog, plusieurs paquets, fichiers supplémentaires à versionner… Voir la [configuration de repogarde](https://github.com/SimBienvenueHoulBoumi/repogarde/blob/main/release-please-config.json) pour un exemple en français.
+    Un fichier `release-please-config.json` à la racine (avec `.release-please-manifest.json`) prend le pas sur la détection : sections du changelog, plusieurs paquets, fichiers supplémentaires à versionner… Voir la [configuration de repowarden](https://github.com/SimBienvenueHoulBoumi/repowarden/blob/main/release-please-config.json) pour un exemple en français.
 
 !!! note "Maven"
     Après chaque release, release-please propose de repasser en `-SNAPSHOT` (PR mergée automatiquement de la même façon). Pour s'en passer : `"skip-snapshot": true` dans `release-please-config.json`.
 
 ## Flux develop → main (mode tag, recommandé)
 
-Pour un projet à deux branches longues ([flux `integrationBranch`](configuration.md#flux-avec-branche-dintegration-develop)) : `develop` sert aux tests (préversions), `main` à la production. **Aucune version n'est écrite dans les fichiers** : elle est calculée depuis tous les commits livrés et portée par le tag, les notes vont dans la release GitHub, comme le [recommande semantic-release](https://semantic-release.gitbook.io/semantic-release/support/faq). repogarde lui-même fonctionne ainsi.
+Pour un projet à deux branches longues ([flux `integrationBranch`](configuration.md#flux-avec-branche-dintegration-develop)) : `develop` sert aux tests (préversions), `main` à la production. **Aucune version n'est écrite dans les fichiers** : elle est calculée depuis tous les commits livrés et portée par le tag, les notes vont dans la release GitHub, comme le [recommande semantic-release](https://semantic-release.gitbook.io/semantic-release/support/faq). repowarden lui-même fonctionne ainsi.
 
 ```yaml title=".github/workflows/release.yml"
 on:
@@ -105,7 +105,7 @@ concurrency:
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
     permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
     with:
       mode: tag
@@ -143,7 +143,7 @@ La CI du projet doit tourner sur les pushs vers `develop` : ses vérifications p
 !!! warning "Déconseillé : préférer le mode tag"
     release-please ne lit sur `main` que les commits de premier niveau : une livraison mergée en merge commit lui apparaît comme un seul « Merge pull request », il n'y voit pas les `feat` et `fix` apportés de `develop`, et peut ne publier **aucune** version. Le mode tag calcule la version à partir de tous les commits livrés.
 
-Pour livrer à un rythme choisi, tout en gardant changelog et fichiers de version à jour (mode pr) : le travail s'intègre dans `develop`, `main` ne reçoit que les livraisons. repogarde lui-même fonctionne ainsi.
+Pour livrer à un rythme choisi, tout en gardant changelog et fichiers de version à jour (mode pr) : le travail s'intègre dans `develop`, `main` ne reçoit que les livraisons. repowarden lui-même fonctionne ainsi.
 
 ```yaml title=".github/workflows/release.yml"
 on:
@@ -152,7 +152,7 @@ on:
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
     permissions: { contents: write, pull-requests: write, actions: write, checks: read, statuses: write }
     with:
       mode: cycle
@@ -175,7 +175,7 @@ La préversion se publie comme une version stable, depuis les sorties `prereleas
   npm-next:
     needs: release
     if: needs.release.outputs.prerelease_created == 'true'
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/npm-publish.yml@v4
     permissions: { contents: read, id-token: write }
     with:
       tag: ${{ needs.release.outputs.prerelease_tag }}
@@ -184,14 +184,14 @@ La préversion se publie comme une version stable, depuis les sorties `prereleas
 
 Prérequis :
 
-- `.repogarde.conf` : `integrationBranch = develop` (PR mal ciblées reciblées vers `develop`) ;
+- `.repowarden.conf` : `integrationBranch = develop` (PR mal ciblées reciblées vers `develop`) ;
 - la CI tourne aussi sur les pushs vers `develop` (ses vérifications valent pour la PR de livraison) ;
-- `repogarde proteger` : `develop` en branche par défaut, merge commit autorisé vers `main`, merge automatique activé ;
+- `repowarden proteger` : `develop` en branche par défaut, merge commit autorisé vers `main`, merge automatique activé ;
 - aucune clé ni jeton : le retour vers `develop`, comme la PR de release, est validé par la CI (lancée par le workflow) puis mergé automatiquement.
 
 ## Publier sur npm
 
-Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repogarde lui-même est publié ainsi (`@simbie/repogarde`).
+Un projet Node peut publier son paquet à chaque release, **sans jeton** : npm vérifie que la publication vient bien du dépôt et de son `release.yml` (publication de confiance) et affiche la provenance du paquet. yarn, pnpm et bun installent depuis le même registre. repowarden lui-même est publié ainsi (`repowarden`).
 
 Mise en place en une commande, depuis le dépôt du projet. Tout est publié par la pipeline, la première version comprise :
 
@@ -199,13 +199,13 @@ Mise en place en une commande, depuis le dépôt du projet. Tout est publié par
 2. **Paquet pas encore sur npm** (npm n'accepte la publication de confiance que sur un paquet existant) :
    - un jeton npm temporaire est créé, valable 7 jours et limité au scope du paquet ;
    - il va directement dans le secret `NPM_TOKEN`, sans jamais s'afficher ; le mot de passe et le code 2FA sont demandés en saisie masquée ;
-   - la variable `REPOGARDE_NPM` active le job, puis la commande attend que la prochaine release publie le paquet.
+   - la variable `REPOWARDEN_NPM` active le job, puis la commande attend que la prochaine release publie le paquet.
 3. **Publication de confiance** : configurée avec `npm trust github`, sans formulaire. Le secret est ensuite supprimé et le jeton révoqué. Les releases suivantes publient sans jeton.
 
 Interrompue (Ctrl+C), la commande reprend où elle en était quand on la relance.
 
 ```bash
-repogarde npm-publication
+repowarden npm-publication
 ```
 
 Puis, dans `.github/workflows/release.yml` :
@@ -213,8 +213,8 @@ Puis, dans `.github/workflows/release.yml` :
 ```yaml
   npm:
     needs: release
-    if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
+    if: vars.REPOWARDEN_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/npm-publish.yml@v4
     permissions: { contents: read, id-token: write }
     with:
       tag: ${{ needs.release.outputs.tag_name }}

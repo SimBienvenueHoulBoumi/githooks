@@ -3,23 +3,30 @@
 #   on:
 #     pull_request_target:
 #       types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft, closed]
+#     pull_request_review:
+#       types: [submitted]
 #     issues:
-#       types: [opened, labeled]
+#       types: [opened, labeled, assigned, closed]
+#     push:
+#       branches-ignore: [main, master, develop]
 #   jobs:
 #     tickets:
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
-#       permissions: { issues: write, pull-requests: write, statuses: write }
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
+#       permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
 #
 # et, dans release.yml, après une release ou une préversion :
 #
 #     tickets:
 #       needs: release
 #       if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
-#       uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+#       uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
 #       permissions: { issues: write, pull-requests: write, statuses: write }
 #       with:
 #         tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
 #
+# Le ticket d'abord, la branche en découle : à la validation (étiquette
+# « validé »), la branche type/12-titre est créée depuis la branche
+# d'intégration et liée au ticket ; le premier push ouvre la PR en brouillon.
 # Chaque PR doit citer un ticket validé (« Ticket : #12 », ou branche feat/12-…),
 # sinon le ticket est créé « à valider » et la vérification « ticket » échoue
 # jusqu'à ce qu'un mainteneur pose l'étiquette « validé ». Statuts suivis :
@@ -39,10 +46,22 @@ on:
         description: Branche d'intégration (ses PR de livraison n'exigent pas de ticket)
         type: string
         default: develop
-      repogarde-ref:
-        description: Version de repogarde dont les scripts sont utilisés
+      main-branch:
+        description: Branche principale (production) ; une PR qui en part ne va que vers la branche d'intégration
         type: string
-        default: v3
+        default: main
+      auto-validate:
+        description: "Ticket ouvert par un mainteneur (droits d'écriture) validé d'office : maintainers, ou never (un mainteneur pose toujours « validé »)"
+        type: string
+        default: maintainers
+      repowarden-ref:
+        description: Version de repowarden dont les scripts sont utilisés
+        type: string
+        default: v4
+      repowarden-repository:
+        description: Dépôt d'où viennent les scripts (repowarden lui-même passe le sien, à son propre commit)
+        type: string
+        default: SimBienvenueHoulBoumi/repowarden
 
 permissions: {}
 
@@ -51,15 +70,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: write # branche du ticket : création à la validation, suppression à l'abandon
       issues: write # tickets : création, statuts, commentaires, fermeture
       pull-requests: write # lien du ticket dans la description de la PR
       statuses: write # vérification « ticket » de la PR
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: SimBienvenueHoulBoumi/repogarde
-          ref: ${{ inputs.repogarde-ref }}
-          path: .repogarde-ci
+          repository: ${{ inputs.repowarden-repository }}
+          ref: ${{ inputs.repowarden-ref }}
+          path: .repowarden-ci
           persist-credentials: false
       - name: Tickets
         env:
@@ -68,6 +88,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           TAG: ${{ inputs.tag }}
           INTEGRATION: ${{ inputs.integration-branch }}
+          MAIN: ${{ inputs.main-branch }}
           ACTION: ${{ github.event.action }}
           PR: ${{ github.event.pull_request.number }}
           MERGED: ${{ github.event.pull_request.merged }}
@@ -77,12 +98,24 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           ISSUE: ${{ github.event.issue.number }}
+          ISSUE_ASSOCIATION: ${{ github.event.issue.author_association }}
+          AUTO_VALIDATE: ${{ inputs.auto-validate }}
           LABEL: ${{ github.event.label.name }}
+          STATE_REASON: ${{ github.event.issue.state_reason }}
+          PUSH_BRANCH: ${{ github.ref_name }}
+          DELETED: ${{ github.event.deleted }}
+          PUSHER: ${{ github.actor }}
+          SHA: ${{ github.sha }}
+          REVIEW_STATE: ${{ github.event.review.state }}
         run: |
           if [ -n "$TAG" ]; then
-            bash .repogarde-ci/ci/tickets.sh release
+            bash .repowarden-ci/ci/tickets.sh release
           elif [ "$EVENT" = issues ]; then
-            bash .repogarde-ci/ci/tickets.sh issue
+            bash .repowarden-ci/ci/tickets.sh issue
+          elif [ "$EVENT" = push ]; then
+            bash .repowarden-ci/ci/tickets.sh push
+          elif [ "$EVENT" = pull_request_review ]; then
+            bash .repowarden-ci/ci/tickets.sh revue
           else
-            bash .repogarde-ci/ci/tickets.sh pr
+            bash .repowarden-ci/ci/tickets.sh pr
           fi

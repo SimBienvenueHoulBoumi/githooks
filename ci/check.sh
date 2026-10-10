@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 # Vérifications CI : mêmes règles que les hooks, mais non contournables.
-# Fonctionne sur GitHub Actions, GitLab CI ou tout autre CI (variables REPOGARDE_*).
+# Fonctionne sur GitHub Actions, GitLab CI ou tout autre CI (variables REPOWARDEN_*).
 #
 #   ci/check.sh [commits] [branch] [secrets] [format] [tests] [deadcode]   (défaut : tout)
 #
 # Variables (toutes optionnelles, détectées automatiquement sur GitHub/GitLab) :
-#   REPOGARDE_CHECKS   liste des vérifications (si aucun argument)
-#   REPOGARDE_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
-#   REPOGARDE_BRANCH   nom de branche à vérifier
-#   REPOGARDE_TARGET   branche cible de la PR / MR (flux integrationBranch)
-#   REPOGARDE_STRICT   "true" : un outil de formatage/test manquant fait échouer
-#   REPOGARDE_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
-#   REPOGARDE_BIN      dossier des outils installés (gitleaks), ajouté au PATH
+#   REPOWARDEN_CHECKS   liste des vérifications (si aucun argument)
+#   REPOWARDEN_BASE     commit de base (sinon : MR/PR, push précédent, branche par défaut)
+#   REPOWARDEN_BRANCH   nom de branche à vérifier
+#   REPOWARDEN_TARGET   branche cible de la PR / MR (flux integrationBranch)
+#   REPOWARDEN_STRICT   "true" : un outil de formatage/test manquant fait échouer
+#   REPOWARDEN_PR_TITLE titre de la PR / MR (devient le message du commit en squash)
+#   REPOWARDEN_BIN      dossier des outils installés (gitleaks), ajouté au PATH
 set -euo pipefail
 
-REPOGARDE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+REPOWARDEN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 # shellcheck source=../hooks/lib/common.sh
-source "$REPOGARDE_DIR/hooks/lib/common.sh"
+source "$REPOWARDEN_DIR/hooks/lib/common.sh"
 # shellcheck source=../hooks/lib/lang.sh
-source "$REPOGARDE_DIR/hooks/lib/lang.sh"
+source "$REPOWARDEN_DIR/hooks/lib/lang.sh"
 
-export PATH="${REPOGARDE_BIN:-$HOME/.local/bin}:$PATH"
+export PATH="${REPOWARDEN_BIN:-$HOME/.local/bin}:$PATH"
 cd "$(git rev-parse --show-toplevel)"
 
 # --- Affichage -----------------------------------------------------------------
@@ -32,7 +32,7 @@ section_t() { _tr "$@"; section "$_T"; }
 ci_error_t() { _tr "$@"; ci_error "$_T"; }
 ci_error() {
     if [ "${GITHUB_ACTIONS:-}" = true ]; then
-        echo "::error title=repogarde::$*"
+        echo "::error title=repowarden::$*"
     else
         err "$*" >&2
     fi
@@ -46,7 +46,7 @@ is_commit() { git cat-file -e "$1^{commit}" 2>/dev/null; }
 # Commit de base des changements à vérifier (vide = tout l'historique)
 detect_base() {
     local v def
-    if [ -n "${REPOGARDE_BASE:-}" ]; then echo "$REPOGARDE_BASE"; return; fi
+    if [ -n "${REPOWARDEN_BASE:-}" ]; then echo "$REPOWARDEN_BASE"; return; fi
     # GitLab merge request
     if [ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ]; then echo "$CI_MERGE_REQUEST_DIFF_BASE_SHA"; return; fi
     # GitHub pull request
@@ -67,12 +67,12 @@ detect_base() {
 detect_branch() {
     # Tag : pas de nom de branche à vérifier
     if [ -n "${CI_COMMIT_TAG:-}" ] || [ "${GITHUB_REF_TYPE:-}" = tag ]; then return; fi
-    echo "${REPOGARDE_BRANCH:-${GITHUB_HEAD_REF:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}}}}"
+    echo "${REPOWARDEN_BRANCH:-${GITHUB_HEAD_REF:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}}}}"
 }
 
 # Branche cible de la PR / MR (vide hors PR)
 detect_target() {
-    echo "${REPOGARDE_TARGET:-${GITHUB_BASE_REF:-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}}}"
+    echo "${REPOWARDEN_TARGET:-${GITHUB_BASE_REF:-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}}}"
 }
 
 # Fichiers ajoutés/modifiés depuis la base (tous les fichiers suivis sans base)
@@ -115,7 +115,7 @@ check_commits() {
         fi
     done < <(git rev-list --no-merges "$BASE..HEAD")
     # Titre de la PR : message du commit final en cas de merge squash
-    local title="${REPOGARDE_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
+    local title="${REPOWARDEN_PR_TITLE:-${CI_MERGE_REQUEST_TITLE:-}}"
     if [ -n "$title" ]; then
         if ! [[ "$title" =~ $CC_PATTERN ]]; then
             ci_error_t ci.check.6 "$title"
@@ -212,10 +212,10 @@ check_tests() {
 
 # --- Exécution ---------------------------------------------------------------------
 
-CHECKS="${*:-${REPOGARDE_CHECKS:-commits branch secrets format tests deadcode}}"
-REPOGARDE_WARN_FILE="$(mktemp)"
-export REPOGARDE_WARN_FILE
-trap 'rm -f "$REPOGARDE_WARN_FILE"' EXIT
+CHECKS="${*:-${REPOWARDEN_CHECKS:-commits branch secrets format tests deadcode}}"
+REPOWARDEN_WARN_FILE="$(mktemp)"
+export REPOWARDEN_WARN_FILE
+trap 'rm -f "$REPOWARDEN_WARN_FILE"' EXIT
 
 # Historique complet nécessaire pour comparer à la base
 if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
@@ -225,9 +225,29 @@ fi
 BASE="$(detect_base)"
 echo_t ci.check.24 "${BASE:-aucune (historique complet)}" "$CHECKS"
 
+# PR partant de main ou de develop : ses vérifications s'accrochent au commit
+# de cette branche persistante, qui ne doit jamais apparaître en rouge
+persistent_pr_r "$(detect_branch)" "$(detect_target)"
+case "$REPLY" in
+    inversee)
+        # Sans objet (develop → branche de ticket, main → autre que develop) :
+        # rien à vérifier, la PR est fermée par le suivi des tickets
+        section_t ci.section.branch
+        attention_t ci.check.inverted "$(detect_branch)" "$(detect_target)"
+        echo_t ci.check.inverted_fix "$(cfg integrationBranch)"
+        exit 0
+        ;;
+    retour)
+        # Retour de main dans develop : merge commit, le titre de la PR n'est
+        # pas un message de commit
+        info_t ci.check.back_merge "$(detect_branch)" "$(detect_target)"
+        REPOWARDEN_PR_TITLE="" CI_MERGE_REQUEST_TITLE=""
+        ;;
+esac
+
 failed=""
 for check in $CHECKS; do
-    # Étapes désactivables par le projet (.repogarde.conf versionné)
+    # Étapes désactivables par le projet (.repowarden.conf versionné)
     case "$check" in
         commits) key="commit-msg" ;;
         branch) key="branch-name" ;;
@@ -242,9 +262,9 @@ for check in $CHECKS; do
     "check_$check" || failed="$failed $check"
 done
 
-if [ "${REPOGARDE_STRICT:-false}" = true ] && [ -s "$REPOGARDE_WARN_FILE" ]; then
+if [ "${REPOWARDEN_STRICT:-false}" = true ] && [ -s "$REPOWARDEN_WARN_FILE" ]; then
     section_t ci.section.strict
-    while IFS= read -r w; do ci_error "$w"; done <"$REPOGARDE_WARN_FILE"
+    while IFS= read -r w; do ci_error "$w"; done <"$REPOWARDEN_WARN_FILE"
     failed="$failed strict"
 fi
 

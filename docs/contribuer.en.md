@@ -4,7 +4,7 @@
 
 ```bash
 brew install bats-core shellcheck actionlint gitleaks   # or apt / winget equivalents
-./install.sh   # repogarde hooks on this repository (it tests itself)
+./install.sh   # repowarden hooks on this repository (it tests itself)
 ```
 
 ## Before each PR
@@ -37,6 +37,6 @@ The CI re-runs everything on Linux, macOS and Windows, plus one e2e job per lang
 ## Branches and releases
 
 - PRs target **`develop`** (default branch); a PR opened against `main` is retargeted automatically. Only urgent fixes (`hotfix/…`) may target `main`.
-- On every merge into `develop`: a **pre-release** `vX.Y.Z-next.N` (npm `next`) and the **delivery PR** `develop` → `main` kept up to date (upcoming version, notes). Merging it, as a merge commit, publishes: `vX.Y.Z` tag, GitHub release (release notes), `v3`, npm `latest`, site. No file is written: the version is carried by the tag.
+- On every merge into `develop`: a **pre-release** `vX.Y.Z-next.N` (npm `next`) and the **delivery PR** `develop` → `main` kept up to date (upcoming version, notes). Merging it, as a merge commit, publishes: `vX.Y.Z` tag, GitHub release (release notes), `v4`, npm `latest`, site. No file is written: the version is carried by the tag.
 - An urgent fix (`hotfix/…`) merged into `main` flows back into `develop` on its own.
 - Details: [Versions and releases, tag mode](releases.md#develop-main-flow-tag-mode-recommended).

@@ -16,8 +16,8 @@ Errors appear as annotations on GitHub and in the job log on GitLab, with the co
 
 ## GitHub Actions
 
-```yaml title=".github/workflows/repogarde.yml"
-name: repogarde
+```yaml title=".github/workflows/repowarden.yml"
+name: repowarden
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited] # edited: PR title re-checked
@@ -26,7 +26,7 @@ on:
 permissions:
   contents: read
 jobs:
-  repogarde:
+  repowarden:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install ruff pytest
-      - uses: SimBienvenueHoulBoumi/repogarde@v3
+      - uses: SimBienvenueHoulBoumi/repowarden@v4
         with:
           strict: true
 ```
@@ -54,27 +54,27 @@ jobs:
 
 ```yaml title=".gitlab-ci.yml"
 include:
-  - project: outils/repogarde                # repogarde hosted on your GitLab
-    ref: v3 # latest 3.x (vX.Y.Z to pin)
-    file: templates/gitlab/repogarde.gitlab-ci.yml
+  - project: outils/repowarden                # repowarden hosted on your GitLab
+    ref: v4 # latest 4.x (vX.Y.Z to pin)
+    file: templates/gitlab/repowarden.gitlab-ci.yml
 
-repogarde:
+repowarden:
   image: python:3.12                         # image with bash, git, curl and the project's tools
   variables:
-    REPOGARDE_STRICT: "true"
+    REPOWARDEN_STRICT: "true"
   before_script:
     - pip install ruff pytest
 ```
 
-Variables: `REPOGARDE_CHECKS`, `REPOGARDE_STRICT`, `REPOGARDE_MEGALINTER`, `REPOGARDE_URL`, `REPOGARDE_REF`, `GITLEAKS_VERSION`, `GITLEAKS_SHA256`, `REPOGARDE_DOWNLOAD_MIRROR` ([internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory)).
+Variables: `REPOWARDEN_CHECKS`, `REPOWARDEN_STRICT`, `REPOWARDEN_MEGALINTER`, `REPOWARDEN_URL`, `REPOWARDEN_REF`, `GITLEAKS_VERSION`, `GITLEAKS_SHA256`, `REPOWARDEN_DOWNLOAD_MIRROR` ([internal sources](industrialisation.md#8-internal-sources-closed-network-nexus-artifactory)).
 
 ## Strict mode
 
-On the developer machine, a missing tool is skipped. In CI with `strict`, it makes the check **fail**: the CI image must contain the project's tooling. repogarde installs gitleaks and actionlint itself (pinned versions, verified checksums).
+On the developer machine, a missing tool is skipped. In CI with `strict`, it makes the check **fail**: the CI image must contain the project's tooling. repowarden installs gitleaks and actionlint itself (pinned versions, verified checksums).
 
 ## MegaLinter
 
-Linters (ESLint, Checkstyle, golangci-lint…) are delegated to [MegaLinter](https://megalinter.io) rather than reimplemented: `megalinter: true` (GitHub) or `REPOGARDE_MEGALINTER: "true"` (GitLab). Only modified files are analysed; configuration lives in the project's `.mega-linter.yml`.
+Linters (ESLint, Checkstyle, golangci-lint…) are delegated to [MegaLinter](https://megalinter.io) rather than reimplemented: `megalinter: true` (GitHub) or `REPOWARDEN_MEGALINTER: "true"` (GitLab). Only modified files are analysed; configuration lives in the project's `.mega-linter.yml`.
 
 ## Server-side rules
 
@@ -82,7 +82,7 @@ To make the rules **impossible to bypass**:
 
 | Host | Where | Availability |
 |---|---|---|
-| GitHub | *Settings → Rules → Rulesets*: require the `repogarde` check, block force pushes; "Restrict branch names", "Restrict commit metadata" | free on public repositories, Pro / Team on private repositories |
+| GitHub | *Settings → Rules → Rulesets*: require the `repowarden` check, block force pushes; "Restrict branch names", "Restrict commit metadata" | free on public repositories, Pro / Team on private repositories |
 | GitLab | *Protected branches*, *Pipelines must succeed*; *Push rules* (Premium) | depending on plan |
 | Bitbucket | *Branch restrictions* | depending on plan |
 

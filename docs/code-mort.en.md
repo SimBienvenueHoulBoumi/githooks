@@ -1,8 +1,8 @@
 # Dead code
 
-Code is **dead** when it can be **proven** to have no effect on the program's behaviour. repogarde distinguishes three cases, which are not proven the same way:
+Code is **dead** when it can be **proven** to have no effect on the program's behaviour. repowarden distinguishes three cases, which are not proven the same way:
 
-| Category | Definition | Examples | Proof | repogarde |
+| Category | Definition | Examples | Proof | repowarden |
 |---|---|---|---|---|
 | **Unreachable** | statements no execution path can reach | code after a `return`, `if (false)` | control-flow analysis | **proven**: blocking |
 | **Unused in its scope** | declaration never referenced where it is visible | import, local variable, **private** parameter or member never read | file reference analysis | **proven**: blocking |
@@ -18,7 +18,7 @@ That is why a **candidate** never blocks by default: a human confirms.
 
 ## Only new dead code
 
-repogarde only reports dead code **introduced** by the PR (lines added or changed since the base). An existing project is not flooded with its history: the debt stops growing, and you reduce it at your own pace.
+repowarden only reports dead code **introduced** by the PR (lines added or changed since the base). An existing project is not flooded with its history: the debt stops growing, and you reduce it at your own pace.
 
 ## Tools, by language
 
@@ -34,12 +34,12 @@ In CI, the action installs PMD for a Java project (pinned version and checksum).
 ## Usage
 
 - **CI**: the `deadcode` check, included by default in the action (`checks:`).
-- **Developer machine**: `repogarde code-mort [base]` analyses your branch like the CI: commits, pending changes and new files. Default base: `origin/main`; on a branch with no changes, nothing is analysed.
+- **Developer machine**: `repowarden code-mort [base]` analyses your branch like the CI: commits, pending changes and new files. Default base: `origin/main`; on a branch with no changes, nothing is analysed.
 
 ## Settings
 
 ```ini
-[repogarde]
+[repowarden]
     deadcode = block               # default: proven blocks, candidates warn
     # deadcode = warn              # nothing blocks
     # deadcode = strict            # candidates block too

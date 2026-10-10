@@ -1,27 +1,27 @@
-# Déployer repogarde dans une organisation
+# Déployer repowarden dans une organisation
 
-repogarde impose les mêmes règles à tous les projets (messages de commit, nommage des branches, secrets, formatage, tests) à **trois niveaux** :
+repowarden impose les mêmes règles à tous les projets (messages de commit, nommage des branches, secrets, formatage, tests) à **trois niveaux** :
 
 | Niveau | Rôle | Contournable ? |
 |---|---|---|
-| Poste développeur — hooks repogarde (installation globale) | Retour immédiat, corrections automatiques (formatage, préfixe de commit) | Oui (`--no-verify`) |
+| Poste développeur — hooks repowarden (installation globale) | Retour immédiat, corrections automatiques (formatage, préfixe de commit) | Oui (`--no-verify`) |
 | CI — action GitHub / template GitLab | **Fait foi** : mêmes vérifications sur chaque merge request | Non |
 | Serveur — protection des branches | Interdit de merger si la CI échoue, interdit le push direct sur `main` | Non |
 
 Les hooks locaux font gagner du temps ; **la CI et la protection des branches garantissent les règles**.
 
-## 1. Héberger repogarde
+## 1. Héberger repowarden
 
 Le dépôt doit être **lisible par tous les développeurs et par la CI** :
 
-- GitLab : importer/mirrorer le dépôt dans un groupe interne (ex. `outils/repogarde`) ;
+- GitLab : importer/mirrorer le dépôt dans un groupe interne (ex. `outils/repowarden`) ;
 - GitHub : dépôt public, ou interne à l'organisation.
 
-Remplacer `SimBienvenueHoulBoumi/repogarde` par ce chemin dans les templates (`templates/`).
+Remplacer `SimBienvenueHoulBoumi/repowarden` par ce chemin dans les templates (`templates/`).
 
 ## 2. Versions et releases (automatiques)
 
-Les projets peuvent obtenir les mêmes releases automatiques : voir [Versions et releases](releases.md). Ci-dessous, celles de repogarde lui-même.
+Les projets peuvent obtenir les mêmes releases automatiques : voir [Versions et releases](releases.md). Ci-dessous, celles de repowarden lui-même.
 
 Les numéros de version sont **calculés automatiquement** à partir des Conventional Commits par [release-please](https://github.com/googleapis/release-please) :
 
@@ -45,43 +45,43 @@ Politique conseillée pour les projets : **figer une version exacte** (`ref: v1.
 
 ## 3. Poste développeur
 
-Installer repogarde une fois par poste, pour tous les dépôts :
+Installer repowarden une fois par poste, pour tous les dépôts :
 
 ```bash
-npm install -g @simbie/repogarde   # registre interne : voir « Sources internes » plus bas
-repogarde install --global
+npm install -g repowarden   # registre interne : voir « Sources internes » plus bas
+repowarden install --global
 ```
 
-La version minimale attendue par un projet se déclare dans son `.repogarde.conf` (`version`) : un poste en retard est prévenu à chaque commit, avec la commande de mise à jour. Les commandes propres au projet se déclarent dans `.repogarde/<hook>` ([Configuration](configuration.md#hooks-propres-au-projet)).
+La version minimale attendue par un projet se déclare dans son `.repowarden.conf` (`version`) : un poste en retard est prévenu à chaque commit, avec la commande de mise à jour. Les commandes propres au projet se déclarent dans `.repowarden/<hook>` ([Configuration](configuration.md#hooks-propres-au-projet)).
 
 Outils recommandés : `gitleaks` (secrets) et les formateurs des langages utilisés (voir [Technologies](technologies.md)).
 
-Un poste sans hooks ne bloque personne : la CI refait toutes les vérifications et fait foi. `repogarde` (sans argument) affiche l'état du poste et l'étape suivante.
+Un poste sans hooks ne bloque personne : la CI refait toutes les vérifications et fait foi. `repowarden` (sans argument) affiche l'état du poste et l'étape suivante.
 
-## 4. Adopter repogarde dans un projet
+## 4. Adopter repowarden dans un projet
 
 Copier depuis `templates/project/` :
 
 | Fichier | Rôle |
 |---|---|
-| `.github/workflows/repogarde.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
+| `.github/workflows/repowarden.yml` | CI GitHub (ajouter les `setup-*` des outils du projet) |
 | `gitlab-ci.yml` | À fusionner dans `.gitlab-ci.yml` (choisir une image avec les outils du projet) |
-| `.repogarde.conf` | Réglages partagés : exceptions de branches, étapes désactivées, commandes personnalisées |
+| `.repowarden.conf` | Réglages partagés : exceptions de branches, étapes désactivées, commandes personnalisées |
 
-`.repogarde.conf` est lu **par les hooks et par la CI** : une exception décidée en revue de code s'applique partout.
+`.repowarden.conf` est lu **par les hooks et par la CI** : une exception décidée en revue de code s'applique partout.
 
-Avec `strict: true` (GitHub) / `REPOGARDE_STRICT: "true"` (GitLab), un outil de formatage ou de test absent de l'image CI fait échouer la vérification au lieu d'être ignoré.
+Avec `strict: true` (GitHub) / `REPOWARDEN_STRICT: "true"` (GitLab), un outil de formatage ou de test absent de l'image CI fait échouer la vérification au lieu d'être ignoré.
 
 ## 5. Protéger les branches (serveur)
 
 ### Merges en squash
 
-Une PR = un commit sur `main`, dont le message est le **titre de la PR** : changelog propre, une ligne par PR. Réglages (*Settings → General → Pull Requests*) : autoriser uniquement *squash merging*, message par défaut *Pull request title*. La CI repogarde vérifie que ce titre suit Conventional Commits ; utiliser `!` dans le titre pour un changement majeur (`feat!: …`).
+Une PR = un commit sur `main`, dont le message est le **titre de la PR** : changelog propre, une ligne par PR. Réglages (*Settings → General → Pull Requests*) : autoriser uniquement *squash merging*, message par défaut *Pull request title*. La CI repowarden vérifie que ce titre suit Conventional Commits ; utiliser `!` dans le titre pour un changement majeur (`feat!: …`).
 
 ### Branches mergées : supprimées automatiquement
 
 - Serveur — GitHub : *Settings → General → Automatically delete head branches* ; GitLab : *Settings → Merge requests → Enable "Delete source branch" option by default*.
-- Flux `develop` : une branche `release/…` ou `hotfix/…` est mergée deux fois (vers `main` et `develop`) ; la suppression automatique de GitHub la supprimerait après le premier merge. Le workflow réutilisable `nettoyage-branches.yml` la conserve tant qu'une autre PR ouverte l'utilise (`repogarde proteger` désactive alors la suppression automatique) :
+- Flux `develop` : une branche `release/…` ou `hotfix/…` est mergée deux fois (vers `main` et `develop`) ; la suppression automatique de GitHub la supprimerait après le premier merge. Le workflow réutilisable `nettoyage-branches.yml` la conserve tant qu'une autre PR ouverte l'utilise (`repowarden proteger` désactive alors la suppression automatique) :
 
   ```yaml
   on:
@@ -89,26 +89,26 @@ Une PR = un commit sur `main`, dont le message est le **titre de la PR** : chang
       types: [closed]
   jobs:
     nettoyage:
-      uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/nettoyage-branches.yml@v3
+      uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/nettoyage-branches.yml@v4
       permissions: { contents: write, pull-requests: read }
   ```
 
-- Postes : le hook `post-merge` de repogarde supprime, après un `git pull`, les branches locales dont la branche distante a disparu et dont toutes les modifications sont dans la branche courante (merge classique ou squash) ; une branche avec du travail non intégré est conservée.
+- Postes : le hook `post-merge` de repowarden supprime, après un `git pull`, les branches locales dont la branche distante a disparu et dont toutes les modifications sont dans la branche courante (merge classique ou squash) ; une branche avec du travail non intégré est conservée.
 
 ### GitHub
 
-**En une commande**, d'après `.repogarde.conf` (branches protégées, flux `develop`) — relançable sans risque, `--dry-run` pour voir avant d'appliquer :
+**En une commande**, d'après `.repowarden.conf` (branches protégées, flux `develop`) — relançable sans risque, `--dry-run` pour voir avant d'appliquer :
 
 ```bash
-repogarde proteger --checks "repogarde,build"   # vérifications séparées par des virgules ; gh connecté (admin)
+repowarden proteger --checks "repowarden,build"   # vérifications séparées par des virgules ; gh connecté (admin)
 ```
 
-Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigées à jour, ni suppression ni push forcé), les modes de merge (squash ; avec un flux `develop` : merge commit sur `main`, squash ou merge commit sur `develop`, qui devient la branche par défaut), réserve les tags `v*` aux workflows (ruleset « repogarde (tags) »), prend le titre de PR comme message de commit et autorise GitHub Actions à créer des PR (releases automatiques).
+Le script pose le ruleset « repowarden » (PR obligatoire, vérifications exigées à jour, ni suppression ni push forcé), les modes de merge (squash ; avec un flux `develop` : merge commit sur `main`, squash ou merge commit sur `develop`, qui devient la branche par défaut ; dans ce flux, les PR n'ont pas à être à jour de leur cible : le merge commit d'une livraison n'existe que sur `main` et bloquerait sinon la livraison suivante), réserve les tags `v*` aux workflows (ruleset « repowarden (tags) »), prend le titre de PR comme message de commit et autorise GitHub Actions à créer des PR (releases automatiques).
 
 À la main : *Settings → Rules → Rulesets* (ou *Branches → Branch protection rules*) sur `main` :
 
 - Require a pull request before merging
-- Require status checks to pass → ajouter **`repogarde`**
+- Require status checks to pass → ajouter **`repowarden`**
 - Block force pushes
 - (optionnel) Restrict branch names / commit metadata avec les [expressions régulières](ci.md#regles-cote-serveur)
 
@@ -133,31 +133,31 @@ Le script pose le ruleset « repogarde » (PR obligatoire, vérifications exigé
 
 Les erreurs apparaissent en annotations sur GitHub et dans le log du job sur GitLab, avec la commande de correction.
 
-## 7. Poste avec l'installation globale repogarde
+## 7. Poste avec l'installation globale repowarden
 
-Avec `install.sh --global` ou `repogarde install --global`, les hooks s'appliquent à tous les dépôts du poste, sans rien ajouter aux projets.
+Avec `install.sh --global` ou `repowarden install --global`, les hooks s'appliquent à tous les dépôts du poste, sans rien ajouter aux projets.
 
-Un projet encore configuré avec lefthook (repogarde 3) : depuis repogarde 4, lefthook n'est plus pris en charge. Un hook installé par lefthook dans `.git/hooks` est ignoré, avec un avertissement. Déplacer les commandes du projet dans `.repogarde/<hook>`, la version attendue dans `.repogarde.conf` (`version`), puis `lefthook uninstall` ([Désinstallation](desinstallation.md)).
+Un projet encore configuré avec lefthook (repowarden 3) : depuis repowarden 4, lefthook n'est plus pris en charge. Un hook installé par lefthook dans `.git/hooks` est ignoré, avec un avertissement. Déplacer les commandes du projet dans `.repowarden/<hook>`, la version attendue dans `.repowarden.conf` (`version`), puis `lefthook uninstall` ([Désinstallation](desinstallation.md)).
 
 ## 8. Sources internes (réseau fermé, Nexus, Artifactory…)
 
-repogarde ne télécharge pas les dépendances des projets : il lance leurs outils (`mvn`, `gradle`, `npm`, `pip`, `go`…), qui utilisent leur configuration habituelle, sur le poste comme en CI.
+repowarden ne télécharge pas les dépendances des projets : il lance leurs outils (`mvn`, `gradle`, `npm`, `pip`, `go`…), qui utilisent leur configuration habituelle, sur le poste comme en CI.
 
 | Outil | Rediriger vers la source interne |
 |---|---|
 | Maven | `~/.m2/settings.xml` : `<mirrors>` |
 | Gradle | `repositories { maven { url = uri("…") } }`, ou un script d'init dans `~/.gradle/init.d/` (plugins : `pluginManagement` dans `settings.gradle.kts`) |
-| npm, yarn, pnpm | `.npmrc` : `registry=…` (y compris pour installer `@simbie/repogarde`) |
+| npm, yarn, pnpm | `.npmrc` : `registry=…` (y compris pour installer `repowarden`) |
 | pip | `pip.conf` : `index-url` |
 | Go | `GOPROXY` |
 | MegaLinter (Docker) | miroir de registre configuré sur le runner |
 
-Ce que repogarde récupère lui-même :
+Ce que repowarden récupère lui-même :
 
 | Élément | Source interne |
 |---|---|
-| repogarde (installation par clone) | miroir Git interne du dépôt : URL du `git clone`, variable `REPOGARDE_URL` du modèle GitLab |
-| Action GitHub `repogarde@v3` (GitHub Enterprise Server) | dépôt synchronisé dans l'organisation ([actions-sync](https://docs.github.com/en/enterprise-server/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/manually-syncing-actions-from-githubcom)), puis `uses: <organisation>/repogarde@v3` |
-| Outils installés en CI (gitleaks, PMD, actionlint) | **recommandé** : déjà présents dans l'image du runner, rien n'est alors téléchargé ; sinon `REPOGARDE_DOWNLOAD_MIRROR` |
+| repowarden (installation par clone) | miroir Git interne du dépôt : URL du `git clone`, variable `REPOWARDEN_URL` du modèle GitLab |
+| Action GitHub `repowarden@v4` (GitHub Enterprise Server) | dépôt synchronisé dans l'organisation ([actions-sync](https://docs.github.com/en/enterprise-server/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/manually-syncing-actions-from-githubcom)), puis `uses: <organisation>/repowarden@v4` |
+| Outils installés en CI (gitleaks, PMD, actionlint) | **recommandé** : déjà présents dans l'image du runner, rien n'est alors téléchargé ; sinon `REPOWARDEN_DOWNLOAD_MIRROR` |
 
-`REPOGARDE_DOWNLOAD_MIRROR` remplace `https://github.com` dans les téléchargements, par exemple un dépôt « generic » Artifactory ou Nexus en proxy des releases GitHub (`https://artifactory.exemple.fr/artifactory/github`). L'empreinte SHA-256 ne vient **jamais** du miroir : celles des versions par défaut sont figées dans repogarde ; pour une autre version, la fournir dans `GITLEAKS_SHA256` ou `ACTIONLINT_SHA256`, sinon le téléchargement est refusé. Un miroir compromis ne peut donc pas faire installer un binaire modifié.
+`REPOWARDEN_DOWNLOAD_MIRROR` remplace `https://github.com` dans les téléchargements, par exemple un dépôt « generic » Artifactory ou Nexus en proxy des releases GitHub (`https://artifactory.exemple.fr/artifactory/github`). L'empreinte SHA-256 ne vient **jamais** du miroir : celles des versions par défaut sont figées dans repowarden ; pour une autre version, la fournir dans `GITLEAKS_SHA256` ou `ACTIONLINT_SHA256`, sinon le téléchargement est refusé. Un miroir compromis ne peut donc pas faire installer un binaire modifié.

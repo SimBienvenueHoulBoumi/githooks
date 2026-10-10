@@ -21,7 +21,7 @@ permissions: {}
 
 jobs:
   release:
-    uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/release-auto.yml@v3
+    uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/release-auto.yml@v4
     permissions:
       contents: write
       pull-requests: write
@@ -31,17 +31,17 @@ jobs:
     # Optionnel :
     # with:
     #   release-type: maven          # sinon détecté (pom.xml, package.json, pyproject.toml…)
-    #   workflows: repogarde.yml     # sinon les workflows pull_request + workflow_dispatch
+    #   workflows: repowarden.yml     # sinon les workflows pull_request + workflow_dispatch
     #   merge-auto: false            # PR de release mergée par un humain
-    # Optionnel : canal de l'équipe (gh secret set REPOGARDE_WEBHOOK)
+    # Optionnel : canal de l'équipe (gh secret set REPOWARDEN_WEBHOOK)
     # secrets:
-    #   webhook: ${{ secrets.REPOGARDE_WEBHOOK }}
+    #   webhook: ${{ secrets.REPOWARDEN_WEBHOOK }}
 
-  # Paquet npm à chaque release, sans jeton (mise en place : repogarde/bin/npm-publication) :
+  # Paquet npm à chaque release, sans jeton (mise en place : repowarden/bin/npm-publication) :
   # npm:
   #   needs: release
-  #   if: vars.REPOGARDE_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
-  #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/npm-publish.yml@v3
+  #   if: vars.REPOWARDEN_NPM == 'true' && (needs.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
+  #   uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/npm-publish.yml@v4
   #   permissions: { contents: read, id-token: write }
   #   with:
   #     tag: ${{ needs.release.outputs.tag_name }}
@@ -49,11 +49,11 @@ jobs:
   #     npm-token: ${{ secrets.NPM_TOKEN }} # première publication seulement
 
   # Tickets passés en préprod à chaque préversion, en done à chaque release
-  # (mise en place : repogarde tickets init, voir la doc Tickets) :
+  # (mise en place : repowarden tickets init, voir la doc Tickets) :
   # tickets:
   #   needs: release
   #   if: needs.release.outputs.release_created == 'true' || needs.release.outputs.prerelease_created == 'true'
-  #   uses: SimBienvenueHoulBoumi/repogarde/.github/workflows/tickets.yml@v3
+  #   uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
   #   permissions: { issues: write, pull-requests: write, statuses: write }
   #   with:
   #     tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
