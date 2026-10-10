@@ -425,6 +425,26 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     [[ "$output" != *"nettoyage-branches.yml"* ]]
 }
 
+@test "proteger : approbation des changements non attribues posee explicitement (false par defaut, reglable)" {
+    require python3
+    fake_gh_repo
+    git config repowarden.integrationBranch develop
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [ "$status" -eq 0 ]
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
+        assert all(x["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] is False for x in r if x["target"]=="branch")' \
+        "$(rulesets_json "$output")"
+    [[ "$output" == *"changements non attribués : false"* ]]
+    git config repowarden.unattributedApproval true
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    python3 -c 'import json,sys; r=json.loads(sys.argv[1]); \
+        assert all(x["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] is True for x in r if x["target"]=="branch")' \
+        "$(rulesets_json "$output")"
+    git config repowarden.unattributedApproval peut-etre
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [ "$status" -ne 0 ]
+}
+
 @test "proteger : relecture exigee (approbations, CODEOWNERS, pas d'auto-approbation du dernier push)" {
     require python3
     fake_gh_repo
