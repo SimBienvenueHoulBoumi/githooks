@@ -374,6 +374,7 @@ _msg_fr() {
         app.step_install) _M="Installation sur le dépôt" ;;
         app.installed) _M="App %s installée sur %s." ;;
         app.not_installed) _M="App %s pas encore installée sur %s : relance repowarden app init une fois installée." ;;
+        app.check_in_ci) _M="Installation vérifiée au premier run du suivi des tickets (étape « Jeton de l'App ») ; pour l'installer : %s" ;;
         app.done) _M="Les workflows repowarden utilisent désormais l'App : ce qu'ils font déclenche les autres workflows." ;;
         app.next) _M="Sans l'App (variable et secret absents), ils reprennent le jeton des Actions." ;;
         tk.reopened) _M="Rouvert : fermé par GitHub au merge de #%s dans \`%s\`, ce n'est pas encore la production. En préprod ; il sera fermé à la release." ;;

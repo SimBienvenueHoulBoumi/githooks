@@ -26,14 +26,22 @@ case "$1 $2" in
     "secret set") cat >"$FAKE/secret.$3" ;;
     "api -X")
         [ "$4" = "app-manifests/c0de/conversions" ] || exit 1
-        printf '{"id":7,"slug":"repowarden-moi","client_id":"Iv1.abc","pem":"-----BEGIN RSA PRIVATE KEY-----\\nSECRET\\n-----END RSA PRIVATE KEY-----"}' ;;
-    "api user/installations")
-        [ -e "$FAKE/installee" ] && printf '42\n' ;;
-    "api user/installations/42/repositories") echo moi/projet ;;
+        cat "$FAKE/conversion.json" ;;
+    "api repos/moi/projet/installation")
+        # au nom de l'App : jeton signé (en-tête.charge.signature), App installée
+        [[ "$*" =~ Authorization:\ Bearer\ [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+ ]] || exit 1
+        echo "${BASH_REMATCH[0]}" >"$FAKE/jwt"
+        [ -e "$FAKE/installee" ] || exit 1 ;;
 esac
 exit 0
 GH
     chmod +x "$F/bin/gh"
+    # Réponse de GitHub à la conversion : vraie clé RSA (le jeton de l'App est signé avec)
+    node -e '
+        const { privateKey } = require("crypto").generateKeyPairSync("rsa", { modulusLength: 2048 });
+        process.stdout.write(JSON.stringify({ id: 7, slug: "repowarden-moi", client_id: "Iv1.abc",
+            pem: privateKey.export({ type: "pkcs1", format: "pem" }) }));
+    ' >"$F/conversion.json"
     # Navigateur : page locale → état lu dans le formulaire → retour de GitHub
     # avec le code ; page d'installation → App installée
     cat >"$F/bin/navigateur" <<'NAV'
@@ -56,14 +64,17 @@ NAV
     [ "$status" -eq 0 ]
     # formulaire envoye a GitHub : compte personnel, manifest sans webhook ni administration
     grep -q 'action="https://github.com/settings/apps/new?state=' "$F/page"
-    grep -q '&quot;active&quot;:false' "$F/page"
+    grep -q '&quot;hook_attributes&quot;:{&quot;url&quot;:&quot;https://github.com/moi/projet&quot;,&quot;active&quot;:false}' "$F/page"
     grep -q '&quot;pull_requests&quot;:&quot;write&quot;' "$F/page"
     ! grep -q 'administration' "$F/page"
     [ "$(cat "$F/var.REPOWARDEN_APP_CLIENT_ID")" = Iv1.abc ]
     [ "$(cat "$F/var.REPOWARDEN_APP_SLUG")" = repowarden-moi ]
     grep -q "BEGIN RSA PRIVATE KEY" "$F/secret.REPOWARDEN_APP_KEY"
-    [[ "$output" != *SECRET* ]]
+    [[ "$output" != *"PRIVATE KEY"* ]]
     [[ "$output" == *"repowarden-moi installée sur moi/projet"* ]]
+    # installation verifiee au nom de l'App, jeton emis par son client
+    node -e 'const p=JSON.parse(Buffer.from(process.argv[1].split(".")[1],"base64url"));if(p.iss!=="Iv1.abc")process.exit(1)' \
+        "$(sed 's/.*Bearer //' "$F/jwt")"
 }
 
 @test "app init : relance -> rien de recree ; --administration -> permission demandee" {
@@ -73,6 +84,7 @@ NAV
     run "$APP" init
     [ "$status" -eq 0 ]
     [[ "$output" == *"déjà configurée"* ]]
+    [[ "$output" == *"premier run du suivi des tickets"* ]]
     ! grep -q "app-manifests" "$F/log"
     rm -f "$F"/var.* "$F"/secret.*
     run "$APP" init --administration
