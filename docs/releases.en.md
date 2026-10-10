@@ -123,12 +123,15 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
 ```
 
-1. On every merge into `develop`: a test **pre-release** (`vX.Y.Z-next.N`, GitHub "pre-release", `preversion` input) and the **delivery PR** `develop` → `main` (upcoming version, notes) kept up to date;
-2. validating it: **one "Approve and deploy" click** on the `production` environment (`delivery-environment` input), from the notification or the run page; the GitHub App then merges the delivery PR (**merge commit**: every commit stays visible), which publishes the `vX.Y.Z` tag and the release on `main`; the version is computed from **all** the delivered commits (merges excluded). Only one validation pending at a time: the latest;
+1. On every merge into `develop`: the **delivery PR** `develop` → `main` (upcoming version, notes) is kept up to date, **without a release**. A test **pre-release** (`vX.Y.Z-next.N`, GitHub "pre-release") is published **at most once a day**, in the evening, if `develop` changed (`preversion-on-push` input for the former behaviour);
+2. **a delivery window**, by default on Friday morning (`delivery-schedule` input, cron of the scheduled trigger): a **single** approval request, containing everything accumulated. Validating it: **one "Approve and deploy" click** on the `production` environment (`delivery-environment` input), from the notification or the run page; the GitHub App then merges the delivery PR (**merge commit**: every commit stays visible), which publishes the `vX.Y.Z` tag and the release on `main`; the version is computed from **all** the delivered commits (merges excluded). Only one validation pending at a time: the latest;
 3. **no stable version without a tested pre-release** (`preversion-obligatoire` input, enabled by default): the version published on `main` must have existed as `vX.Y.Z-next.N` on `develop`. A major (v3 → v4) therefore always goes through its `4.0.0-next.N`;
-4. **only `develop` goes into `main`**: an urgent fix is a `fix/…` PR into `develop` (pre-release right away), then an immediate delivery. If something still lands directly on `main`, it flows back into `develop` on its own (PR validated by the CI, merged, no key).
+4. **only `develop` goes into `main`**: an urgent fix is a `fix/…` PR into `develop`, labelled **`urgent`**: its merge starts the delivery request right away (without waiting for the window). By hand: *Actions → release → Run workflow* on `develop`. If something still lands directly on `main`, it flows back into `develop` on its own (PR validated by the CI, merged, no key).
 
-The pace of stable versions is yours: `develop` accumulates (pre-releases), a delivery publishes it all as **one** version, minor or major depending on the commits.
+Stable versions follow a regular pace: `develop` accumulates, one delivery per window publishes it all as **one** version, minor or major depending on the commits. When it is out, that version's pre-releases are removed from GitHub (on npm they stay: a published version cannot be removed).
+
+!!! note "Approving the window's request"
+    The approval covers the state of `develop` when the request was made. A merge into `develop` between the request and the approval voids it: the delivery then waits for the next window, or a manual run. Nothing enters `main` without approval.
 
 | | `develop`: testing | `main`: production |
 |---|---|---|
