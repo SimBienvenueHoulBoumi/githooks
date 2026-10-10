@@ -53,6 +53,9 @@ PY
     grep -q "github.event.schedule == inputs.delivery-schedule" .github/workflows/release-auto.yml
     grep -q 'delivery-schedule: "0 7 \* \* 5"' .github/workflows/release.yml
     grep -q -- '- cron: "0 7 \* \* 5"' .github/workflows/release.yml
+    # La livraison porte sur un instantané figé de develop (l'approbation ne
+    # devient pas caduque quand develop avance)
+    grep -q 'branche="livraison/' .github/workflows/release-auto.yml
 }
 
 @test "scripts : aucun tube vers grep -q ou head (SIGPIPE + pipefail = echec aleatoire)" {
