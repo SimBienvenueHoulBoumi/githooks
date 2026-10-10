@@ -334,6 +334,16 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     ! grep -q "rouvert" "$F/events"
 }
 
+@test "tickets : ticket deja livre (preprod, done) -> aucune branche recreee a l'assignation" {
+    for st in "statut: préprod" "statut: done"; do
+        N=12 ticket "validé" "$st"
+        echo moi >"$F/issues/12.assignees"
+        ISSUE=12 ACTION=assigned run "$TICKETS" issue
+        [ "$status" -eq 0 ]
+    done
+    ! grep -q "branche-creee" "$F/events"
+}
+
 @test "tickets : nom de branche du ticket (type, numero, titre sans accents, tronque)" {
     source "$BATS_TEST_DIRNAME/../hooks/lib/tickets.sh"
     ticket_branch_r 12 "Élargir l'accès à la façade : ÉTAPE 2" fix

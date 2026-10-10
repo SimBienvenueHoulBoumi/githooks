@@ -136,6 +136,8 @@ branche_du_ticket_r() {
 # ouverte cite déjà le ticket (travail commencé hors de sa branche).
 creer_branche() {
     local n="$1" titre labels branche pr head body
+    # Travail déjà mergé ou en production : plus de branche à (re)créer
+    travail_termine "$(etiquettes "$n")" && return 0
     branche_du_ticket_r "$n"
     [ -z "$REPLY" ] || return 0
     while IFS=$'\t' read -r pr head; do
