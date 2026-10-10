@@ -363,6 +363,12 @@ _msg_en() {
         tk.merged) _M="Merged by PR #%s into %s: in pre-production, available in the next pre-release." ;;
         tk.branch_created) _M="Ticket validated: its branch \`%s\` is created from \`%s\`.\n\nTo work on it:\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(or \`git fetch && git switch %s\`). The first push opens the draft PR." ;;
         tk.branch_notice) _M="Branch %s created for ticket #%s" ;;
+        tk.sync.ready) _M="Ticket #%s assigned: local branch %s ready (repowarden ticket %s)." ;;
+        tk.sync.not_validated) _M="Ticket #%s assigned but not validated yet: no branch for now." ;;
+        tk.sync.failed) _M="Ticket #%s: branch not created (rights on the repository?)." ;;
+        tk.sync.reassigned) _M="Ticket #%s is no longer assigned to you (now: %s): local branch %s kept." ;;
+        tk.sync.done) _M="Branches of assigned tickets up to date." ;;
+        tk.validated_waiting) _M="Ticket validated, waiting to be taken: its branch will be created when it is assigned, or by taking it yourself with \`repowarden ticket %s\`." ;;
         tk.pr_inverted) _M="PR closed automatically: a PR from \`%s\` to \`%s\` is pointless. A persistent branch only goes out for a delivery (develop → main) or a back-merge (main → develop). To update a work branch: on that branch, \`git merge origin/%s\`, then \`git push\`." ;;
         tk.pr_backmerge_empty) _M="PR closed automatically: \`%s\` brings no content to \`%s\`. The back-merge is done automatically after a release, only when there is something to bring back." ;;
         tk.branch_registered) _M="Ticket branch: \`%s\`." ;;

@@ -363,6 +363,12 @@ _msg_fr() {
         tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
         tk.branch_created) _M="Ticket validé : sa branche \`%s\` est créée depuis \`%s\`.\n\nPour y travailler :\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(ou \`git fetch && git switch %s\`). Le premier push ouvre la PR en brouillon." ;;
         tk.branch_notice) _M="Branche %s créée pour le ticket #%s" ;;
+        tk.sync.ready) _M="Ticket #%s assigné : branche locale %s prête (repowarden ticket %s)." ;;
+        tk.sync.not_validated) _M="Ticket #%s assigné mais pas encore validé : pas de branche pour l'instant." ;;
+        tk.sync.failed) _M="Ticket #%s : branche non créée (droits sur le dépôt ?)." ;;
+        tk.sync.reassigned) _M="Ticket #%s n'est plus assigné à toi (maintenant : %s) : branche locale %s conservée." ;;
+        tk.sync.done) _M="Branches des tickets assignés à jour." ;;
+        tk.validated_waiting) _M="Ticket validé, en attente d'être pris : sa branche sera créée à l'assignation, ou en le prenant soi-même avec \`repowarden ticket %s\`." ;;
         tk.pr_inverted) _M="PR fermée automatiquement : une PR de \`%s\` vers \`%s\` est sans objet. Une branche persistante ne part que pour une livraison (develop → main) ou un retour (main → develop). Pour mettre une branche de travail à jour : sur cette branche, \`git merge origin/%s\`, puis \`git push\`." ;;
         tk.pr_backmerge_empty) _M="PR fermée automatiquement : \`%s\` n'apporte aucun contenu à \`%s\`. Le retour est fait automatiquement après une release, seulement quand il y a quelque chose à rapporter." ;;
         tk.branch_registered) _M="Branche du ticket : \`%s\`." ;;

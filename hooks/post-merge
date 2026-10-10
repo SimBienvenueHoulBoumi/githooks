@@ -6,8 +6,11 @@
 set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
+source "$(dirname "$0")/lib/tickets.sh"
 exit_if_skipped
 run_local_hook "$@"
+# Branches locales des tickets qui me sont assignés (au plus toutes les 15 min)
+tickets_sync || true
 skipped prune-branches && exit 0
 
 current="$(git symbolic-ref --short HEAD 2>/dev/null || echo "")"

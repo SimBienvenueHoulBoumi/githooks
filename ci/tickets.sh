@@ -68,6 +68,9 @@ statut() {
 
 etiquettes() { gh issue view "$1" --json labels -q '.labels[].name' 2>/dev/null || true; }
 
+# Personnes assignées au ticket $1 (une par ligne)
+assignes() { gh issue view "$1" --json assignees -q '.assignees[].login' 2>/dev/null || true; }
+
 est_mainteneur() { [[ "${1:-}" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; }
 
 # Registre des branches d'un ticket : repère invisible dans les commentaires
@@ -232,7 +235,14 @@ accepter() {
     if grep -qxF "$S_AVALIDER" <<<"$(etiquettes "$n")"; then
         statut "$n" "$S_BACKLOG"
     fi
-    creer_branche "$n"
+    # La branche naît quand le ticket est pris (assigné) : un ticket validé
+    # pour plus tard n'a pas de branche qui vieillit en attendant
+    if [ -n "$(assignes "$n")" ]; then
+        creer_branche "$n"
+    else
+        _tr tk.validated_waiting "$n"
+        gh issue comment "$n" --body "$_T" >/dev/null
+    fi
     while IFS=$'\t' read -r pr head sha; do
         [ -n "$pr" ] || continue
         body="$(gh pr view "$pr" --json body -q .body)"
@@ -264,7 +274,9 @@ cmd_issue() {
             accepter "$ISSUE"
             ;;
         assigned)
-            # Pris en charge : en cours, s'il attendait dans le backlog
+            # Pris en charge : sa branche (s'il est validé), en cours s'il
+            # attendait dans le backlog
+            est_valide "$ISSUE" && creer_branche "$ISSUE"
             grep -qxF "$S_BACKLOG" <<<"$(etiquettes "$ISSUE")" && statut "$ISSUE" "$S_ENCOURS"
             return 0
             ;;

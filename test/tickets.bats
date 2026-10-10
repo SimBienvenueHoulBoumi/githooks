@@ -50,6 +50,7 @@ case "$1 $2" in
             *"-q .title"*) cat "$F/issues/$3.title" 2>/dev/null || echo "Ajoute le panier" ;;
             *"-q .id"*) echo "I_$3" ;;
             *comments*) cat "$F/issues/$3.comments" 2>/dev/null || true ;;
+            *assignees*) cat "$F/issues/$3.assignees" 2>/dev/null || true ;;
             *) etiquettes "$3" ;;
         esac ;;
     "issue edit")
@@ -126,6 +127,7 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
 @test "tickets : ouvert par un mainteneur -> valide d'office, backlog, branche ; sinon a valider" {
     echo "Corrige le total à payer" >"$F/issues/12.title"
     N=12 ticket "type: fix"
+    echo moi >"$F/issues/12.assignees"
     ISSUE=12 ACTION=opened ISSUE_ASSOCIATION=OWNER run "$TICKETS" issue
     [ "$status" -eq 0 ]
     grep -qxF "validé" "$F/issues/12.labels"
@@ -168,11 +170,25 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     [ ! -e "$F/issues/42.labels" ]
 }
 
-@test "tickets : ticket valide -> sa branche cree depuis develop, liee au ticket, une seule fois" {
+@test "tickets : valide sans personne -> attend d'etre pris ; assigne -> branche creee depuis develop, liee, une seule fois" {
     N=12 ticket "statut: à valider" "validé" "type: fix"
     echo "Corrige le total à payer" >"$F/issues/12.title"
     ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
     [ "$status" -eq 0 ]
+    ! grep -q "branche-creee" "$F/events"
+    grep -q "repowarden ticket 12" "$F/issues/12.comments"
+    [ "$(labels 12 | grep statut)" = "statut: backlog" ]
+    # pris : assigne -> sa branche, en cours
+    : >"$F/events"
+    echo moi >"$F/issues/12.assignees"
+    ISSUE=12 ACTION=assigned run "$TICKETS" issue
+    [ "$status" -eq 0 ]
+    [ "$(labels 12 | grep statut)" = "statut: en cours" ]
+    grep -qx "branche-creee fix/12-corrige-le-total-a-payer" "$F/events"
+    # valide alors qu'il est deja assigne : branche tout de suite
+    : >"$F/events"
+    N=12 ticket "statut: à valider" "validé" "type: fix"
+    ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
     grep -qx "branche-creee fix/12-corrige-le-total-a-payer" "$F/events"
     grep -q "commentaire 12" "$F/events"
     [ "$(labels 12 | grep statut)" = "statut: backlog" ]
@@ -223,6 +239,7 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
 @test "tickets : registre -> branche creee, faite a la main ou seconde, inscrite une fois sur le ticket" {
     N=12 ticket "validé" "statut: backlog" "type: fix"
     echo "Corrige le total" >"$F/issues/12.title"
+    echo moi >"$F/issues/12.assignees"
     ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
     grep -qF "<!-- repowarden:branche fix/12-corrige-le-total -->" "$F/issues/12.comments"
     # premier push de la branche creee : deja inscrite, rien de plus

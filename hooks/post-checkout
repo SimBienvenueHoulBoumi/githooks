@@ -21,4 +21,6 @@ if ! skipped branch-name && ! branch_name_valid "$BRANCH"; then
 fi
 # Branche de travail sans ticket : prévenu, jamais bloqué
 ticket_hint "$BRANCH"
+# Branches locales des tickets qui me sont assignés (au plus toutes les 15 min)
+tickets_sync || true
 exit 0
