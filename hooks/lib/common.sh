@@ -176,7 +176,9 @@ persistent_pr_r() {
 AGENT_EMAIL_RE='^(noreply@anthropic\.com|[0-9]+\+[Cc]opilot@users\.noreply\.github\.com|cursoragent@cursor\.com|devin-ai-integration\[bot\]@users\.noreply\.github\.com)$'
 AGENT_NAME_RE='^(Claude|Claude Code|Copilot|Cursor Agent|Devin AI)$'
 # Lignes de signature (grep -iE, insensible à la casse)
-AGENT_LINE_ERE='^[[:space:]]*(co-authored-by:.*(anthropic\.com|copilot@users\.noreply\.github\.com|cursor\.com|devin-ai-integration)|.*generated (with|by) \[?(claude|github copilot|copilot|cursor|devin))'
+# (locale C : un emoji en tête de ligne, comme « 🤖 Generated with », reste
+# des octets quelconques, y compris sous Windows ; motifs en ASCII)
+AGENT_LINE_ERE='(^[[:space:]]*co-authored-by:.*(anthropic\.com|copilot@users\.noreply\.github\.com|cursor\.com|devin-ai-integration))|(generated (with|by) \[?(claude|github copilot|copilot|cursor|devin))'
 
 # Vrai si les signatures d'agents sont refusées (défaut)
 agents_refused() { cfg_r allowAgentSignatures false; [ "$REPLY" != true ]; }
@@ -186,7 +188,7 @@ agent_identity() { [[ "$2" =~ $AGENT_EMAIL_RE || "$1" =~ $AGENT_NAME_RE ]]; }
 
 # REPLY = premières lignes de signature d'agent du texte $1 (vide si aucune)
 agent_lines_r() {
-    REPLY="$(grep -aiE "$AGENT_LINE_ERE" <<<"$1" || true)"
+    REPLY="$(LC_ALL=C grep -aiE "$AGENT_LINE_ERE" <<<"$1" || true)"
 }
 
 # Vrai si $1 est un en-tête conforme (format et 72 caractères)

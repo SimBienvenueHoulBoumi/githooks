@@ -74,6 +74,7 @@ Co-authored-by: Alice <alice@example.com>"
     [ "$status" -eq 0 ]
     [[ "$output" == *"Signature d'agent IA retirée"* ]]
     msg="$(git log -1 --format=%B)"
+    echo "message : $msg"
     [[ "$msg" != *anthropic* && "$msg" != *"Generated with"* ]]
     [[ "$msg" == *"Co-authored-by: Alice <alice@example.com>"* ]]
     # auteur agent : refuse
