@@ -56,7 +56,7 @@ NAV
     [ "$status" -eq 0 ]
     # formulaire envoye a GitHub : compte personnel, manifest sans webhook ni administration
     grep -q 'action="https://github.com/settings/apps/new?state=' "$F/page"
-    grep -q '&quot;active&quot;:false' "$F/page"
+    grep -q '&quot;hook_attributes&quot;:{&quot;url&quot;:&quot;https://github.com/moi/projet&quot;,&quot;active&quot;:false}' "$F/page"
     grep -q '&quot;pull_requests&quot;:&quot;write&quot;' "$F/page"
     ! grep -q 'administration' "$F/page"
     [ "$(cat "$F/var.REPOWARDEN_APP_CLIENT_ID")" = Iv1.abc ]

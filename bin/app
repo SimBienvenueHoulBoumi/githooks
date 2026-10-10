@@ -90,7 +90,8 @@ else
             if (process.env.ADMIN) perms.administration = "write";
             const manifeste = JSON.stringify({
                 name: process.env.NOM, url: "https://github.com/" + process.env.REPO,
-                hook_attributes: { active: false }, public: false,
+                // Webhook inactif : GitHub exige tout de même son adresse
+                hook_attributes: { url: "https://github.com/" + process.env.REPO, active: false }, public: false,
                 redirect_url: "http://127.0.0.1:" + port + "/fin", default_permissions: perms,
             }).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
             res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
