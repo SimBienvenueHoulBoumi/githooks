@@ -1,6 +1,6 @@
 # Contribuer
 
-Règles de travail (tickets, commits, interdits) : [`AGENTS.md`](AGENTS.md), à lire avant tout changement.
+Règles de travail (tickets, commits, interdits) : [`AGENTS.md`](https://github.com/SimBienvenueHoulBoumi/repowarden/blob/main/AGENTS.md), à lire avant tout changement.
 
 ## Mise en place
 
