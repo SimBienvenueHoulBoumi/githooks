@@ -24,3 +24,6 @@ jobs:
     with:
       repowarden-repository: ${{ github.repository }}
       repowarden-ref: ${{ github.sha }}
+      app-client-id: ${{ vars.REPOWARDEN_APP_CLIENT_ID }}
+    secrets:
+      app-key: ${{ secrets.REPOWARDEN_APP_KEY }}
