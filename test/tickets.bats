@@ -34,6 +34,7 @@ case "$1 $2" in
         echo "https://github.com/o/r/pull/9" ;;
     "pr close") echo "pr-fermee $3" >>"$F/events" ;;
     "api graphql")
+        case "$*" in *closer*) printf '%s\n' "${FAKE_CLOSER:-}"; exit 0 ;; esac
         for a in "$@"; do case "$a" in name=*) echo "branche-creee ${a#name=}" >>"$F/events" ;; esac; done ;;
     "api -X")
         echo "branche-supprimee ${4#repos/o/r/git/refs/heads/}" >>"$F/events" ;;
@@ -64,6 +65,7 @@ case "$1 $2" in
         done ;;
     "issue comment") echo "commentaire $3" >>"$F/events"; printf '%s\n' "$5" >>"$F/issues/$3.comments" ;;
     "issue close") echo "fermé $3" >>"$F/events" ;;
+    "issue reopen") echo "rouvert $3" >>"$F/events" ;;
     "issue list")
         while [ $# -gt 0 ]; do [ "$1" = --label ] && l="$2"; shift; done
         for f in "$F"/issues/*.labels; do
@@ -307,6 +309,29 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     : >"$F/events"
     ACTION=opened HEAD=develop BASE=main run "$TICKETS" pr
     ! grep -q "pr-fermee" "$F/events"
+}
+
+@test "tickets : PR brouillon du bot suivie ; ticket ferme par GitHub au merge dans develop -> rouvert en preprod" {
+    # PR ouverte par le suivi des tickets (github-actions[bot]) : suivie, pas exemptee
+    N=12 ticket "validé" "statut: en relecture"
+    printf 'Ticket : #12' >"$F/pr_body"
+    AUTHOR='github-actions[bot]' ACTION=closed MERGED=true run "$TICKETS" pr
+    [ "$(labels 12 | grep statut)" = "statut: préprod" ]
+    # ferme par GitHub au merge d'une PR liee dans develop : rouvert, preprod
+    N=13 ticket "validé" "statut: en cours"
+    FAKE_CLOSER="7 develop" ISSUE=13 ACTION=closed STATE_REASON=completed run "$TICKETS" issue
+    [ "$status" -eq 0 ]
+    grep -qx "rouvert 13" "$F/events"
+    [ "$(labels 13 | grep statut)" = "statut: préprod" ]
+    # ferme par la livraison sur main, a la main, ou deja done : respecte
+    : >"$F/events"
+    for cas in "FAKE_CLOSER=8 main" "FAKE_CLOSER="; do
+        N=14 ticket "validé" "statut: préprod"
+        env "$cas" ISSUE=14 ACTION=closed STATE_REASON=completed "$TICKETS" issue
+    done
+    N=15 ticket "validé" "statut: done"
+    FAKE_CLOSER="9 develop" ISSUE=15 ACTION=closed STATE_REASON=completed run "$TICKETS" issue
+    ! grep -q "rouvert" "$F/events"
 }
 
 @test "tickets : nom de branche du ticket (type, numero, titre sans accents, tronque)" {
