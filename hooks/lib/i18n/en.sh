@@ -263,10 +263,11 @@ _msg_en() {
         ci.proteger.13) _M="Settings applied." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs: a number from 0 to 9 is expected." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview: true or false." ;;
+        ci.proteger.automerge_invalid) _M="autoMergeWork: true or false." ;;
         ci.proteger.unattributed_invalid) _M="unattributedApproval: true or false." ;;
         ci.proteger.no_branch) _M="None of the branches \"%s\" exists on %s." ;;
         ci.proteger.no_cleanup) _M="Automatic branch deletion disabled (it would delete develop): add a workflow calling nettoyage-branches.yml, otherwise merged branches remain (see In an organisation)." ;;
-        ci.proteger.delivery) _M="  delivery into main: %s approval(s) required (moving to a new version); auto-merge disabled" ;;
+        ci.proteger.delivery) _M="  delivery into main: %s approval(s) required (moving to a new version); auto-merge of work PRs into develop: %s" ;;
         ci.proteger.methods_flow) _M="main: merge commit; %s: squash or merge commit" ;;
         ci.proteger.tags_org) _M="reserved for workflows" ;;
         ci.proteger.tags_user) _M="neither moved nor deleted (personal account: creation allowed)" ;;
@@ -364,6 +365,9 @@ _msg_en() {
         tk.merged) _M="Merged by PR #%s into %s: in pre-production, available in the next pre-release." ;;
         tk.branch_created) _M="Ticket validated: its branch \`%s\` is created from \`%s\`.\n\nTo work on it:\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(or \`git fetch && git switch %s\`). The first push opens the draft PR." ;;
         tk.branch_notice) _M="Branch %s created for ticket #%s" ;;
+        tk.automerge_armed) _M="PR #%s: auto-merge armed (squash), as soon as the checks are green." ;;
+        tk.automerge_no_app) _M="PR #%s: auto-merge not armed, no GitHub App (repowarden app init): with the Actions token, the merge would trigger no workflow." ;;
+        tk.automerge_failed) _M="PR #%s: auto-merge not armed (auto-merge not allowed on the repository: repowarden proteger)." ;;
         app.no_node) _M="node is required (local page creating the App): https://nodejs.org" ;;
         app.step_create) _M="Creating the GitHub App" ;;
         app.exists) _M="App already set up for this repository (client %s): nothing to recreate." ;;

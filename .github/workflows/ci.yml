@@ -6,8 +6,9 @@ on:
     branches: [main, develop]
   pull_request:
     # ready_for_review : PR brouillon ouverte par le suivi des tickets, sans CI
-    # encore (jeton des Actions)
-    types: [opened, synchronize, reopened, ready_for_review]
+    # encore (jeton des Actions) ; edited : base ou titre modifiés (une PR
+    # reciblée ne reste pas sur l'échec de l'ancienne base)
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   # Lancé par le workflow de release sur sa PR (GITHUB_TOKEN ne déclenche que ce type)
   workflow_dispatch:
 

@@ -263,10 +263,11 @@ _msg_fr() {
         ci.proteger.13) _M="Réglages appliqués." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs : nombre de 0 à 9 attendu." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview : true ou false." ;;
+        ci.proteger.automerge_invalid) _M="autoMergeWork : true ou false." ;;
         ci.proteger.unattributed_invalid) _M="unattributedApproval : true ou false." ;;
         ci.proteger.no_branch) _M="Aucune des branches « %s » n'existe sur %s." ;;
         ci.proteger.no_cleanup) _M="Suppression automatique des branches désactivée (elle supprimerait develop) : ajouter un workflow qui appelle nettoyage-branches.yml, sinon les branches mergées restent (voir En organisation)." ;;
-        ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique désactivé" ;;
+        ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique des PR de travail vers develop : %s" ;;
         ci.proteger.methods_flow) _M="main : merge commit ; %s : squash ou merge commit" ;;
         ci.proteger.tags_org) _M="réservés aux workflows" ;;
         ci.proteger.tags_user) _M="ni déplacés ni supprimés (compte personnel : création libre)" ;;
@@ -364,6 +365,9 @@ _msg_fr() {
         tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
         tk.branch_created) _M="Ticket validé : sa branche \`%s\` est créée depuis \`%s\`.\n\nPour y travailler :\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(ou \`git fetch && git switch %s\`). Le premier push ouvre la PR en brouillon." ;;
         tk.branch_notice) _M="Branche %s créée pour le ticket #%s" ;;
+        tk.automerge_armed) _M="PR #%s : merge automatique armé (squash), dès que les vérifications sont vertes." ;;
+        tk.automerge_no_app) _M="PR #%s : merge automatique non armé, pas de GitHub App (repowarden app init) : avec le jeton des Actions, le merge ne déclencherait aucun workflow." ;;
+        tk.automerge_failed) _M="PR #%s : merge automatique non armé (dépôt sans merge automatique autorisé : repowarden proteger)." ;;
         app.no_node) _M="node est nécessaire (page locale de création de l'App) : https://nodejs.org" ;;
         app.step_create) _M="Création de la GitHub App" ;;
         app.exists) _M="App déjà configurée pour ce dépôt (client %s) : rien à recréer." ;;

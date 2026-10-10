@@ -423,6 +423,13 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     printf 'jobs:\n  n:\n    uses: o/r/.github/workflows/nettoyage-branches.yml@v4\n' >.github/workflows/nettoyage.yml
     GH_BRANCHES="main develop" run "$PROTEGER" --dry-run --checks "repowarden"
     [[ "$output" != *"nettoyage-branches.yml"* ]]
+    [[ "$output" == *"merge automatique des PR de travail vers develop : true"* ]]
+    git config repowarden.autoMergeWork false
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [[ "$output" == *"merge automatique des PR de travail vers develop : false"* ]]
+    git config repowarden.autoMergeWork peut-etre
+    GH_BRANCHES="main develop" run "$PROTEGER" --dry-run
+    [ "$status" -ne 0 ]
 }
 
 @test "proteger : approbation des changements non attribues posee explicitement (false par defaut, reglable)" {

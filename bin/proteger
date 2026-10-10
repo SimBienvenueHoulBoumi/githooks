@@ -177,8 +177,12 @@ if [ -n "$integration" ]; then
     # Nettoyage par le workflow nettoyage-branches (garde une branche encore
     # source d'une autre PR ouverte)
     delete_on_merge=false
-    # Merge automatique désactivé : aucune livraison programmée sans décision
-    auto_merge=false
+    # Merge automatique autorisé pour les PR de travail vers develop (armé par
+    # le suivi des tickets) ; une livraison vers main ne passe jamais sans son
+    # approbation humaine, merge automatique ou non. autoMergeWork = false : aucun.
+    cfg_r autoMergeWork true
+    auto_merge="$REPLY"
+    [[ "$auto_merge" =~ ^(true|false)$ ]] || { err_t ci.proteger.automerge_invalid; exit 1; }
     # Sans ce workflow, les branches mergées ne seraient plus supprimées
     if ! grep -qs "nettoyage-branches.yml" "$GIT_TOPLEVEL"/.github/workflows/*.y*ml; then
         attention_t ci.proteger.no_cleanup
@@ -211,7 +215,7 @@ echo_t ci.proteger.1 "$REPO"
 echo_t ci.proteger.2 "$existing"
 echo_t ci.proteger.3 "$CHECKS"
 echo_t ci.proteger.4 "$methods" "$delete_on_merge"
-[ -z "$integration" ] || echo_t ci.proteger.delivery "$livraison"
+[ -z "$integration" ] || echo_t ci.proteger.delivery "$livraison" "$auto_merge"
 echo_t ci.proteger.5 "$tags_msg"
 [ -z "$integration" ] || echo_t ci.proteger.6 "$integration"
 echo_t ci.proteger.7 "$REVIEWS" "$CODEOWNERS" "$UNATTRIBUTED"
