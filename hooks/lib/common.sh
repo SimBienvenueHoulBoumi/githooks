@@ -186,7 +186,7 @@ agent_identity() { [[ "$2" =~ $AGENT_EMAIL_RE || "$1" =~ $AGENT_NAME_RE ]]; }
 
 # REPLY = premières lignes de signature d'agent du texte $1 (vide si aucune)
 agent_lines_r() {
-    REPLY="$(grep -iE "$AGENT_LINE_ERE" <<<"$1" || true)"
+    REPLY="$(grep -aiE "$AGENT_LINE_ERE" <<<"$1" || true)"
 }
 
 # Vrai si $1 est un en-tête conforme (format et 72 caractères)

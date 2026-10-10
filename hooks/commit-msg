@@ -14,8 +14,10 @@ if agents_refused; then
     agent_lines_r "$(cat "$MSG_FILE")"
     if [ -n "$REPLY" ]; then
         while IFS= read -r ligne; do attention_t hook.agent_stripped "$ligne"; done <<<"$REPLY"
-        grep -viE "$AGENT_LINE_ERE" "$MSG_FILE" >"$MSG_FILE.repowarden" || true
-        mv "$MSG_FILE.repowarden" "$MSG_FILE"
+        # grep -a : texte même avec un emoji (Windows le croirait binaire) ;
+        # contenu réécrit dans le même fichier (git le garde ouvert sous Windows)
+        filtre="$(grep -aviE "$AGENT_LINE_ERE" "$MSG_FILE" || true)"
+        printf '%s\n' "$filtre" >"$MSG_FILE"
     fi
     for ident in GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT; do
         id="$(git var "$ident" 2>/dev/null || true)"
