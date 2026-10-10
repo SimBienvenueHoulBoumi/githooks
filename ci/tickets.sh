@@ -242,13 +242,38 @@ cmd_pr() {
     done
     # Le blocage est porté par le statut « ticket » (exigé par la protection) :
     # le job reste vert, un rouge signale une vraie panne
-    verifier "$PR" "$HEAD_SHA" "$tickets" || true
+    if verifier "$PR" "$HEAD_SHA" "$tickets"; then
+        merge_auto "$PR" "${BASE:-}" "${DRAFT:-false}"
+    fi
+}
+
+# Merge automatique (squash) de la PR de travail $1, cible $2, brouillon $3 :
+# armé quand elle est prête, vise la branche d'intégration et que son ticket
+# est validé (appelé après une vérification réussie) ; désarmé en brouillon.
+# Seulement avec le jeton de l'App : un merge fait avec le jeton des Actions ne
+# déclencherait aucun workflow (préversion, livraison, tickets).
+merge_auto() {
+    local pr="$1" base="$2" brouillon="$3"
+    [ "${AUTO_MERGE:-true}" = true ] && [ "$base" = "${INTEGRATION:-develop}" ] || return 0
+    if [ "$brouillon" = true ]; then
+        gh pr merge "$pr" --disable-auto >/dev/null 2>&1 || true
+        return 0
+    fi
+    if [ "${APP_TOKEN:-false}" != true ]; then
+        notice_t tk.automerge_no_app "$pr"
+        return 0
+    fi
+    if gh pr merge "$pr" --auto --squash >/dev/null 2>&1; then
+        notice_t tk.automerge_armed "$pr"
+    else
+        notice_t tk.automerge_failed "$pr"
+    fi
 }
 
 # Ticket $1 validé : backlog s'il attendait la validation, sa branche, et
 # vérification relancée sur les PR ouvertes qui l'attendaient
 accepter() {
-    local n="$1" pr head sha body
+    local n="$1" pr head sha body base brouillon
     if grep -qxF "$S_AVALIDER" <<<"$(etiquettes "$n")"; then
         statut "$n" "$S_BACKLOG"
     fi
@@ -260,14 +285,16 @@ accepter() {
         _tr tk.validated_waiting "$n"
         gh issue comment "$n" --body "$_T" >/dev/null
     fi
-    while IFS=$'\t' read -r pr head sha; do
+    while IFS=$'\t' read -r pr head sha base brouillon; do
         [ -n "$pr" ] || continue
         body="$(gh pr view "$pr" --json body -q .body)"
         pr_tickets_r "$body" "$head"
         [[ " $REPLY " == *" $n "* ]] || continue
-        verifier "$pr" "$sha" "$REPLY" || true
-    done < <(gh pr list --state open --json number,headRefName,headRefOid \
-        -q '.[] | [.number, .headRefName, .headRefOid] | @tsv')
+        if verifier "$pr" "$sha" "$REPLY"; then
+            merge_auto "$pr" "$base" "$brouillon"
+        fi
+    done < <(gh pr list --state open --json number,headRefName,headRefOid,baseRefName,isDraft \
+        -q '.[] | [.number, .headRefName, .headRefOid, .baseRefName, .isDraft] | @tsv')
 }
 
 cmd_issue() {
