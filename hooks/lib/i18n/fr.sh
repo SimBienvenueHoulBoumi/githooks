@@ -254,7 +254,7 @@ _msg_fr() {
         ci.proteger.4) _M="  merges : %s ; suppression auto des branches : %s" ;;
         ci.proteger.5) _M="  tags v* : %s" ;;
         ci.proteger.6) _M="  branche par défaut : %s" ;;
-        ci.proteger.7) _M="  approbations exigées : %s ; revue des CODEOWNERS : %s" ;;
+        ci.proteger.7) _M="  approbations exigées : %s ; revue des CODEOWNERS : %s ; approbation des changements non attribués : %s" ;;
         ci.proteger.8) _M="  (les admins gardent un contournement explicite, tracé dans l'historique de la PR)" ;;
         ci.proteger.9) _M="  environnement « %s » : approbation de %s ; branches protégées et tags v*" ;;
         ci.proteger.10) _M="Ruleset « %s » mis à jour." ;;
@@ -263,6 +263,7 @@ _msg_fr() {
         ci.proteger.13) _M="Réglages appliqués." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs : nombre de 0 à 9 attendu." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview : true ou false." ;;
+        ci.proteger.unattributed_invalid) _M="unattributedApproval : true ou false." ;;
         ci.proteger.no_branch) _M="Aucune des branches « %s » n'existe sur %s." ;;
         ci.proteger.no_cleanup) _M="Suppression automatique des branches désactivée (elle supprimerait develop) : ajouter un workflow qui appelle nettoyage-branches.yml, sinon les branches mergées restent (voir En organisation)." ;;
         ci.proteger.delivery) _M="  livraison vers main : %s approbation(s) exigée(s) (passage à une nouvelle version) ; merge automatique désactivé" ;;

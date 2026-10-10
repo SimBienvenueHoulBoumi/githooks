@@ -35,9 +35,12 @@ Réglages versionnés dans `.repowarden.conf`, appliqués par `repowarden proteg
 [repowarden]
     requiredReviews = 1              # approbations par PR
     codeOwnerReview = true           # revue des CODEOWNERS sur leurs fichiers
+    unattributedApproval = false     # approbation en plus pour les changements non attribués (défaut false)
     environment = production         # déploiements soumis à approbation
     environmentReviewers = alice @acme/release  # comptes ou équipes ; défaut : l'utilisateur gh courant
 ```
+
+`unattributedApproval` vaut `false` par défaut et `proteger` le pose toujours explicitement. Sans cela, GitHub l'active d'office : une PR ouverte par une application (PR de livraison, PR brouillon d'un ticket, ouvertes par le jeton des Actions) attendrait alors une approbation humaine, même sans approbation exigée. La validation humaine d'une livraison passe déjà par `requiredReviews` sur `main`.
 
 ```text title=".github/CODEOWNERS"
 # Un motif par ligne ; la dernière règle qui correspond l'emporte

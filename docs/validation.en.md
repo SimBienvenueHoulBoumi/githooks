@@ -35,9 +35,12 @@ Settings versioned in `.repowarden.conf`, applied by `repowarden proteger` (can 
 [repowarden]
     requiredReviews = 1              # approvals per PR
     codeOwnerReview = true           # CODEOWNERS review on their files
+    unattributedApproval = false     # extra approval for unattributed changes (default false)
     environment = production         # deployments subject to approval
     environmentReviewers = alice @acme/release  # accounts or teams; default: the current gh user
 ```
+
+`unattributedApproval` defaults to `false` and `proteger` always sets it explicitly. Otherwise GitHub turns it on: a PR opened by an app (delivery PR, ticket draft PR, opened by the Actions token) would then wait for a human approval, even with no approval required. Human validation of a delivery already goes through `requiredReviews` on `main`.
 
 ```text title=".github/CODEOWNERS"
 # One pattern per line; the last matching rule wins

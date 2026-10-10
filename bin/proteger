@@ -14,7 +14,7 @@
 #                [--sans-tags] [--dry-run]
 # --sans-tags : dépôt qui déplace lui-même un tag (tag majeur flottant v2…).
 # Réglages équivalents dans .repowarden.conf (requiredReviews, codeOwnerReview,
-# environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
+# unattributedApproval, environment, environmentReviewers). Demande un gh connecté, admin du dépôt.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -25,6 +25,12 @@ cfg_r requiredReviews 0
 REVIEWS="$REPLY"
 cfg_r codeOwnerReview false
 CODEOWNERS="$REPLY"
+# Approbation supplémentaire des changements non attribués : GitHub l'active
+# d'office si elle n'est pas posée, et une PR ouverte par une application
+# (jeton des Actions : PR de livraison, PR brouillon des tickets) attend alors
+# un humain, même sans approbation exigée. Posée explicitement, false par défaut.
+cfg_r unattributedApproval false
+UNATTRIBUTED="$REPLY"
 cfg_r environment ""
 ENVIRONMENT="$REPLY"
 cfg_r environmentReviewers ""
@@ -51,6 +57,7 @@ done
 [ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 [[ "$REVIEWS" =~ ^[0-9]$ ]] || { err_t ci.proteger.reviews_invalid; exit 1; }
 [[ "$CODEOWNERS" =~ ^(true|false)$ ]] || { err_t ci.proteger.codeowners_invalid; exit 1; }
+[[ "$UNATTRIBUTED" =~ ^(true|false)$ ]] || { err_t ci.proteger.unattributed_invalid; exit 1; }
 # Avec relecture : le dernier à pousser ne peut pas approuver son propre push
 last_push=false
 [ "$REVIEWS" = 0 ] || last_push=true
@@ -104,6 +111,7 @@ branch_ruleset() {
       "allowed_merge_methods": [$3],
       "dismiss_stale_reviews_on_push": true,
       "require_code_owner_review": $CODEOWNERS,
+      "require_extra_approval_for_unattributed_changes": $UNATTRIBUTED,
       "require_last_push_approval": ${6:-$last_push},
       "required_approving_review_count": ${5:-$REVIEWS},
       "required_review_thread_resolution": true}},
@@ -206,7 +214,7 @@ echo_t ci.proteger.4 "$methods" "$delete_on_merge"
 [ -z "$integration" ] || echo_t ci.proteger.delivery "$livraison"
 echo_t ci.proteger.5 "$tags_msg"
 [ -z "$integration" ] || echo_t ci.proteger.6 "$integration"
-echo_t ci.proteger.7 "$REVIEWS" "$CODEOWNERS"
+echo_t ci.proteger.7 "$REVIEWS" "$CODEOWNERS" "$UNATTRIBUTED"
 if [ "$REVIEWS" != 0 ] || [ "$CODEOWNERS" = true ]; then
     echo_t ci.proteger.8
 fi
