@@ -48,6 +48,11 @@ fi
 
 skipped tests && { info "Tests désactivés (repowarden.skip)."; exit 0; }
 
+# Shellcheck sur les fichiers shell modifiés (ticket #202)
+# - shellcheck installé : s'exécute sur chaque fichier shell modifié, échec bloque le push
+# - shellcheck non installé : signalé ; bloqué en CI stricte (REPOWARDEN_STRICT_SHELLCHECK)
+skipped shellcheck && { info "Shellcheck désactivé (repowarden.skip)."; exit 0; }
+
 REMOTE="${1:-origin}"
 
 # Fichiers modifiés par le push de <sha> : depuis l'état distant connu, ou pour
@@ -68,7 +73,45 @@ changed_files() {
     fi
 }
 
-run_tests_for() { test_projects <"$1"; }
+# Détecter les fichiers shell modifiés dans le push
+changed_shell_files() {
+    local sha="$1" remote_sha="$2" base=""
+    if [[ ! "$remote_sha" =~ ^0+$ ]] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+        base="$remote_sha"
+    else
+        oldest="$(git rev-list "$sha" --not --remotes="$REMOTE" | tail -n1)"
+        [ -z "$oldest" ] && return 0                       # déjà tout sur le remote
+        base="$(git rev-parse -q --verify "$oldest^" || true)" # vide = premier push
+    fi
+    if [ -n "$base" ]; then
+        git diff --name-only "$base" "$sha" | grep -E '\.sh$' || true
+    else
+        git ls-tree -r --name-only "$sha" | grep -E '\.sh$' || true
+    fi
+}
+
+# Exécuter shellcheck sur les fichiers shell modifiés
+shellcheck_modified() {
+    local changed="$1"
+    if [ -z "$changed" ]; then
+        ok_t hook.pre_push.sc
+        return 0
+    fi
+    # shellcheck disable=SC2086 # on veut exécuter shellcheck
+    while IFS= read -r file; do
+        [ -z "$file" ] && continue
+        if ! shellcheck "$file" >/dev/null 2>&1; then
+            err_t hook.pre_push.sc "$file"
+            return 1
+        fi
+    done <<<"$changed"
+    ok_t hook.pre_push.sc
+}
+
+# Lance les tests du projet touché. Lecture des fichiers modifiés sur stdin.
+run_tests_for() {
+    test_projects <"$1"
+}
 
 TESTED=""
 CHANGED="$(git rev-parse --absolute-git-dir)/repowarden-changed-files"
@@ -84,6 +127,25 @@ while read -r _ local_sha _ remote_sha; do
     fi
     # Teste le commit poussé tel qu'il sera sur le serveur
     run_on_commit "$local_sha" run_tests_for "$CHANGED"
+    # Shellcheck sur les fichiers shell modifiés (même commande que en CI)
+    modified_shell="$(changed_shell_files "$local_sha" "$remote_sha")"
+    if [ -n "${REPOWARDEN_STRICT_SHELLCHECK:-}" ]; then
+        # Mode strict : échec si shellcheck détecte des problèmes
+        if [ -n "$modified_shell" ]; then
+            if ! shellcheck_modified "$modified_shell" >/dev/null 2>&1; then
+                err_t hook.pre_push.sc_fail "${local_sha:0:7}"
+                rm -f "$CHANGED"
+                exit 1
+            fi
+        fi
+    else
+        # Mode développeur : avertissement si shellcheck non installé ou des warnings
+        if [ -n "$modified_shell" ]; then
+            shellcheck_modified "$modified_shell" >/dev/null 2>&1 || true
+        elif ! command -v shellcheck >/dev/null 2>&1; then
+            warn "⚠ Shellcheck non installé (ajoutez REPOWARDEN_STRICT_SHELLCHECK=1 en CI pour bloquer)"
+        fi
+    fi
 done <<<"$REFS"
 
 rm -f "$CHANGED"
