@@ -64,7 +64,7 @@ cmd_pr() {
     done
     # Le blocage est porté par le statut « ticket » (exigé par la protection) :
     # le job reste vert, un rouge signale une vraie panne
-    if verifier "$PR" "$HEAD_SHA" "$tickets"; then
+    if verifier "$PR" "$HEAD_SHA" "$tickets" "$HEAD"; then
         merge_auto "$PR" "${BASE:-}" "${DRAFT:-false}"
     fi
 }

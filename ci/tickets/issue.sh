@@ -24,7 +24,7 @@ accepter() {
         body="$(gh pr view "$pr" --json body -q .body)"
         pr_tickets_r "$body" "$head"
         [[ " $REPLY " == *" $n "* ]] || continue
-        if verifier "$pr" "$sha" "$REPLY"; then
+        if verifier "$pr" "$sha" "$REPLY" "$head"; then
             merge_auto "$pr" "$base" "$brouillon"
         fi
     done < <(gh pr list --state open --json number,headRefName,headRefOid,baseRefName,isDraft \

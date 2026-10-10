@@ -32,7 +32,7 @@ cmd_push() {
     [ -z "${PUSHER:-}" ] || gh issue edit "$n" --add-assignee "$PUSHER" >/dev/null || true
     est_valide "$n" && statut "$n" "$S_ENCOURS"
     notice_t tk.draft_opened "${url##*/}" "$n"
-    verifier "${url##*/}" "$SHA" "$n" || true
+    verifier "${url##*/}" "$SHA" "$n" "$PUSH_BRANCH" || true
 }
 
 # Revue : corrections demandées → le ticket repasse en cours
