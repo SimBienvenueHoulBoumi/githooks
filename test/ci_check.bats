@@ -535,6 +535,39 @@ print(json.dumps(out))' <<<"$(sed -n '/^{/,$p' <<<"$1")"
     [[ "$output" == *"Aucune des branches"* ]]
 }
 
+@test "ci : agents IA -> auteur, committer ou signature refuses (commits et description de PR), bots acceptes" {
+    GIT_AUTHOR_NAME=Claude GIT_AUTHOR_EMAIL=noreply@anthropic.com \
+        git commit -q --no-verify --allow-empty -m "fix: par un agent"
+    run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"agent IA (Claude <noreply@anthropic.com>)"* ]]
+    [[ "$output" != *"nouvelle fonctionnalité"* ]]
+    # signature dans le message
+    git reset -q --hard "$REPOWARDEN_BASE"
+    git commit -q --no-verify --allow-empty -m "fix: a" -m "Co-Authored-By: Claude Opus <noreply@anthropic.com>"
+    run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"signature d'agent IA dans le message"* ]]
+    # description de PR (corps du commit en squash)
+    git reset -q --hard "$REPOWARDEN_BASE"
+    git commit -q --no-verify --allow-empty -m "fix: b"
+    REPOWARDEN_PR_BODY=$'Corrige b.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)' run "$CHECK" commits
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Description de la PR"* ]]
+    # bots d'automatisation : acceptes
+    git reset -q --hard "$REPOWARDEN_BASE"
+    GIT_AUTHOR_NAME='github-actions[bot]' GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com' \
+        git commit -q --no-verify --allow-empty -m "chore: par le bot"
+    run "$CHECK" commits
+    [ "$status" -eq 0 ]
+    # reglage : agents autorises
+    GIT_AUTHOR_NAME=Claude GIT_AUTHOR_EMAIL=noreply@anthropic.com \
+        git commit -q --no-verify --allow-empty -m "fix: agent autorise"
+    git config repowarden.allowAgentSignatures true
+    run "$CHECK" commits
+    [ "$status" -eq 0 ]
+}
+
 @test "ci : bots (Dependabot, Renovate) -> format exige, longueur libre" {
     long="fix(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 in the prod group"
     GIT_AUTHOR_EMAIL="49699333+dependabot[bot]@users.noreply.github.com" \

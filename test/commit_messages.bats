@@ -64,3 +64,27 @@ setup() { setup_repo; initial_commit; }
     run git commit -q --allow-empty -m "n'importe quoi"
     [ "$status" -eq 0 ]
 }
+
+@test "commit-msg : signatures d'agent IA retirees du message, identite d'agent refusee" {
+    git switch -q -c feat/x
+    run git commit -q --allow-empty -m "feat: ajoute un truc" -m "Pourquoi." \
+        -m "Co-Authored-By: Claude Opus <noreply@anthropic.com>
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Co-authored-by: Alice <alice@example.com>"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Signature d'agent IA retirée"* ]]
+    msg="$(git log -1 --format=%B)"
+    [[ "$msg" != *anthropic* && "$msg" != *"Generated with"* ]]
+    [[ "$msg" == *"Co-authored-by: Alice <alice@example.com>"* ]]
+    # auteur agent : refuse
+    GIT_AUTHOR_NAME=Claude GIT_AUTHOR_EMAIL=noreply@anthropic.com \
+        run git commit -q --allow-empty -m "fix: autre"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"agent IA"* ]]
+    # reglage : agents autorises
+    git config repowarden.allowAgentSignatures true
+    GIT_AUTHOR_NAME=Claude GIT_AUTHOR_EMAIL=noreply@anthropic.com \
+        run git commit -q --allow-empty -m "fix: autorise" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
+    [ "$status" -eq 0 ]
+    [[ "$(git log -1 --format=%B)" == *anthropic* ]]
+}

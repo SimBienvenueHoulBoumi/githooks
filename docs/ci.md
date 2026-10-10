@@ -6,7 +6,7 @@ La CI refait toutes les vérifications des hooks sur chaque PR / MR : **c'est el
 
 | Vérification | Échoue si |
 |---|---|
-| `commits` | un message n'est pas Conventional Commits, dépasse 72 caractères, ou est un `fixup!`/`squash!` non squashé ; **titre de la PR** non conforme (il devient le message du commit en squash) |
+| `commits` | un message n'est pas Conventional Commits, dépasse 72 caractères, ou est un `fixup!`/`squash!` non squashé ; **titre de la PR** non conforme (il devient le message du commit en squash) ; un commit dont l'**auteur ou le committer est un agent IA**, ou une **signature d'agent** (`Co-Authored-By: Claude …`, « Generated with … ») dans un message ou dans la description de la PR (réglage `allowAgentSignatures`) |
 | `branch` | le nom de branche ne respecte pas `<type>/<sujet>` (hors exceptions) |
 | `secrets` | gitleaks trouve un secret dans les commits de la branche |
 | `format` | un fichier modifié n'est pas formaté (le formateur est lancé, rien n'est committé) |
