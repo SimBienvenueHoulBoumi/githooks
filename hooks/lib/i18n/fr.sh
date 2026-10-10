@@ -231,6 +231,13 @@ _msg_fr() {
         ci.check.25) _M="Désactivé par .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Échec :%s" ;;
         ci.check.27) _M="Toutes les vérifications repowarden sont passées." ;;
+        hook.agent_stripped) _M="Signature d'agent IA retirée du message : %s" ;;
+        hook.agent_identity) _M="Commit refusé : l'auteur ou le committer est un agent IA (%s). Les commits portent l'identité d'une personne." ;;
+        hook.agent_identity_fix) _M="  Corriger : git config user.name \"Ton Nom\" && git config user.email ton@mail, puis recommencer le commit. Pour autoriser les agents : git config repowarden.allowAgentSignatures true" ;;
+        ci.check.agent_identity) _M="Commit %s : auteur ou committer agent IA (%s) ; les commits portent l'identité d'une personne." ;;
+        ci.check.agent_line) _M="Commit %s : signature d'agent IA dans le message (%s)." ;;
+        ci.check.agent_pr_body) _M="Description de la PR : signature d'agent IA (%s) ; elle deviendrait le message du commit en squash, à retirer." ;;
+        ci.check.agent_fix) _M="Réécrire les commits concernés avec l'identité d'une personne, sans signature d'agent (réglage repowarden.allowAgentSignatures = true pour les autoriser)." ;;
         ci.check.inverted) _M="PR de « %s » vers « %s » : une branche persistante ne part que pour une livraison (develop → main) ou un retour (main → develop). PR sans objet : rien à vérifier, elle est fermée automatiquement." ;;
         ci.check.inverted_fix) _M="Pour mettre une branche de travail à jour : sur cette branche, git merge origin/%s, puis git push." ;;
         ci.check.back_merge) _M="Retour de %s dans %s (merge commit) : le titre de la PR n'est pas vérifié." ;;

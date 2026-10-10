@@ -231,6 +231,13 @@ _msg_en() {
         ci.check.25) _M="Disabled by .repowarden.conf (skip %s)." ;;
         ci.check.26) _M="Failed:%s" ;;
         ci.check.27) _M="All repowarden checks passed." ;;
+        hook.agent_stripped) _M="AI agent signature removed from the message: %s" ;;
+        hook.agent_identity) _M="Commit refused: the author or committer is an AI agent (%s). Commits carry a person's identity." ;;
+        hook.agent_identity_fix) _M="  Fix: git config user.name \"Your Name\" && git config user.email you@mail, then commit again. To allow agents: git config repowarden.allowAgentSignatures true" ;;
+        ci.check.agent_identity) _M="Commit %s: AI agent author or committer (%s); commits carry a person's identity." ;;
+        ci.check.agent_line) _M="Commit %s: AI agent signature in the message (%s)." ;;
+        ci.check.agent_pr_body) _M="PR description: AI agent signature (%s); it would become the commit message when squashing, remove it." ;;
+        ci.check.agent_fix) _M="Rewrite the affected commits with a person's identity, without agent signature (setting repowarden.allowAgentSignatures = true to allow them)." ;;
         ci.check.inverted) _M="PR from \"%s\" to \"%s\": a persistent branch only goes out for a delivery (develop → main) or a back-merge (main → develop). Pointless PR: nothing to check, it is closed automatically." ;;
         ci.check.inverted_fix) _M="To update a work branch: on that branch, git merge origin/%s, then git push." ;;
         ci.check.back_merge) _M="Back-merge of %s into %s (merge commit): the PR title is not checked." ;;

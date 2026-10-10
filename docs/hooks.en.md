@@ -25,6 +25,8 @@ Format `<type>(<scope>): <description>`; `!` after the type for a breaking chang
 | `docs` | documentation | patch |
 | `style`, `refactor`, `test`, `build`, `ci`, `chore`, `revert` | formatting, restructuring, tests, build, CI, maintenance, revert | none on their own |
 
+**AI agents**: agent signatures (`Co-Authored-By: Claude …`, "🤖 Generated with …") are **removed** from the message, and a commit whose author or committer is an agent (`noreply@anthropic.com`, Copilot, Cursor, Devin) is **refused**: the history carries a person's identity. Automation bots (`github-actions`, repowarden App, Dependabot) are not affected. To allow agents: `git config repowarden.allowAgentSignatures true` (or in `.repowarden.conf`).
+
 A `!` (`feat!: …`) or a `BREAKING CHANGE:` footer produces a **major version**. See [automatic releases](industrialisation.md#2-versions-and-releases-automatic).
 
 ## Commit assistant: `git cc`
