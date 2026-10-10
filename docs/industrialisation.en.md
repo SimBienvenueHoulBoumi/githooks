@@ -112,6 +112,17 @@ Manually: *Settings → Rules → Rulesets* (or *Branches → Branch protection 
 - Block force pushes
 - (optional) Restrict branch names / commit metadata with the [regular expressions](ci.md#server-side-rules)
 
+### GitHub App for workflows
+
+What the Actions token does triggers **no other workflow**: a draft PR opened by ticket tracking has no CI, and an automatic merge would start neither a pre-release nor a delivery. A GitHub App dedicated to the repository removes this limit:
+
+```bash
+repowarden app init                  # once: "Create", then "Install"
+repowarden app init --administration # + administration right (configuration applied by the CI)
+```
+
+The command opens GitHub's creation page, prefilled: minimal permissions (contents, PRs, issues, statuses), no webhook. It stores the identifier (variable `REPOWARDEN_APP_CLIENT_ID`) and the private key (secret `REPOWARDEN_APP_KEY`) without displaying them, then opens the installation page. Workflows then get a one-hour token on each run; without the App, they fall back to the Actions token. The App follows the same rules as everyone: no exception in the rulesets.
+
 ### GitLab
 
 - *Settings → Repository → Protected branches*: `main` → *Allowed to push: No one*, *Allowed to merge: Developers*

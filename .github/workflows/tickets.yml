@@ -54,6 +54,10 @@ on:
         description: "Ticket ouvert par un mainteneur (droits d'écriture) validé d'office : maintainers, ou never (un mainteneur pose toujours « validé »)"
         type: string
         default: maintainers
+      app-client-id:
+        description: "GitHub App des workflows (repowarden app init : vars.REPOWARDEN_APP_CLIENT_ID) ; vide : jeton des Actions"
+        type: string
+        default: ""
       repowarden-ref:
         description: Version de repowarden dont les scripts sont utilisés
         type: string
@@ -62,6 +66,11 @@ on:
         description: Dépôt d'où viennent les scripts (repowarden lui-même passe le sien, à son propre commit)
         type: string
         default: SimBienvenueHoulBoumi/repowarden
+
+    secrets:
+      app-key:
+        description: Clé privée de la GitHub App (secrets.REPOWARDEN_APP_KEY)
+        required: false
 
 permissions: {}
 
@@ -81,9 +90,22 @@ jobs:
           ref: ${{ inputs.repowarden-ref }}
           path: .repowarden-ci
           persist-credentials: false
+      # Jeton de la GitHub App : ce qu'il fait (PR brouillon, merge) déclenche
+      # les autres workflows, contrairement au jeton des Actions
+      - name: Jeton de l'App
+        id: app
+        if: inputs.app-client-id != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.app-key }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-statuses: write
       - name: Tickets
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app.outputs.token || github.token }}
           GH_REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
           TAG: ${{ inputs.tag }}

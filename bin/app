@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# GitHub App du dépôt : identité d'automatisation des workflows repowarden.
+# Ce que fait le jeton des Actions ne déclenche aucun workflow (PR brouillon
+# sans CI, merge automatique sans préversion…) ; un jeton de l'App, si.
+#
+#   repowarden app init [--repo propriétaire/nom] [--nom NOM] [--administration]
+#
+# 1. création (flux « manifest » de GitHub) : une page locale envoie la
+#    description de l'App à GitHub, tu cliques sur « Create » ; permissions
+#    minimales (contenu, PR, tickets, statuts ; administration seulement avec
+#    --administration, pour appliquer la configuration depuis la CI) ;
+# 2. identifiants rangés sans être affichés : variable REPOWARDEN_APP_CLIENT_ID,
+#    secret REPOWARDEN_APP_KEY (clé privée) ;
+# 3. installation sur le dépôt : tu cliques sur « Install ».
+# Relançable : une App déjà configurée n'est pas recréée. Demande gh et node.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=../hooks/lib/common.sh
+source "$ROOT/hooks/lib/common.sh"
+
+aide() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; }
+
+commande="${1:-}"
+[ $# -eq 0 ] || shift
+REPO="" NOM="" ADMIN=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
+        --nom) shift; NOM="${1:?--nom attend un nom}" ;;
+        --administration) ADMIN=1 ;;
+        -h | --help) aide; exit 0 ;;
+        *) err_t install.unknown_arg "$1"; exit 1 ;;
+    esac
+    shift
+done
+if [ "$commande" != init ]; then
+    aide
+    [ -z "$commande" ] || [ "$commande" = -h ] || [ "$commande" = --help ]
+    exit
+fi
+
+command -v gh >/dev/null || { err_t bot.no_gh; exit 1; }
+command -v node >/dev/null || { err_t app.no_node; exit 1; }
+[ -n "$REPO" ] || REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+owner="${REPO%%/*}"
+NOM="${NOM:-repowarden-$owner}"
+brand "app · $REPO"
+
+# Ouvre une adresse dans le navigateur (REPOWARDEN_OPEN : commande à utiliser)
+ouvrir() {
+    if [ -n "${REPOWARDEN_OPEN:-}" ]; then "$REPOWARDEN_OPEN" "$1"
+    elif command -v open >/dev/null; then open "$1"
+    elif command -v xdg-open >/dev/null; then xdg-open "$1" >/dev/null 2>&1
+    elif command -v cmd.exe >/dev/null; then cmd.exe /c start "" "$1"
+    fi
+}
+
+# 1. Création, si l'App n'est pas déjà configurée pour ce dépôt
+step_t app.step_create
+client_id="$(gh variable get REPOWARDEN_APP_CLIENT_ID --repo "$REPO" 2>/dev/null || true)"
+if [ -n "$client_id" ] && grep -q '^REPOWARDEN_APP_KEY' <<<"$(gh secret list --repo "$REPO")"; then
+    ok_t app.exists "$client_id"
+    slug="$(gh variable get REPOWARDEN_APP_SLUG --repo "$REPO" 2>/dev/null || true)"
+else
+    if [ "$(gh api "users/$owner" -q .type)" = Organization ]; then
+        cible="https://github.com/organizations/$owner/settings/apps/new"
+    else
+        cible="https://github.com/settings/apps/new"
+    fi
+    sortie="$(mktemp)"
+    trap 'rm -f "$sortie"' EXIT
+    # Page locale : envoie la description à GitHub (formulaire POST), puis
+    # reçoit le code de retour ; le code est écrit sur la sortie standard
+    NOM="$NOM" REPO="$REPO" ADMIN="$ADMIN" CIBLE="$cible" node -e '
+        const http = require("http"), crypto = require("crypto");
+        const etat = crypto.randomBytes(16).toString("hex");
+        const srv = http.createServer((req, res) => {
+            const u = new URL(req.url, "http://127.0.0.1");
+            if (u.pathname === "/fin") {
+                if (u.searchParams.get("state") !== etat) { res.writeHead(400); res.end("état invalide"); return; }
+                res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+                res.end("<p>App créée : retourne au terminal.</p>");
+                console.log("CODE " + u.searchParams.get("code"));
+                res.on("finish", () => process.exit(0));
+                return;
+            }
+            const port = srv.address().port;
+            const perms = { contents: "write", pull_requests: "write", issues: "write", statuses: "write", metadata: "read" };
+            if (process.env.ADMIN) perms.administration = "write";
+            const manifeste = JSON.stringify({
+                name: process.env.NOM, url: "https://github.com/" + process.env.REPO,
+                hook_attributes: { active: false }, public: false,
+                redirect_url: "http://127.0.0.1:" + port + "/fin", default_permissions: perms,
+            }).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+            res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+            res.end("<form id=f method=post action=\"" + process.env.CIBLE + "?state=" + etat + "\">" +
+                "<input type=hidden name=manifest value=\"" + manifeste + "\"></form>" +
+                "<script>document.getElementById(\"f\").submit()</script>");
+        });
+        srv.listen(0, "127.0.0.1", () => console.log("PORT " + srv.address().port));
+        setTimeout(() => { console.log("DELAI"); process.exit(1); }, 15 * 60 * 1000);
+    ' >"$sortie" &
+    serveur=$!
+    for _ in $(seq 1 50); do grep -q '^PORT ' "$sortie" && break; sleep 0.1; done
+    port="$(sed -n 's/^PORT //p' "$sortie")"
+    [ -n "$port" ] || { err_t app.server_failed; exit 1; }
+    info_t app.open "http://127.0.0.1:$port/"
+    ouvrir "http://127.0.0.1:$port/"
+    wait "$serveur" || true
+    code="$(sed -n 's/^CODE //p' "$sortie")"
+    [ -n "$code" ] || { err_t app.no_code; exit 1; }
+    # Conversion du code : identifiants de l'App, rangés sans être affichés
+    reponse="$(gh api -X POST "app-manifests/$code/conversions")"
+    client_id="$(node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).client_id' <<<"$reponse")"
+    slug="$(node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).slug' <<<"$reponse")"
+    node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).pem)' <<<"$reponse" |
+        gh secret set REPOWARDEN_APP_KEY --repo "$REPO"
+    reponse=""
+    gh variable set REPOWARDEN_APP_CLIENT_ID --repo "$REPO" --body "$client_id"
+    gh variable set REPOWARDEN_APP_SLUG --repo "$REPO" --body "$slug"
+    ok_t app.created "$slug"
+fi
+
+# 2. Installation sur le dépôt (vérifiée depuis tes installations)
+step_t app.step_install
+installee() {
+    local id
+    id="$(gh api user/installations --paginate -q ".installations[] | select(.app_slug == \"$slug\") | .id" 2>/dev/null | sed -n 1p)"
+    [ -n "$id" ] || return 1
+    grep -qxF "$REPO" <<<"$(gh api "user/installations/$id/repositories" --paginate -q '.repositories[].full_name' 2>/dev/null)"
+}
+if [ -n "$slug" ] && ! installee; then
+    info_t app.open "https://github.com/apps/$slug/installations/new"
+    ouvrir "https://github.com/apps/$slug/installations/new"
+    for _ in $(seq 1 120); do installee && break; sleep 5; done
+fi
+if [ -n "$slug" ] && installee; then
+    ok_t app.installed "$slug" "$REPO"
+else
+    attention_t app.not_installed "$slug" "$REPO"
+    exit 1
+fi
+echo
+ok_t app.done
+dim_t app.next
