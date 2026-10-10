@@ -410,6 +410,12 @@ jobs:
           MAIN: ${{ inputs.main-branch }}
           INITIAL_VERSION: ${{ inputs.initial-version }}
           MODE: ${{ inputs.mode }}
+          # Livraison approuvée (environnement) : la PR part d'un instantané de
+          # develop, créé seulement à la demande (fenêtre, manuelle, urgence)
+          INSTANTANE: ${{ inputs.mode == 'tag' && inputs.delivery-environment != '' }}
+          DEMANDE: >-
+            ${{ github.event_name == 'workflow_dispatch' || inputs.delivery-on-push ||
+            (github.event_name == 'schedule' && github.event.schedule == inputs.delivery-schedule) }}
         run: |
           git fetch -q origin "$MAIN"
           pr="$(gh pr list --head "$INTEGRATION" --base "$MAIN" --state open --json number -q '.[0].number // empty')"
@@ -431,6 +437,37 @@ jobs:
             title="chore(release): livrer $INTEGRATION sur $MAIN"
             body="Aucune nouvelle version : maintenance uniquement (ci, chore, docs…)."
           fi
+          if [ "$INSTANTANE" = true ]; then
+            # Instantané : l'approbation porte sur ce commit exact ; ce qui est
+            # mergé ensuite dans develop partira à la livraison suivante
+            if [ "$DEMANDE" != true ]; then
+              echo "Livraison à venir : $title (demandée dans la fenêtre de livraison)."
+              exit 0
+            fi
+            # Une seule demande en attente : les précédentes sont fermées
+            while IFS=$'\t' read -r ancienne tete; do
+              [ -n "$ancienne" ] || continue
+              if [[ "$tete" == livraison/* ]]; then
+                gh pr close "$ancienne" --delete-branch --comment "Remplacée par une demande de livraison plus récente." >/dev/null
+              else
+                gh pr close "$ancienne" --comment "Remplacée par une demande de livraison sur un instantané de $INTEGRATION." >/dev/null
+              fi
+            done < <(gh pr list --base "$MAIN" --state open --json number,headRefName \
+              -q ".[] | select(.headRefName == \"$INTEGRATION\" or (.headRefName | startswith(\"livraison/\"))) | [.number, .headRefName] | @tsv")
+            branche="livraison/${version:+v}${version:-maintenance}"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branche" >/dev/null 2>&1 || true
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/heads/$branche" -f sha="$GITHUB_SHA" >/dev/null
+            # PR ouverte par le jeton des Actions : le suivi des tickets ne s'y
+            # lance pas ; une livraison n'exige pas de ticket
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f state=success -f context=ticket \
+              -f description="Livraison : sans ticket" >/dev/null
+            body="$(printf '%s\n\n_Instantané de %s au commit %s : approuver la demande de déploiement suffit, le travail mergé ensuite partira à la livraison suivante._\n' \
+              "$body" "$INTEGRATION" "${GITHUB_SHA:0:7}")"
+            url="$(gh pr create --head "$branche" --base "$MAIN" --title "$title" --body "$body")"
+            echo "pr=${url##*/}" >>"$GITHUB_OUTPUT"
+            echo "::notice::Demande de livraison : $title ($branche)"
+            exit 0
+          fi
           if [ -n "$pr" ]; then
             gh pr edit "$pr" --title "$title" --body "$body" >/dev/null
             echo "::notice::PR #$pr : $title"
@@ -447,7 +484,7 @@ jobs:
       - name: Urgence
         if: >-
           inputs.mode == 'tag' && inputs.delivery-environment != '' && !inputs.delivery-on-push &&
-          github.event_name == 'push' && github.ref_name == inputs.integration-branch && steps.livraison.outputs.pr != ''
+          github.event_name == 'push' && github.ref_name == inputs.integration-branch
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

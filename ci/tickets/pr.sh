@@ -27,7 +27,7 @@ cmd_pr() {
     # Bots de dépendances, PR de release, livraisons et retours : pas de ticket
     # exigé. Les PR ouvertes par le suivi des tickets lui-même (jeton des
     # Actions, github-actions[bot]) citent leur ticket : suivies normalement.
-    if [[ "${AUTHOR:-}" =~ ^(dependabot|renovate)(\[bot\])?$ || "$HEAD" == release-please--* ||
+    if [[ "${AUTHOR:-}" =~ ^(dependabot|renovate)(\[bot\])?$ || "$HEAD" == release-please--* || "$HEAD" == livraison/* ||
         "$HEAD" == "${INTEGRATION:-develop}" || "$HEAD" == "${MAIN:-main}" ]]; then
         gh api "repos/$GH_REPO/statuses/$HEAD_SHA" -f state=success -f context=ticket \
             -f description="Sans ticket (bot, release ou livraison)" >/dev/null

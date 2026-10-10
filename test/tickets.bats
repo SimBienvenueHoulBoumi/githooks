@@ -178,6 +178,12 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     ACTION=opened HEAD=develop run "$TICKETS" pr
     [ "$status" -eq 0 ]
     [ ! -e "$F/issues/42.labels" ]
+    # instantane de livraison vers main : sans ticket
+    : >"$F/events"
+    ACTION=opened HEAD=livraison/v4.4.0 BASE=main run "$TICKETS" pr
+    [ "$status" -eq 0 ]
+    grep -qx "statut-pr success" "$F/events"
+    [ ! -e "$F/issues/42.labels" ]
 }
 
 @test "tickets : valide sans personne -> attend d'etre pris ; assigne -> branche creee depuis develop, liee, une seule fois" {
