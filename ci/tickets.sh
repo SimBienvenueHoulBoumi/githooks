@@ -68,6 +68,19 @@ statut() {
 
 etiquettes() { gh issue view "$1" --json labels -q '.labels[].name' 2>/dev/null || true; }
 
+# REPLY = « <n° de PR> <branche cible> » de la PR dont le merge a fermé le
+# ticket $1, vide si le ticket a été fermé autrement (à la main, release…)
+fermee_par_pr_r() {
+    # shellcheck disable=SC2016 # variables GraphQL, pas du shell
+    REPLY="$(gh api graphql -f query='query($o: String!, $r: String!, $n: Int!) {
+  repository(owner: $o, name: $r) { issue(number: $n) {
+    timelineItems(last: 1, itemTypes: CLOSED_EVENT) { nodes { ... on ClosedEvent {
+      closer { ... on PullRequest { number baseRefName } } } } } } } }' \
+        -f o="${GH_REPO%%/*}" -f r="${GH_REPO#*/}" -F n="$1" \
+        -q '.data.repository.issue.timelineItems.nodes[0].closer // empty | "\(.number) \(.baseRefName)"' \
+        2>/dev/null || true)"
+}
+
 # Personnes assignées au ticket $1 (une par ligne)
 assignes() { gh issue view "$1" --json assignees -q '.assignees[].login' 2>/dev/null || true; }
 
@@ -123,6 +136,8 @@ branche_du_ticket_r() {
 # ouverte cite déjà le ticket (travail commencé hors de sa branche).
 creer_branche() {
     local n="$1" titre labels branche pr head body
+    # Travail déjà mergé ou en production : plus de branche à (re)créer
+    travail_termine "$(etiquettes "$n")" && return 0
     branche_du_ticket_r "$n"
     [ -z "$REPLY" ] || return 0
     while IFS=$'\t' read -r pr head; do
@@ -187,9 +202,11 @@ cmd_pr() {
             notice "$_T"
         fi
     fi
-    # Bots de dépendances, PR de release, livraisons et retours : pas de ticket exigé
-    if [[ "${AUTHOR:-}" =~ \[bot\]$ || "$HEAD" == release-please--* || "$HEAD" == "${INTEGRATION:-develop}" ||
-        "$HEAD" == "${MAIN:-main}" ]]; then
+    # Bots de dépendances, PR de release, livraisons et retours : pas de ticket
+    # exigé. Les PR ouvertes par le suivi des tickets lui-même (jeton des
+    # Actions, github-actions[bot]) citent leur ticket : suivies normalement.
+    if [[ "${AUTHOR:-}" =~ ^(dependabot|renovate)(\[bot\])?$ || "$HEAD" == release-please--* ||
+        "$HEAD" == "${INTEGRATION:-develop}" || "$HEAD" == "${MAIN:-main}" ]]; then
         gh api "repos/$GH_REPO/statuses/$HEAD_SHA" -f state=success -f context=ticket \
             -f description="Sans ticket (bot, release ou livraison)" >/dev/null
         return 0
@@ -281,6 +298,21 @@ cmd_issue() {
             return 0
             ;;
         closed)
+            # Fermé par GitHub au merge d'une PR liée dans la branche par défaut
+            # (develop) : pas encore en production, rouvert en préprod. Une
+            # fermeture à la main (sans PR) est respectée.
+            if [ "${STATE_REASON:-}" = completed ] && ! grep -qxF "$S_DONE" <<<"$(etiquettes "$ISSUE")"; then
+                fermee_par_pr_r "$ISSUE"
+                local fpr="${REPLY%% *}" fbase="${REPLY#* }"
+                if [ -n "$fpr" ] && [ "$fbase" != "${MAIN:-main}" ]; then
+                    gh issue reopen "$ISSUE" >/dev/null
+                    statut "$ISSUE" "$S_PREPROD"
+                    _tr tk.reopened "$fpr" "$fbase"
+                    gh issue comment "$ISSUE" --body "$_T" >/dev/null
+                    notice "$_T"
+                fi
+                return 0
+            fi
             # Abandonné : PR fermées, branche supprimée (un ticket terminé est
             # fermé par la release, sa branche est déjà supprimée au merge)
             [ "${STATE_REASON:-}" = not_planned ] || return 0
