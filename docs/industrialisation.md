@@ -112,6 +112,17 @@ Le script pose le ruleset « repowarden » (PR obligatoire, vérifications exig�
 - Block force pushes
 - (optionnel) Restrict branch names / commit metadata avec les [expressions régulières](ci.md#regles-cote-serveur)
 
+### GitHub App des workflows
+
+Ce que fait le jeton des Actions ne déclenche **aucun autre workflow** : une PR brouillon ouverte par le suivi des tickets n'a pas de CI, et un merge automatique ne lancerait ni préversion ni livraison. Une GitHub App propre au dépôt lève cette limite :
+
+```bash
+repowarden app init                  # une fois : « Create », puis « Install »
+repowarden app init --administration # + droit d'administration (configuration appliquée par la CI)
+```
+
+La commande ouvre la page de création de GitHub, préremplie : permissions minimales (contenu, PR, tickets, statuts), sans webhook. Elle range l'identifiant (variable `REPOWARDEN_APP_CLIENT_ID`) et la clé privée (secret `REPOWARDEN_APP_KEY`) sans les afficher, puis ouvre la page d'installation. Les workflows obtiennent ensuite un jeton d'une heure à chaque run ; sans l'App, ils reprennent le jeton des Actions. L'App suit les mêmes règles que tout le monde : aucune exception dans les rulesets.
+
 ### GitLab
 
 - *Settings → Repository → Protected branches* : `main` → *Allowed to push: No one*, *Allowed to merge: Developers*

@@ -101,6 +101,9 @@ jobs:
       tag: ${{ needs.release.outputs.tag_name || needs.release.outputs.prerelease_tag }}
       repowarden-repository: ${{ github.repository }}
       repowarden-ref: ${{ github.sha }}
+      app-client-id: ${{ vars.REPOWARDEN_APP_CLIENT_ID }}
+    secrets:
+      app-key: ${{ secrets.REPOWARDEN_APP_KEY }}
 
   # Tag majeur flottant (v1 → dernière v1.x.y) pour `uses: …/repowarden@v1`
   tag-major:
