@@ -18,7 +18,7 @@ etiquettes() { cat "$F/issues/$1.labels" 2>/dev/null || true; }
 case "$1 $2" in
     "pr view")
         case "$*" in
-            *"-q .body"*) cat "$F/pr_body" 2>/dev/null || true ;;
+            *"-q .body"*) cat "$F/pr_body.$3" 2>/dev/null || cat "$F/pr_body" 2>/dev/null || true ;;
             *"-q .title"*) echo "feat: panier" ;;
         esac ;;
     "pr edit")
@@ -26,6 +26,7 @@ case "$1 $2" in
     "pr list")
         case "$*" in
             *--head*) printf '%s\n' "${FAKE_PR_HEAD:-}" ;;
+            *"--state all"*) printf '%s\n' "${FAKE_PRS_ALL:-}" ;;
             *) printf '%s\n' "${FAKE_PRS:-}" ;;
         esac ;;
     "pr create")
@@ -48,6 +49,7 @@ case "$1 $2" in
         case "$*" in
             *"-q .title"*) cat "$F/issues/$3.title" 2>/dev/null || echo "Ajoute le panier" ;;
             *"-q .id"*) echo "I_$3" ;;
+            *comments*) cat "$F/issues/$3.comments" 2>/dev/null || true ;;
             *) etiquettes "$3" ;;
         esac ;;
     "issue edit")
@@ -59,13 +61,14 @@ case "$1 $2" in
             esac
             shift
         done ;;
-    "issue comment") echo "commentaire $3" >>"$F/events" ;;
+    "issue comment") echo "commentaire $3" >>"$F/events"; printf '%s\n' "$5" >>"$F/issues/$3.comments" ;;
     "issue close") echo "fermé $3" >>"$F/events" ;;
     "issue list")
         while [ $# -gt 0 ]; do [ "$1" = --label ] && l="$2"; shift; done
         for f in "$F"/issues/*.labels; do
             [ -e "$f" ] && grep -qxF "$l" "$f" && basename "$f" .labels
         done ;;
+    "api repos/o/r/issues?"*) printf '%s\n' "${FAKE_ISSUES:-}" ;;
     "api repos/"*)
         for a in "$@"; do case "$a" in state=*) echo "statut-pr ${a#state=}" >>"$F/events" ;; esac; done ;;
 esac
@@ -215,6 +218,57 @@ ticket() { printf '%s\n' "$@" >"$F/issues/$N.labels"; }
     [ "$status" -eq 0 ]
     grep -qx "pr-fermee 9" "$F/events"
     grep -qx "branche-supprimee feat/12-panier" "$F/events"
+}
+
+@test "tickets : registre -> branche creee, faite a la main ou seconde, inscrite une fois sur le ticket" {
+    N=12 ticket "validé" "statut: backlog" "type: fix"
+    echo "Corrige le total" >"$F/issues/12.title"
+    ISSUE=12 ACTION=labeled LABEL=validé run "$TICKETS" issue
+    grep -qF "<!-- repowarden:branche fix/12-corrige-le-total -->" "$F/issues/12.comments"
+    # premier push de la branche creee : deja inscrite, rien de plus
+    : >"$F/events"
+    FAKE_PR_HEAD=9 PUSH_BRANCH=fix/12-corrige-le-total SHA=a run "$TICKETS" push
+    ! grep -q "commentaire 12" "$F/events"
+    # branche faite a la main pour le ticket 13 : inscrite au premier push, une fois
+    N=13 ticket "validé" "statut: backlog"
+    FAKE_PR_HEAD=9 PUSH_BRANCH=feat/13-a-la-main SHA=b run "$TICKETS" push
+    FAKE_PR_HEAD=9 PUSH_BRANCH=feat/13-a-la-main SHA=c run "$TICKETS" push
+    [ "$(grep -c "repowarden:branche feat/13-a-la-main" "$F/issues/13.comments")" -eq 1 ]
+    # seconde branche pour le meme ticket : inscrite et signalee
+    FAKE_PR_HEAD=9 PUSH_BRANCH=feat/13-autre SHA=d run "$TICKETS" push
+    [[ "$output" == *"feat/13-autre"*"feat/13-a-la-main"* ]]
+    grep -q "repowarden:branche feat/13-autre" "$F/issues/13.comments"
+}
+
+@test "tickets : mise en route -> tickets existants ranges, branches des PR inscrites, relancable" {
+    N=20 ticket "validé"
+    N=21 ticket "type: feat"
+    N=22 ticket "type: fix"
+    N=23 ticket "statut: en cours"
+    printf 'Ticket : #21' >"$F/pr_body.5"
+    printf 'Rien' >"$F/pr_body.6"
+    printf 'Notes' >"$F/pr_body.8"
+    export FAKE_ISSUES=$'20\tNONE\n21\tOWNER\n22\tNONE\n23\tNONE' \
+        FAKE_PRS_ALL=$'5\tfeat/panier\n6\tfix/22-total\n8\tdevelop'
+    run "$TICKETS" adopter
+    [ "$status" -eq 0 ]
+    [ "$(labels 20 | grep statut)" = "statut: backlog" ]
+    grep -qxF "validé" "$F/issues/21.labels"
+    [ "$(labels 21 | grep statut)" = "statut: backlog" ]
+    [ "$(labels 22 | grep statut)" = "statut: à valider" ]
+    [ "$(labels 23 | grep statut)" = "statut: en cours" ]
+    grep -q "repowarden:branche feat/panier" "$F/issues/21.comments"
+    grep -q "PR #5" "$F/issues/21.comments"
+    grep -q "repowarden:branche fix/22-total" "$F/issues/22.comments"
+    [[ "$output" == *"3"*"2"* ]]
+    # relance : rien de nouveau
+    : >"$F/events"
+    run "$TICKETS" adopter
+    ! grep -q "commentaire" "$F/events"
+    # sans validation automatique : ticket d'un mainteneur a valider
+    N=24 ticket "type: feat"
+    FAKE_ISSUES=$'24\tOWNER' FAKE_PRS_ALL="" AUTO_VALIDATE=never run "$TICKETS" adopter
+    [ "$(labels 24 | grep statut)" = "statut: à valider" ]
 }
 
 @test "tickets : nom de branche du ticket (type, numero, titre sans accents, tronque)" {

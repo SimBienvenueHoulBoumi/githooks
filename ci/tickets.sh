@@ -14,6 +14,8 @@
 #   ci/tickets.sh revue     corrections demandées en revue → en cours
 #   ci/tickets.sh release   release publiée : tickets en préprod → done (fermés),
 #                           ou prévenus de la préversion
+#   ci/tickets.sh adopter   mise en route (tickets init) : tickets existants
+#                           rangés, branches des PR inscrites sur leurs tickets
 #
 # Le ticket d'abord, la branche en découle : à valider → (validé : branche
 # type/12-titre) backlog → en cours → en relecture → préprod → done. Seul un
@@ -65,6 +67,40 @@ statut() {
 }
 
 etiquettes() { gh issue view "$1" --json labels -q '.labels[].name' 2>/dev/null || true; }
+
+est_mainteneur() { [[ "${1:-}" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; }
+
+# Registre des branches d'un ticket : repère invisible dans les commentaires
+# du bot. GitHub ne lie une branche au ticket qu'à sa création, et une branche
+# liée supprimée y perd son nom : le registre garde le nom de chaque branche.
+REPERE="repowarden:branche"
+repere() { printf '<!-- %s %s -->' "$REPERE" "$1"; }
+
+# REPLY = branches inscrites sur le ticket $1 (séparées par des espaces)
+branches_inscrites_r() {
+    local corps
+    corps="$(gh issue view "$1" --json comments -q '.comments[].body' 2>/dev/null || true)"
+    REPLY="$(grep -oE "<!-- $REPERE [^ ]+ -->" <<<"$corps" | awk '{ printf "%s ", $3 }' || true)"
+    REPLY="${REPLY% }"
+}
+
+# Inscrit la branche $2 sur le ticket $1, une seule fois ($3 : origine, ex. PR #7).
+# Une seconde branche pour le même ticket est inscrite et signalée.
+INSCRITES=0
+inscrire_branche() {
+    local n="$1" b="$2" origine="${3:-}"
+    branches_inscrites_r "$n"
+    [[ " $REPLY " != *" $b "* ]] || return 0
+    if [ -n "$REPLY" ]; then
+        _tr tk.branch_second "$b" "${REPLY// /, }"
+        notice "$_T"
+    else
+        _tr tk.branch_registered "$b"
+    fi
+    [ -z "$origine" ] || _T="$_T ($origine)"
+    gh issue comment "$n" --body "$_T"$'\n\n'"$(repere "$b")" >/dev/null
+    INSCRITES=$((INSCRITES + 1))
+}
 est_valide() { grep -qxF "$VALIDE" <<<"$(etiquettes "$1")"; }
 
 # REPLY = branche du dépôt portant le ticket $1 (type/<n>-…), vide si aucune
@@ -105,7 +141,7 @@ creer_branche() {
         -f oid="$(gh api "repos/$GH_REPO/git/ref/heads/$INTEGRATION" -q .object.sha)" \
         -f name="$branche" >/dev/null
     _tr tk.branch_created "$branche" "$INTEGRATION" "$n" "$branche"
-    gh issue comment "$n" --body "$_T" >/dev/null
+    gh issue comment "$n" --body "$_T"$'\n\n'"$(repere "$branche")" >/dev/null
     notice_t tk.branch_notice "$branche" "$n"
 }
 
@@ -197,7 +233,7 @@ cmd_issue() {
             # Ouvert par un mainteneur (droits d'écriture) : c'est déjà sa
             # décision, validé d'office ; sinon, un mainteneur pose « validé »
             if [ "${AUTO_VALIDATE:-maintainers}" = maintainers ] &&
-                [[ "${ISSUE_ASSOCIATION:-}" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
+                est_mainteneur "${ISSUE_ASSOCIATION:-}"; then
                 gh issue edit "$ISSUE" --add-label "$VALIDE" >/dev/null
                 statut "$ISSUE" "$S_AVALIDER"
                 accepter "$ISSUE"
@@ -243,6 +279,8 @@ cmd_push() {
     branch_ticket_r "$PUSH_BRANCH"
     n="$REPLY"
     [ -n "$n" ] || return 0
+    # Branche faite hors du ticket (à la main) : inscrite sur le ticket
+    inscrire_branche "$n" "$PUSH_BRANCH"
     pr="$(gh pr list --state open --head "$PUSH_BRANCH" --json number -q '.[0].number // empty')"
     [ -z "$pr" ] || return 0
     [ "$(gh api "repos/$GH_REPO/compare/$INTEGRATION...$PUSH_BRANCH" -q .ahead_by)" != 0 ] || return 0
@@ -274,6 +312,39 @@ cmd_revue() {
     return 0
 }
 
+# Mise en route sur un dépôt existant (tickets init, relançable) : tickets
+# ouverts sans statut rangés (validé ou ouvert par un mainteneur → backlog,
+# sinon à valider) ; branches des PR ouvertes et mergées inscrites sur les
+# tickets qu'elles citent. Aucune branche créée en masse : elle naît quand le
+# ticket est pris (repowarden ticket N).
+cmd_adopter() {
+    local n assoc labels pr head ranges=0 t
+    while IFS=$'\t' read -r n assoc; do
+        [ -n "$n" ] || continue
+        labels="$(etiquettes "$n")"
+        ! grep -q '^statut: ' <<<"$labels" || continue
+        if grep -qxF "$VALIDE" <<<"$labels"; then
+            statut "$n" "$S_BACKLOG"
+        elif [ "${AUTO_VALIDATE:-maintainers}" = maintainers ] && est_mainteneur "$assoc"; then
+            gh issue edit "$n" --add-label "$VALIDE" >/dev/null
+            statut "$n" "$S_BACKLOG"
+        else
+            statut "$n" "$S_AVALIDER"
+        fi
+        ranges=$((ranges + 1))
+    done < <(gh api "repos/$GH_REPO/issues?state=open&per_page=100" --paginate \
+        -q '.[] | select(.pull_request | not) | [.number, .author_association] | @tsv')
+    while IFS=$'\t' read -r pr head; do
+        [ -n "$pr" ] || continue
+        [[ "$head" != "${INTEGRATION:-develop}" && "$head" != release-please--* ]] || continue
+        pr_tickets_r "$(gh pr view "$pr" --json body -q .body)" "$head"
+        for t in $REPLY; do inscrire_branche "$t" "$head" "PR #$pr"; done
+    done < <(gh pr list --state all --limit 1000 --json number,headRefName,state \
+        -q '.[] | select(.state != "CLOSED") | [.number, .headRefName] | @tsv')
+    _tr tk.adopted "$ranges" "$INSCRITES"
+    echo "$_T"
+}
+
 cmd_release() {
     local n
     while IFS= read -r n; do
@@ -301,5 +372,6 @@ case "${1:-}" in
     push) cmd_push ;;
     revue) cmd_revue ;;
     release) cmd_release ;;
-    *) echo "usage : ci/tickets.sh pr|issue|push|revue|release" >&2; exit 2 ;;
+    adopter) cmd_adopter ;;
+    *) echo "usage : ci/tickets.sh pr|issue|push|revue|release|adopter" >&2; exit 2 ;;
 esac

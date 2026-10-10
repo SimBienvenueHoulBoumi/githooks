@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Prépare le suivi des tickets d'un dépôt GitHub (relançable sans risque) :
-#   repowarden tickets init [--repo propriétaire/nom]
+#   repowarden tickets init [--repo propriétaire/nom] [--sans-validation-auto]
 #   - étiquettes : « validé », les statuts (à valider, backlog, en cours,
 #     en relecture, préprod, done) et les types (type: feat, type: fix…), qui
 #     donnent le préfixe de la branche du ticket ;
 #   - modèle de ticket .github/ISSUE_TEMPLATE/ticket.yml (créé « à valider ») ;
-#   - workflow .github/workflows/tickets.yml (s'ils n'existent pas déjà).
+#   - workflow .github/workflows/tickets.yml (s'ils n'existent pas déjà) ;
+#   - tickets existants : sans statut, rangés (validé ou ouverts par un
+#     mainteneur → backlog, sinon à valider ; --sans-validation-auto : tous à
+#     valider) ; branches des PR ouvertes et mergées inscrites sur leurs tickets.
 # Ensuite : committer ces fichiers, exiger la vérification « ticket »
 # (repowarden proteger --checks "…,ticket") et brancher le job tickets de release.yml.
 set -euo pipefail
@@ -20,12 +23,13 @@ commande="${1:-}"
 while [ $# -gt 0 ]; do
     case "$1" in
         --repo) shift; REPO="${1:?--repo attend propriétaire/nom}" ;;
+        --sans-validation-auto) AUTO_VALIDATE=never ;;
         *) err_t install.unknown_arg "$1"; exit 1 ;;
     esac
     shift
 done
 if [ "$commande" != init ]; then
-    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
     [ "$commande" = "" ] || [ "$commande" = -h ] || [ "$commande" = --help ]
     exit
 fi
@@ -109,6 +113,10 @@ jobs:
     uses: SimBienvenueHoulBoumi/repowarden/.github/workflows/tickets.yml@v4
     permissions: { contents: write, issues: write, pull-requests: write, statuses: write }
 YAML
+
+# 3. Tickets et branches existants (relançable : rien n'est fait deux fois)
+step_t tk.init_adopt
+GH_REPO="$REPO" AUTO_VALIDATE="${AUTO_VALIDATE:-maintainers}" "$ROOT/ci/tickets.sh" adopter | sed 's/^/  /'
 
 echo
 ok_t tk.init_done

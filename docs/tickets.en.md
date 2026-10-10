@@ -33,6 +33,7 @@ repowarden ticket                             # ticket of the current branch
 
 - **No PR without a ticket**: a PR references its ticket in its description (`Ticket : #12`), or its branch carries it (`feat/12-cart`). Otherwise, the ticket is **created automatically** from the PR, linked to its description, and "à valider".
 - **No merge without a validated ticket**: the PR's `ticket` check fails until its ticket has the `validé` label. It passes as soon as the label is added, without re-running anything. The `tickets` job stays green while waiting: a red job means a real failure.
+- **One ticket, one branch, and the ticket remembers it**: the branch created by the ticket is linked to it (*Development* panel). GitHub can only link a branch when creating it, and a deleted linked branch loses its name there: the bot therefore **writes the branch name on the ticket** ("Ticket branch" comment), when it is created as well as on the first push of a hand-made `type/12-…` branch. A second branch for the same ticket is registered and flagged.
 - Dependency bots, release PRs and `develop` → `main` deliveries do not need a ticket.
 - The draft PR is opened by the Actions token, which does not trigger other workflows: CI runs on the next push, or when marked "Ready for review" (`ready_for_review` in the CI triggers, as in the project template).
 
@@ -42,10 +43,16 @@ repowarden ticket                             # ticket of the current branch
 ## Setup
 
 ```bash
-repowarden tickets init          # labels, ticket template, tickets.yml workflow
+repowarden tickets init          # labels, template, workflow, existing tickets and branches
 git add .github && git cc       # then a PR
 repowarden proteger --checks "repowarden,ticket"   # "ticket" check required
 ```
+
+On a repository that already has tickets, `tickets init` takes them over (re-runnable, nothing is done twice):
+
+- open tickets **without a status**: those labelled `validé` or opened by a maintainer go to **backlog**, the others **to validate** (`--sans-validation-auto`: all to validate);
+- **branches of open and merged PRs**: registered on the tickets they reference, to know which ticket handled which branch, even deleted;
+- no mass branch creation: the branch is born when the ticket is taken (`repowarden ticket N`).
 
 In `.github/workflows/release.yml`, tickets move to pre-production on each pre-release and to done on each release:
 

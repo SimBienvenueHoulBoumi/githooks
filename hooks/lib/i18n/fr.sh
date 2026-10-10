@@ -360,6 +360,10 @@ _msg_fr() {
         tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
         tk.branch_created) _M="Ticket validé : sa branche \`%s\` est créée depuis \`%s\`.\n\nPour y travailler :\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(ou \`git fetch && git switch %s\`). Le premier push ouvre la PR en brouillon." ;;
         tk.branch_notice) _M="Branche %s créée pour le ticket #%s" ;;
+        tk.branch_registered) _M="Branche du ticket : \`%s\`." ;;
+        tk.branch_second) _M="Seconde branche pour ce ticket : \`%s\` (déjà : %s). Un ticket, une branche : regrouper le travail, ou ouvrir un ticket séparé." ;;
+        tk.adopted) _M="Tickets existants : %s rangé(s), %s branche(s) inscrite(s)." ;;
+        tk.init_adopt) _M="Tickets et branches existants" ;;
         tk.abandoned) _M="Ticket #%s abandonné : PR fermée, branche supprimée." ;;
         tk.branch_deleted) _M="Branche %s supprimée (ticket #%s abandonné)" ;;
         tk.draft_opened) _M="PR #%s ouverte en brouillon pour le ticket #%s" ;;
