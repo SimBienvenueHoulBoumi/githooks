@@ -363,6 +363,7 @@ _msg_fr() {
         tk.merged) _M="Mergé par la PR #%s dans %s : en préprod, disponible dans la prochaine préversion." ;;
         tk.branch_created) _M="Ticket validé : sa branche \`%s\` est créée depuis \`%s\`.\n\nPour y travailler :\n\n\`\`\`bash\nrepowarden ticket %s\n\`\`\`\n\n(ou \`git fetch && git switch %s\`). Le premier push ouvre la PR en brouillon." ;;
         tk.branch_notice) _M="Branche %s créée pour le ticket #%s" ;;
+        tk.reopened) _M="Rouvert : fermé par GitHub au merge de #%s dans \`%s\`, ce n'est pas encore la production. En préprod ; il sera fermé à la release." ;;
         tk.sync.ready) _M="Ticket #%s assigné : branche locale %s prête (repowarden ticket %s)." ;;
         tk.sync.not_validated) _M="Ticket #%s assigné mais pas encore validé : pas de branche pour l'instant." ;;
         tk.sync.failed) _M="Ticket #%s : branche non créée (droits sur le dépôt ?)." ;;
