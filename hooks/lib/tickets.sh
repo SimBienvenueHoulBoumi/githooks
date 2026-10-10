@@ -102,3 +102,83 @@ ticket_hint() {
         dim_t tk.cli.silence
     fi
 }
+
+# REPLY = branche d'où partent les tickets : integrationBranch, sinon la branche
+# par défaut du dépôt distant
+ticket_base_r() {
+    cfg_r integrationBranch ""
+    [ -z "$REPLY" ] || return 0
+    REPLY="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)"
+    REPLY="${REPLY#origin/}"
+}
+
+# REPLY = branche distante (origin) du ticket $1 (type/<n>-…), vide si aucune
+ticket_remote_branch_r() {
+    local ref
+    REPLY=""
+    while IFS= read -r ref; do
+        ref="${ref#origin/}"
+        branch_ticket_r "$ref"
+        if [ "$REPLY" = "$1" ]; then REPLY="$ref"; return 0; fi
+        REPLY=""
+    done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin)
+}
+
+# Branches locales des tickets qui me sont assignés (repowarden tickets sync ;
+# hooks post-merge et post-checkout en mode auto, au plus toutes les 15 min) :
+# branche distante retrouvée, ou créée et liée au ticket (validé) ; branche
+# locale de suivi créée sans changer la branche courante. Ticket qui ne m'est
+# plus assigné : signalé, sa branche locale conservée. Réglage ticketSync :
+# auto (défaut), manual (commande seulement), off. $1 = force (commande).
+tickets_sync() {
+    local force="${1:-}" stamp now last base n titre etiquettes branche b qui etat
+    local miens=" "
+    cfg_r ticketSync auto
+    [ "$REPLY" != off ] || return 0
+    if [ -z "$force" ]; then
+        [ "$REPLY" = auto ] && tickets_managed && command -v gh >/dev/null || return 0
+        stamp="$(git rev-parse --git-common-dir)/repowarden-ticket-sync"
+        now="$(date +%s)"
+        last="$(cat "$stamp" 2>/dev/null || echo 0)"
+        [ $((now - last)) -ge "${REPOWARDEN_TICKET_SYNC_EVERY:-900}" ] || return 0
+        echo "$now" >"$stamp"
+        gh auth status >/dev/null 2>&1 || return 0
+    fi
+    git fetch -q origin --prune 2>/dev/null || return 0
+    ticket_base_r
+    base="$REPLY"
+    while IFS=$'\t' read -r n titre etiquettes; do
+        [ -n "$n" ] || continue
+        miens="$miens$n "
+        etiquettes="${etiquettes//\\n/$'\n'}"
+        ticket_remote_branch_r "$n"
+        branche="$REPLY"
+        if [ -z "$branche" ]; then
+            if tickets_managed && ! grep -qxF "$VALIDE" <<<"$etiquettes"; then
+                info_t tk.sync.not_validated "$n"
+                continue
+            fi
+            ticket_type_r "$etiquettes"
+            ticket_branch_r "$n" "$titre" "$REPLY"
+            branche="$REPLY"
+            if ! gh issue develop "$n" --name "$branche" --base "$base" >/dev/null 2>&1 ||
+                ! git fetch -q origin "$branche" 2>/dev/null; then
+                attention_t tk.sync.failed "$n"
+                continue
+            fi
+        fi
+        git show-ref -q --verify "refs/heads/$branche" && continue
+        git branch -q --track "$branche" "origin/$branche" && ok_t tk.sync.ready "$n" "$branche" "$n"
+    done < <(gh issue list --assignee @me --state open --limit 100 --json number,title,labels \
+        -q '.[] | [.number, .title, ([.labels[].name] | join("\n"))] | @tsv' 2>/dev/null || true)
+    while IFS= read -r b; do
+        branch_ticket_r "$b"
+        n="$REPLY"
+        [ -n "$n" ] && [[ "$miens" != *" $n "* ]] || continue
+        IFS=$'\t' read -r etat qui <<<"$(gh issue view "$n" --json state,assignees \
+            -q '[.state, ([.assignees[].login] | join(", "))] | @tsv' 2>/dev/null || true)"
+        [ "$etat" = OPEN ] && [ -n "$qui" ] || continue
+        info_t tk.sync.reassigned "$n" "$qui" "$b"
+    done < <(git for-each-ref --format='%(refname:short)' refs/heads)
+    return 0
+}

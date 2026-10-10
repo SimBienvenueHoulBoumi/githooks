@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Prépare le suivi des tickets d'un dépôt GitHub (relançable sans risque) :
 #   repowarden tickets init [--repo propriétaire/nom] [--sans-validation-auto]
+#   repowarden tickets sync   branches locales des tickets qui me sont assignés
+#                             (aussi automatique : réglage ticketSync = auto|manual|off)
 #   - étiquettes : « validé », les statuts (à valider, backlog, en cours,
 #     en relecture, préprod, done) et les types (type: feat, type: fix…), qui
 #     donnent le préfixe de la branche du ticket ;
@@ -28,8 +30,18 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
+if [ "$commande" = sync ]; then
+    # shellcheck source=../hooks/lib/tickets.sh
+    source "$ROOT/hooks/lib/tickets.sh"
+    command -v gh >/dev/null || { err_t bot.no_gh; exit 1; }
+    [ -n "$GIT_TOPLEVEL" ] || { err_t install.not_repo; exit 1; }
+    cd "$GIT_TOPLEVEL"
+    tickets_sync force
+    ok_t tk.sync.done
+    exit 0
+fi
 if [ "$commande" != init ]; then
-    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
     [ "$commande" = "" ] || [ "$commande" = -h ] || [ "$commande" = --help ]
     exit
 fi

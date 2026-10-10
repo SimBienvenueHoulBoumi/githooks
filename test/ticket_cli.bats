@@ -18,9 +18,19 @@ setup() {
 echo "$*" >>"$FAKE/log"
 case "$1 $2" in
     "issue create") echo "https://github.com/o/r/issues/42" ;;
-    "issue view") printf '%s\n' "${FAKE_ISSUE:-$(printf 'OPEN\tAjoute le panier\tvalidé')}" ;;
+    "issue view")
+        case "$*" in
+            *assignees*) printf '%s\n' "${FAKE_OWNER:-}" ;;
+            *) printf '%s\n' "${FAKE_ISSUE:-$(printf 'OPEN\tAjoute le panier\tvalidé')}" ;;
+        esac ;;
     "issue develop")
-        while [ $# -gt 0 ]; do [ "$1" = --name ] && git switch -q -c "$2"; shift; done ;;
+        # --checkout : branche locale ; sinon (sync) branche créée sur origin
+        case "$*" in
+            *--checkout*) while [ $# -gt 0 ]; do [ "$1" = --name ] && git switch -q -c "$2"; shift; done ;;
+            *) while [ $# -gt 0 ]; do [ "$1" = --name ] && git push -q --no-verify origin "main:refs/heads/$2"; shift; done ;;
+        esac ;;
+    "issue list") printf '%s\n' "${FAKE_ASSIGNED:-}" ;;
+    "auth status") exit 0 ;;
 esac
 exit 0
 GH
@@ -110,4 +120,56 @@ gere() {
     [ "$status" -eq 0 ]
     grep -q -- "--label statut: à valider --label type: fix" "$F/log"
     [[ "$output" == *"Ticket #42 créé, à valider"* ]]
+}
+
+@test "ticket cli : repowarden ticket <n> -> le ticket est pris (assigne a soi)" {
+    git config repowarden.integrationBranch main
+    PATH="$F/bin:$PATH" run "$TICKET" 12
+    [ "$status" -eq 0 ]
+    grep -q "issue edit 12 --add-assignee @me" "$F/log"
+}
+
+@test "tickets sync : branches locales des tickets assignes, branche courante inchangee" {
+    gere
+    git push -q --no-verify origin main
+    git push -q --no-verify origin "main:refs/heads/fix/12-total"
+    export FAKE_ASSIGNED="$(printf '12\tTotal\tvalidé\n13\tAjoute le panier\tvalidé\\ntype: feat\n14\tPas encore\tstatut: à valider')"
+    PATH="$F/bin:$PATH" run "$BATS_TEST_DIRNAME/../bin/tickets" sync
+    [ "$status" -eq 0 ]
+    [ "$(git branch --show-current)" = main ]
+    # branche distante existante : suivie en local
+    [ "$(git rev-parse --abbrev-ref fix/12-total@{upstream})" = origin/fix/12-total ]
+    # pas de branche : creee et liee au ticket, puis suivie
+    grep -q "issue develop 13 --name feat/13-ajoute-le-panier --base main" "$F/log"
+    [ "$(git rev-parse --abbrev-ref feat/13-ajoute-le-panier@{upstream})" = origin/feat/13-ajoute-le-panier ]
+    # pas valide : aucune branche
+    [[ "$output" == *"#14"*"pas encore validé"* ]]
+    ! git show-ref -q --verify refs/heads/feat/14-pas-encore
+    [[ "$output" == *"#12 assigné : branche locale fix/12-total prête"* ]]
+    # relance : rien de nouveau
+    PATH="$F/bin:$PATH" run "$BATS_TEST_DIRNAME/../bin/tickets" sync
+    [[ "$output" != *"prête"* ]]
+}
+
+@test "tickets sync : ticket reassigne -> signale, branche locale conservee" {
+    gere
+    git push -q --no-verify origin main
+    git branch -q feat/20-ancien
+    FAKE_ASSIGNED="" FAKE_OWNER="$(printf 'OPEN\talice')" PATH="$F/bin:$PATH" \
+        run "$BATS_TEST_DIRNAME/../bin/tickets" sync
+    [[ "$output" == *"#20 n'est plus assigné à toi (maintenant : alice)"* ]]
+    git show-ref -q --verify refs/heads/feat/20-ancien
+}
+
+@test "tickets sync : automatique dans les hooks, au plus une fois par periode ; off -> rien" {
+    gere
+    git push -q --no-verify origin main
+    PATH="$F/bin:$PATH" git switch -q -c feat/1-a
+    [ "$(grep -c "^issue list" "$F/log")" -eq 1 ]
+    PATH="$F/bin:$PATH" git switch -q main
+    [ "$(grep -c "^issue list" "$F/log")" -eq 1 ]
+    rm -f "$(git rev-parse --git-common-dir)/repowarden-ticket-sync"
+    git config repowarden.ticketSync off
+    PATH="$F/bin:$PATH" git switch -q feat/1-a
+    [ "$(grep -c "^issue list" "$F/log")" -eq 1 ]
 }

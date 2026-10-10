@@ -7,8 +7,8 @@ Every change starts from a **ticket** (GitHub issue): **the branch derives from 
 | Status (label) | When | Automatic effect |
 |---|---|---|
 | `statut: à valider` | ticket created (by hand, or `repowarden ticket nouveau`) | — |
-| `statut: backlog` | a maintainer adds the **`validé`** label, or opens the ticket themselves (validated straight away) | **branch `<type>/<n>-<title>` created** from `develop` and **linked to the ticket** (*Development* panel); comment with the command to fetch it |
-| `statut: en cours` | someone assigns themselves the ticket, or pushes a first commit to its branch | on the first push: **draft PR** opened to `develop`, `Ticket : #n`, assigned |
+| `statut: backlog` | a maintainer adds the **`validé`** label, or opens the ticket themselves (validated straight away) | ticket ready to be taken; comment with the command to take it |
+| `statut: en cours` | someone assigns themselves the ticket (or `repowarden ticket N`), or pushes a first commit to its branch | on assignment: **branch `<type>/<n>-<title>` created** from `develop` and **linked to the ticket** (*Development* panel), so a ticket validated for later has no branch going stale; on the first push: **draft PR** opened to `develop`, `Ticket : #n`, assigned |
 | `statut: en relecture` | PR "Ready for review" | CI runs; a "Request changes" review moves the ticket back to in progress |
 | `statut: préprod` | PR merged into `develop` | branch deleted; comment on each pre-release `vX.Y.Z-next.N` |
 | `statut: done` | release on `main` | ticket **closed**, with the version |
@@ -25,7 +25,8 @@ repowarden ticket nouveau "Add the cart"       # create a ticket (awaiting valid
 repowarden ticket                             # ticket of the current branch
 ```
 
-- `repowarden ticket <n>` fetches the branch created on validation. If it does not exist yet (ticket tracking not installed), it is created and linked to the ticket with `gh issue develop`.
+- `repowarden ticket <n>` **takes the ticket** (assigned to you) and switches to its branch; creates it and links it to the ticket (`gh issue develop`) if it does not exist yet.
+- **Assigned tickets → local branches**: on every `git pull` or branch switch (at most every 15 min, only with `gh` logged in), repowarden creates the local branch of each ticket assigned to you, without changing your current branch. A ticket reassigned to someone else is flagged, its local branch kept. On demand: `repowarden tickets sync`; setting `ticketSync = auto | manual | off`.
 - **Branch without a ticket**: `repowarden` warns (when arriving on the branch and in `git cc`), **never blocking**: not everyone works with tickets. If the project's tickets are managed by repowarden, it **offers to create one** (`git cc` creates and references it on "yes"); otherwise it shows how to silence it: `git config repowarden.skip tickets`.
 - `git cc` references `Ticket : #12` on a `feat/12-…` branch.
 

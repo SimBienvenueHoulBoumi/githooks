@@ -7,8 +7,8 @@ Chaque changement part d'un **ticket** (issue GitHub) : **la branche découle du
 | Statut (étiquette) | Quand | Effet automatique |
 |---|---|---|
 | `statut: à valider` | ticket créé (à la main, ou `repowarden ticket nouveau`) | — |
-| `statut: backlog` | un mainteneur pose l'étiquette **`validé`**, ou ouvre lui-même le ticket (validé d'office) | **branche `<type>/<n°>-<titre>` créée** depuis `develop` et **liée au ticket** (panneau *Development*) ; commentaire avec la commande pour la récupérer |
-| `statut: en cours` | quelqu'un s'assigne le ticket, ou pousse un premier commit sur sa branche | au premier push : **PR en brouillon** ouverte vers `develop`, `Ticket : #n`, assignée |
+| `statut: backlog` | un mainteneur pose l'étiquette **`validé`**, ou ouvre lui-même le ticket (validé d'office) | ticket prêt à être pris ; commentaire avec la commande pour le prendre |
+| `statut: en cours` | quelqu'un s'assigne le ticket (ou `repowarden ticket N`), ou pousse un premier commit sur sa branche | à l'assignation : **branche `<type>/<n°>-<titre>` créée** depuis `develop` et **liée au ticket** (panneau *Development*), un ticket validé pour plus tard n'a donc pas de branche qui vieillit ; au premier push : **PR en brouillon** ouverte vers `develop`, `Ticket : #n`, assignée |
 | `statut: en relecture` | PR « Ready for review » | la CI tourne ; une revue « Request changes » ramène le ticket en cours |
 | `statut: préprod` | PR mergée dans `develop` | branche supprimée ; commentaire à chaque préversion `vX.Y.Z-next.N` |
 | `statut: done` | release sur `main` | ticket **fermé**, avec la version |
@@ -25,7 +25,8 @@ repowarden ticket nouveau "Ajoute le panier"   # crée un ticket (à valider)
 repowarden ticket                             # ticket de la branche courante
 ```
 
-- `repowarden ticket <n>` récupère la branche créée à la validation. Si elle n'existe pas encore (suivi des tickets non installé), elle est créée et liée au ticket avec `gh issue develop`.
+- `repowarden ticket <n>` **prend le ticket** (assigné à soi) et se place sur sa branche ; la crée et la lie au ticket (`gh issue develop`) si elle n'existe pas encore.
+- **Tickets assignés → branches locales** : à chaque `git pull` ou changement de branche (au plus toutes les 15 min, seulement avec `gh` connecté), repowarden crée la branche locale de chaque ticket qui t'est assigné, sans changer ta branche courante. Un ticket réassigné à quelqu'un d'autre est signalé, sa branche locale conservée. À la demande : `repowarden tickets sync` ; réglage `ticketSync = auto | manual | off`.
 - **Branche sans ticket** : `repowarden` prévient (à l'arrivée sur la branche et dans `git cc`), **sans jamais bloquer** : tout le monde ne travaille pas avec des tickets. Si le projet fait gérer ses tickets par repowarden, il **propose d'en créer un** (`git cc` le crée et le cite sur un « oui ») ; sinon, il indique comment ne plus le voir : `git config repowarden.skip tickets`.
 - `git cc` cite `Ticket : #12` sur une branche `feat/12-…`.
 
