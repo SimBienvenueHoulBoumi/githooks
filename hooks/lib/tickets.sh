@@ -174,10 +174,10 @@ tickets_sync() {
     while IFS= read -r b; do
         branch_ticket_r "$b"
         n="$REPLY"
-        [ -n "$n" ] && [[ "$miens" != *" $n "* ]] || continue
+        if [ -z "$n" ] || [[ "$miens" == *" $n "* ]]; then continue; fi
         IFS=$'\t' read -r etat qui <<<"$(gh issue view "$n" --json state,assignees \
             -q '[.state, ([.assignees[].login] | join(", "))] | @tsv' 2>/dev/null || true)"
-        [ "$etat" = OPEN ] && [ -n "$qui" ] || continue
+        if [ "$etat" != OPEN ] || [ -z "$qui" ]; then continue; fi
         info_t tk.sync.reassigned "$n" "$qui" "$b"
     done < <(git for-each-ref --format='%(refname:short)' refs/heads)
     return 0
