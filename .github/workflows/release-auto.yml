@@ -93,6 +93,17 @@ on:
         # release ne modifie aucun fichier de .github/workflows/ (le jeton des
         # Actions n'en a pas le droit)
         default: v4
+      delivery-environment:
+        description: >-
+          Mode tag : environnement de déploiement dont l'approbation (« Approve
+          and deploy ») valide la livraison ; la GitHub App merge alors la PR
+          de livraison. Vide : la livraison se merge à la main (revue de PR).
+        type: string
+        default: ""
+      app-client-id:
+        description: "GitHub App des workflows (repowarden app init : vars.REPOWARDEN_APP_CLIENT_ID), pour merger la livraison approuvée"
+        type: string
+        default: ""
       notify:
         description: >-
           Événements envoyés au canal de l'équipe (secret webhook) : release
@@ -113,7 +124,7 @@ on:
         description: Obsolète, ignoré (ancien bot de release ; refusé en v4)
         required: false
       app-key:
-        description: Obsolète, ignoré (ancien bot de release ; refusé en v4)
+        description: Clé privée de la GitHub App (secrets.REPOWARDEN_APP_KEY), avec app-client-id
         required: false
     outputs:
       release_created:
@@ -155,7 +166,7 @@ jobs:
       sha: ${{ steps.release.outputs.sha || steps.publish.outputs.sha }}
       waiting_pr: ${{ steps.merge.outputs.waiting_pr }}
     env:
-      HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
+      HAS_APP: ${{ secrets.app-id != '' }}
     steps:
       # Ancien bot de release (GitHub App) : entrées obsolètes, ignorées
       - name: Entrées obsolètes
@@ -352,6 +363,7 @@ jobs:
       prerelease_created: ${{ steps.preversion.outputs.created }}
       prerelease_tag: ${{ steps.preversion.outputs.tag }}
       prerelease_version: ${{ steps.preversion.outputs.version }}
+      delivery_pr: ${{ steps.livraison.outputs.pr }}
     env:
       HAS_APP: ${{ secrets.app-id != '' && secrets.app-key != '' }}
     steps:
@@ -372,6 +384,7 @@ jobs:
           persist-credentials: false
 
       - name: PR de livraison
+        id: livraison
         if: github.ref_name == inputs.integration-branch
         env:
           GH_TOKEN: ${{ github.token }}
@@ -404,9 +417,11 @@ jobs:
             gh pr edit "$pr" --title "$title" --body "$body" >/dev/null
             echo "::notice::PR #$pr : $title"
           else
-            gh pr create --head "$INTEGRATION" --base "$MAIN" --title "$title" --body "$body"
+            url="$(gh pr create --head "$INTEGRATION" --base "$MAIN" --title "$title" --body "$body")"
+            pr="${url##*/}"
             echo "::notice::PR de livraison créée : $title"
           fi
+          echo "pr=$pr" >>"$GITHUB_OUTPUT"
 
       # Mode cycle : préversion de test à chaque merge sur la branche
       # d'intégration ; numéro = commits depuis la branche principale
@@ -527,6 +542,47 @@ jobs:
 
   # Canal de l'équipe (optionnel) : release publiée, PR de release à approuver,
   # échec. Sans secret webhook, rien n'est envoyé. Message dans la langue du projet.
+  # Mode tag : livraison validée par l'approbation de l'environnement
+  # delivery-environment (une seule en attente : la plus récente) ; approuvée,
+  # la GitHub App arme le merge de la PR de livraison, qui part dès que les
+  # vérifications et ce déploiement sont réussis (règle de la branche
+  # principale). L'App, et non le jeton des Actions : le merge déclenche ainsi
+  # la release sur la branche principale.
+  livraison:
+    needs: tag
+    if: >-
+      inputs.mode == 'tag' && inputs.delivery-environment != '' &&
+      github.ref_name == inputs.integration-branch && needs.tag.outputs.delivery_pr != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.delivery-environment }}
+    concurrency:
+      group: livraison-${{ github.repository }}
+      cancel-in-progress: true
+    permissions: {}
+    steps:
+      - name: Jeton de l'App
+        id: app
+        if: inputs.app-client-id != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.app-key }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Merge de la livraison approuvée
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ needs.tag.outputs.delivery_pr }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Livraison approuvée, mais pas de GitHub App (repowarden app init) : merger la PR #$PR à la main (avec le jeton des Actions, la release ne se lancerait pas)."
+            exit 1
+          fi
+          gh pr merge "$PR" --auto --merge
+          echo "::notice::Livraison approuvée : PR #$PR mergée dès que les vérifications sont vertes, puis tag et release."
+
   notifier:
     needs: [release, tag]
     if: always() && !cancelled()

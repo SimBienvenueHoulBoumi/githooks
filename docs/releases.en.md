@@ -124,7 +124,7 @@ jobs:
 ```
 
 1. On every merge into `develop`: a test **pre-release** (`vX.Y.Z-next.N`, GitHub "pre-release", `preversion` input) and the **delivery PR** `develop` → `main` (upcoming version, notes) kept up to date;
-2. merging it (human decision, **merge commit**: every commit stays visible) publishes the `vX.Y.Z` tag and the release on `main`; the version is computed from **all** the delivered commits (merges excluded);
+2. validating it: **one "Approve and deploy" click** on the `production` environment (`delivery-environment` input), from the notification or the run page; the GitHub App then merges the delivery PR (**merge commit**: every commit stays visible), which publishes the `vX.Y.Z` tag and the release on `main`; the version is computed from **all** the delivered commits (merges excluded). Only one validation pending at a time: the latest;
 3. **no stable version without a tested pre-release** (`preversion-obligatoire` input, enabled by default): the version published on `main` must have existed as `vX.Y.Z-next.N` on `develop`. A major (v3 → v4) therefore always goes through its `4.0.0-next.N`;
 4. **only `develop` goes into `main`**: an urgent fix is a `fix/…` PR into `develop` (pre-release right away), then an immediate delivery. If something still lands directly on `main`, it flows back into `develop` on its own (PR validated by the CI, merged, no key).
 

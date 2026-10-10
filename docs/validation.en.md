@@ -22,7 +22,7 @@ The risk is not the machine. It is human approval that is too light. This page d
 | Review code before it gets in | required approvals; approval dismissed by a new commit; the last pusher cannot approve their own push | `repowarden proteger --relecteurs N` |
 | Have sensitive areas reviewed by their owners | `CODEOWNERS` file + required code owner review | `repowarden proteger --codeowners` |
 | Decide to publish | deployment environment: the job waits for approval from a designated person | `repowarden proteger --environnement production` |
-| Decide to deliver (`develop` flow) | `develop` → `main` delivery PR, always merged by a human | `tag` mode |
+| Decide to deliver (`develop` flow) | one **"Approve and deploy"** click on the `production` environment (notification, mobile app, run page); the GitHub App then merges the `develop` → `main` delivery PR. `main` requires this successful deployment: nothing enters it without this approval | `tag` mode, `deliveryApproval = deployment` (default; `review`: PR review instead) |
 | Keep control over the release PR (`pr` mode) | human merge | `release-auto` with `merge-auto: false` |
 
 With a required review, the release PR is never merged by the bot. The bot prepares it and has CI validate it, then it waits for human approval. Merging it publishes the release.
@@ -36,6 +36,7 @@ Settings versioned in `.repowarden.conf`, applied by `repowarden proteger` (can 
     requiredReviews = 1              # approvals per PR
     codeOwnerReview = true           # CODEOWNERS review on their files
     unattributedApproval = false     # extra approval for unattributed changes (default false)
+    deliveryApproval = deployment    # delivery validated by "Approve and deploy" (review: PR review)
     environment = production         # deployments subject to approval
     environmentReviewers = alice @acme/release  # accounts or teams; default: the current gh user
 ```

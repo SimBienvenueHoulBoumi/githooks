@@ -270,6 +270,8 @@ _msg_fr() {
         ci.proteger.13) _M="Réglages appliqués." ;;
         ci.proteger.reviews_invalid) _M="--relecteurs : nombre de 0 à 9 attendu." ;;
         ci.proteger.codeowners_invalid) _M="codeOwnerReview : true ou false." ;;
+        ci.proteger.delivery_deploy) _M="  livraison vers main : approbation du déploiement « %s » (Approve and deploy), puis merge par la GitHub App ; merge automatique des PR de travail vers develop : %s" ;;
+        ci.proteger.delivery_invalid) _M="deliveryApproval : deployment ou review." ;;
         ci.proteger.automerge_invalid) _M="autoMergeWork : true ou false." ;;
         ci.proteger.unattributed_invalid) _M="unattributedApproval : true ou false." ;;
         ci.proteger.no_branch) _M="Aucune des branches « %s » n'existe sur %s." ;;
