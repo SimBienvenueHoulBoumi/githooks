@@ -115,8 +115,9 @@ else
     reponse="$(gh api -X POST "app-manifests/$code/conversions")"
     client_id="$(node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).client_id' <<<"$reponse")"
     slug="$(node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).slug' <<<"$reponse")"
-    node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).pem)' <<<"$reponse" |
-        gh secret set REPOWARDEN_APP_KEY --repo "$REPO"
+    # Clé gardée en mémoire le temps de vérifier l'installation, jamais affichée
+    cle="$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).pem)' <<<"$reponse")"
+    printf '%s' "$cle" | gh secret set REPOWARDEN_APP_KEY --repo "$REPO"
     reponse=""
     gh variable set REPOWARDEN_APP_CLIENT_ID --repo "$REPO" --body "$client_id"
     gh variable set REPOWARDEN_APP_SLUG --repo "$REPO" --body "$slug"
@@ -125,18 +126,33 @@ fi
 
 # 2. Installation sur le dépôt (vérifiée depuis tes installations)
 step_t app.step_install
+# Vérifiée au nom de l'App (jeton signé avec sa clé, valable 10 min) : le jeton
+# de gh ne peut pas lister les installations d'une App
 installee() {
-    local id
-    id="$(gh api user/installations --paginate -q ".installations[] | select(.app_slug == \"$slug\") | .id" 2>/dev/null | sed -n 1p)"
-    [ -n "$id" ] || return 1
-    grep -qxF "$REPO" <<<"$(gh api "user/installations/$id/repositories" --paginate -q '.repositories[].full_name' 2>/dev/null)"
+    local jwt
+    jwt="$(CLE="$cle" CID="$client_id" node -e '
+        const c = require("crypto"), now = Math.floor(Date.now() / 1000);
+        const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+        const t = b({ alg: "RS256", typ: "JWT" }) + "." + b({ iat: now - 60, exp: now + 540, iss: process.env.CID });
+        process.stdout.write(t + "." + c.sign("RSA-SHA256", Buffer.from(t), process.env.CLE).toString("base64url"));
+    ' 2>/dev/null)" || return 1
+    gh api "repos/$REPO/installation" -H "Authorization: Bearer $jwt" >/dev/null 2>&1
 }
+cle="${cle:-}"
+if [ -z "$cle" ]; then
+    # Relance (clé non disponible ici) : vérifiée au premier run du suivi des tickets
+    info_t app.check_in_ci "https://github.com/apps/$slug/installations/new"
+    echo
+    ok_t app.done
+    exit 0
+fi
 if [ -n "$slug" ] && ! installee; then
     info_t app.open "https://github.com/apps/$slug/installations/new"
     ouvrir "https://github.com/apps/$slug/installations/new"
     for _ in $(seq 1 120); do installee && break; sleep 5; done
 fi
 if [ -n "$slug" ] && installee; then
+    cle=""
     ok_t app.installed "$slug" "$REPO"
 else
     attention_t app.not_installed "$slug" "$REPO"
