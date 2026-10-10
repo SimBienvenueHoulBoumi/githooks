@@ -34,7 +34,7 @@ repowarden cc -m "…" --type … --scope … --body "…" --refs "Ticket : #<n>
 - Avant chaque push, les mêmes vérifications que la CI :
 
 ```bash
-shellcheck bin/* ci/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lib/i18n/*.sh hooks/lang/*.sh install.sh
+shellcheck bin/* ci/*.sh ci/tickets/*.sh hooks/pre-commit hooks/prepare-commit-msg hooks/commit-msg hooks/pre-push hooks/post-checkout hooks/post-merge hooks/lib/*.sh hooks/lib/i18n/*.sh hooks/lang/*.sh install.sh
 actionlint .github/workflows/*.yml
 bats test/
 ```
