@@ -46,6 +46,10 @@ on:
         description: Branche d'intégration (ses PR de livraison n'exigent pas de ticket)
         type: string
         default: develop
+      main-branch:
+        description: Branche principale (production) ; une PR qui en part ne va que vers la branche d'intégration
+        type: string
+        default: main
       auto-validate:
         description: "Ticket ouvert par un mainteneur (droits d'écriture) validé d'office : maintainers, ou never (un mainteneur pose toujours « validé »)"
         type: string
@@ -84,6 +88,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           TAG: ${{ inputs.tag }}
           INTEGRATION: ${{ inputs.integration-branch }}
+          MAIN: ${{ inputs.main-branch }}
           ACTION: ${{ github.event.action }}
           PR: ${{ github.event.pull_request.number }}
           MERGED: ${{ github.event.pull_request.merged }}
